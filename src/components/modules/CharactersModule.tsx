@@ -421,7 +421,7 @@ function DetailPanel({
   const setAttitude = (value: number) =>
     onUpdate((c) => { c.attitude = formatDecimalString(value); });
 
-  const setAppeal = (type: "ART" | "COMMERCIAL", value: number) =>
+  const setAppeal = (type: "ART" | "COM", value: number) =>
     onUpdate((c) => {
       const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
       if (wt?.[type]) wt[type].value = formatDecimalString(value);
@@ -439,7 +439,7 @@ function DetailPanel({
       c.attitude = "1.000";
       const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
       if (wt?.ART) wt.ART.value = "1.000";
-      if (wt?.COMMERCIAL) wt.COMMERCIAL.value = "1.000";
+      if (wt?.COM) wt.COM.value = "1.000";
     });
   };
 
@@ -685,11 +685,11 @@ function AppealSection({
   onSetAppeal,
 }: {
   char: Character;
-  onSetAppeal: (type: "ART" | "COMMERCIAL", value: number) => void;
+  onSetAppeal: (type: "ART" | "COM", value: number) => void;
 }) {
   const wt = char.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
   const artEntry = wt?.ART;
-  const comEntry = wt?.COMMERCIAL;
+  const comEntry = wt?.COM;
 
   if (!artEntry && !comEntry) return null;
 
@@ -726,7 +726,7 @@ function AppealSection({
             value={parseFloat(String(comEntry.value)) || 0}
             cap={1}
             color="#c8a040"
-            onChange={(v) => onSetAppeal("COMMERCIAL", v)}
+            onChange={(v) => onSetAppeal("COM", v)}
             scale={1}
             precision={3}
           />
@@ -973,7 +973,7 @@ export default function CharactersModule() {
         c.attitude = "1.000";
         const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
         if (wt?.ART) wt.ART.value = "1.000";
-        if (wt?.COMMERCIAL) wt.COMMERCIAL.value = "1.000";
+        if (wt?.COM) wt.COM.value = "1.000";
       }
     });
   }, [updateStateJson, showAll]);
