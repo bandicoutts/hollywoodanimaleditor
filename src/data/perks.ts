@@ -12,6 +12,10 @@ export const PERK_LABELS: Record<string, string> = {
   BLDG_RND_II:             "Research Group 3",
   BLDG_RND_III:            "Research Group 4",
   BLDG_RND_IV:             "Research Group 5",
+  BLDG_POWERPLANT_II:      "Power Plant II",
+  BLDG_POWERPLANT_III:     "Power Plant III",
+  BLDG_WATER_TOWER_II:     "Water Tower II",
+  BLDG_WATER_TOWER_III:    "Water Tower III",
   BLDG_CONSTRUCTOR:        "Constructor",
   BLDG_FREELANCE:          "Freelance Office",
   BLDG_SUPPLY:             "Supply",
@@ -192,6 +196,9 @@ export const PERK_LABELS: Record<string, string> = {
   PRINT_INHOUSE_QLT_1:     "Printing in 3 weeks",
   PRINT_INHOUSE_QLT_2:     "Printing in one week",
   PRINT_EMERGENCY:         "Emergency printing",
+
+  // ── Shenanigans / Dirty Tricks ───────────────────────────────────────────────
+  BM_UNLOCK:               "Dirty tricks",
 
   // ── Distribution / Marketing ──────────────────────────────────────────────────
   WM_HOSPICE:               "Hospice visit",
