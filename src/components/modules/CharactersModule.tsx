@@ -8,6 +8,7 @@ import {
   getPrimaryProfession,
   getProfessionColor,
   getProfessionLabel,
+  MANAGEMENT_KEYS,
   PROFESSIONS,
 } from "@/data/professions";
 import { resolveCharacterName } from "@/data/characterNames";
@@ -1020,6 +1021,7 @@ export default function CharactersModule() {
     if (profFilter !== "all") {
       list = list.filter((c) => {
         const p = getPrimaryProfession(c.professions);
+        if (profFilter === "management") return p !== null && MANAGEMENT_KEYS.has(p);
         return p === profFilter;
       });
     }
@@ -1036,11 +1038,19 @@ export default function CharactersModule() {
   const availableProfs = useMemo(() => {
     const base = showAll ? characters : characters.filter((c) => c.studioId !== null);
     const seen = new Set<string>();
+    let hasManagement = false;
     for (const c of base) {
       const p = getPrimaryProfession(c.professions);
-      if (p) seen.add(p);
+      if (!p) continue;
+      if (MANAGEMENT_KEYS.has(p)) {
+        hasManagement = true;
+      } else {
+        seen.add(p);
+      }
     }
-    return [...seen].sort();
+    const result = [...seen].sort();
+    if (hasManagement) result.push("management");
+    return result;
   }, [characters, showAll]);
 
   const selectedChar = useMemo(
@@ -1178,7 +1188,7 @@ export default function CharactersModule() {
               <option value="all">All professions</option>
               {availableProfs.map((p) => (
                 <option key={p} value={p}>
-                  {getProfessionLabel(p)}
+                  {p === "management" ? "Management" : getProfessionLabel(p)}
                 </option>
               ))}
             </select>
