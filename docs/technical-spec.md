@@ -79,14 +79,18 @@ Top-level fields in `stateJson`:
 | `xp` | number | Experience points |
 | `firstNameId` | string | References in-game name lookup — do not edit |
 | `lastNameId` | string | References in-game name lookup — do not edit |
-| `labels` | array | String labels e.g. `"IMMORTAL"`, `"STERILE"` |
+| `customName` | string \| null | Custom display name written directly to save — preferred over localStorage |
+| `labels` | string[] | Trait labels e.g. `"IMMORTAL"`, `"STERILE"` — editable array |
 
 Filter employed characters by `studioId !== null`.
 
 **Known profession types:**
 `Actor`, `Director`, `Producer`, `Scriptwriter`, `Cinematographer`, `Composer`, `FilmEditor`, `Agent`, `CptLawyer`, `CptHR`, `CptPR`, `CptFinancier`, `LieutProd`, `LieutPrep`, `LieutTech`, `LieutScript`, `LieutRelease`, `LieutPost`, `LieutSecurity`, `LieutEscort`, `LieutMuseum`, `LieutInfrastructure`, `LieutProducers`
 
-Character names are integer IDs referencing an in-game lookup table. Display as `"Character #65"` or allow users to assign local display names. Do not edit `firstNameId` or `lastNameId`.
+**Known label values (31 observed):**
+`ALCOHOLIC`, `ARROGANT`, `CALM`, `CHASTE`, `CHEERY`, `DEMANDING`, `DISCIPLINED`, `HARDWORKING`, `HEARTBREAKER`, `HOTHEADED`, `IMMORTAL`, `INDIFFERENT`, `JUNKIE`, `LAZY`, `LEADER`, `LUDOMANIAC`, `MAIN_CHARACTER`, `MELANCHOLIC`, `MISOGYNIST`, `MODEST`, `OPEN_MINDED`, `PERFECTIONIST`, `RACIST`, `SIMPLE`, `STERILE`, `SUPER_IMMORTAL`, `TEAM_PLAYER`, `UNDISCIPLINED`, `UNTOUCHABLE`, `UNWANTED_ACTOR`, `XENOPHOBE`
+
+Character names are integer IDs referencing an in-game lookup table. The `customName` field exists on character objects in the save file — write display names there directly. Do not edit `firstNameId` or `lastNameId`.
 
 ---
 
@@ -184,7 +188,7 @@ STUDIO_TECH, STUDIO_TECH_ADD_RND, STUDIO_TECH_RED_TIME_1, STUDIO_TECH_RED_TIME_2
 { "Item1": "DRAMA", "Item2": "1929-01-01T00:00:00" }
 ```
 
-`Item1` is the tag ID. `Item2` is the availability date — use the current in-game date when adding new tags. The list below covers 156 known tag IDs. Apply the same rules as perks: reference set only, not a hardcoded enum.
+`Item1` is the tag ID. `Item2` is the availability date — use the current in-game date when adding new tags. The in-game date is not directly readable from the save, so `"1929-01-01T00:00:00"` is used as a safe fallback (the game accepts any valid date string here). The list below covers 156 known tag IDs. Apply the same rules as perks: reference set only, not a hardcoded enum.
 
 **Genre**
 `DRAMA, COMEDY, ACTION, ROMANCE, DETECTIVE, ADVENTURE, THRILLER, HISTORICAL, HORROR, SCIENCE_FICTION`
@@ -271,7 +275,7 @@ To complete instantly: set `constructionDuration` to `0` and `constructionQualit
 }
 ```
 
-Set `finished: true` and `locked: false` to unlock.
+Set `finished: true`, `locked: false`, and `progress: "1.000"` to fully unlock.
 
 ---
 
@@ -363,7 +367,11 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
 - `functionalities` flags with toggle switches
 - Bulk: Unlock All Milestones, Enable All Features
 
-### 10. AI Script Optimizer
+### 10. AI Script Optimizer _(deferred)_
+
+The UI shell (genre pills, disabled generate button) is scaffolded to reserve the module slot. Full implementation is deferred pending feasibility assessment.
+
+Planned behaviour when implemented:
 - User selects target genre/tone
 - Pass player's current `tagPool` to Claude API (`claude-sonnet-4-5` or later)
 - Claude suggests: protagonist, antagonist, supporting character, theme, events, finale, setting

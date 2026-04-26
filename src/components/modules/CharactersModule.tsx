@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useId } from "react";
 import { useSaveFile } from "@/context/SaveFileContext";
 import type { Character } from "@/lib/save-file";
 import { formatDecimalString } from "@/lib/save-file";
@@ -10,6 +10,17 @@ import {
   getProfessionLabel,
   PROFESSIONS,
 } from "@/data/professions";
+
+// ── Known labels ──────────────────────────────────────────────────────────────
+
+const KNOWN_LABELS = [
+  "ALCOHOLIC", "ARROGANT", "CALM", "CHASTE", "CHEERY", "DEMANDING",
+  "DISCIPLINED", "HARDWORKING", "HEARTBREAKER", "HOTHEADED", "IMMORTAL",
+  "INDIFFERENT", "JUNKIE", "LAZY", "LEADER", "LUDOMANIAC", "MAIN_CHARACTER",
+  "MELANCHOLIC", "MISOGYNIST", "MODEST", "OPEN_MINDED", "PERFECTIONIST",
+  "RACIST", "SIMPLE", "STERILE", "SUPER_IMMORTAL", "TEAM_PLAYER",
+  "UNDISCIPLINED", "UNTOUCHABLE", "UNWANTED_ACTOR", "XENOPHOBE",
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -637,42 +648,129 @@ function DetailPanel({
       </div>
 
       {/* Labels */}
-      {Array.isArray(char.labels) && char.labels.length > 0 && (
-        <>
-          <hr className="gold-divider" style={{ margin: "8px 0 20px" }} />
-          <p
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: "10px",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "var(--color-text-muted)",
-              marginBottom: "10px",
-            }}
-          >
-            Traits
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {(char.labels as string[]).map((label) => (
-              <span
-                key={label}
-                style={{
-                  fontFamily: "var(--font-ui)",
-                  fontSize: "10px",
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                  color: "var(--color-text-secondary)",
-                  border: "1px solid var(--color-border)",
-                  padding: "2px 8px",
-                }}
-              >
-                {label}
-              </span>
-            ))}
-          </div>
-        </>
-      )}
+      <LabelsEditor
+        labels={Array.isArray(char.labels) ? (char.labels as string[]) : []}
+        onAdd={(label) => onUpdate((c) => { if (!Array.isArray(c.labels)) c.labels = []; (c.labels as string[]).push(label); })}
+        onRemove={(label) => onUpdate((c) => { if (Array.isArray(c.labels)) c.labels = (c.labels as string[]).filter((l) => l !== label); })}
+      />
     </div>
+  );
+}
+
+function LabelsEditor({
+  labels,
+  onAdd,
+  onRemove,
+}: {
+  labels: string[];
+  onAdd: (label: string) => void;
+  onRemove: (label: string) => void;
+}) {
+  const selectId = useId();
+  const currentSet = new Set(labels);
+  const available = KNOWN_LABELS.filter((l) => !currentSet.has(l));
+
+  const unknownLabels = labels.filter((l) => !KNOWN_LABELS.includes(l));
+  const allLabels = [...labels];
+
+  return (
+    <>
+      <hr className="gold-divider" style={{ margin: "8px 0 20px" }} />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "12px",
+        }}
+      >
+        <p
+          style={{
+            fontFamily: "var(--font-ui)",
+            fontSize: "10px",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--color-text-muted)",
+          }}
+        >
+          Traits
+        </p>
+        {/* Add from known list */}
+        <select
+          id={selectId}
+          value=""
+          onChange={(e) => { if (e.target.value) onAdd(e.target.value); }}
+          style={{
+            fontFamily: "var(--font-ui)",
+            fontSize: "10px",
+            color: "var(--color-text-muted)",
+            background: "var(--color-bg-raised)",
+            border: "1px solid var(--color-border)",
+            padding: "2px 6px",
+            cursor: "pointer",
+            outline: "none",
+          }}
+        >
+          <option value="">+ Add trait</option>
+          {available.map((l) => (
+            <option key={l} value={l}>{l}</option>
+          ))}
+        </select>
+      </div>
+      {allLabels.length === 0 ? (
+        <p
+          style={{
+            fontFamily: "var(--font-ui)",
+            fontSize: "11px",
+            color: "var(--color-text-muted)",
+            fontStyle: "italic",
+          }}
+        >
+          No traits
+        </p>
+      ) : (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+          {allLabels.map((label) => (
+            <div
+              key={label}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                fontFamily: "var(--font-ui)",
+                fontSize: "10px",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                color: unknownLabels.includes(label) ? "var(--color-text-muted)" : "var(--color-text-secondary)",
+                border: "1px solid var(--color-border)",
+                padding: "2px 6px 2px 8px",
+              }}
+            >
+              {label}
+              <button
+                onClick={() => onRemove(label)}
+                title={`Remove ${label}`}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  color: "var(--color-text-muted)",
+                  fontSize: "12px",
+                  lineHeight: 1,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-danger)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-muted)"; }}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
