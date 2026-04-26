@@ -160,6 +160,24 @@ export const PERK_LABELS: Record<string, string> = {
   PRODUCERS_ON_FILM_2:   "Two producers per project",
   PRODUCERS_ON_FILM_3:   "Three producers per project",
 
+  // ── Tags & Research ───────────────────────────────────────────────────────────
+  TAGS_RESEARCH:              "Story element research",
+  TAGS_SLOTS_6:               "Tag slot 6",
+  TAGS_SLOTS_7:               "Tag slot 7",
+  TAGS_SLOTS_8:               "Tag slot 8",
+  TAGS_SLOTS_9:               "Tag slot 9",
+  TAGS_SLOTS_10:              "Tag slot 10",
+  TAGS_RESEARCH_DIRECTION:    "Research direction",
+  TAGS_RESEARCH_TIME_RED_1:   "Research 25% faster",
+  TAGS_RESEARCH_TIME_RED_2:   "Research 50% faster",
+  TAGS_RESEARCH_TIME_RED_3:   "Research twice as fast",
+  TAGS_XP_BONUS_1:            "25% more XP per story element",
+  TAGS_XP_BONUS_2:            "50% more XP per story element",
+  TAGS_XP_BONUS_3:            "Double XP per story element",
+  TAGS_NEW_PP_BONUS:          "IP for new story elements",
+  NEW_TAG_BY_LT_1:            "Lieutenant researches tags",
+  NEW_TAG_BY_LT_2:            "Lieutenant researches tags faster",
+
   // ── Engineering ───────────────────────────────────────────────────────────────
   STUDIO_TECH:           "Technology Incentive",
   STUDIO_TECH_ADD_RND:   "Additional research groups",
@@ -633,9 +651,36 @@ export const PERK_GROUPS: PerkGroup[] = [
   },
 ];
 
-export const ALL_KNOWN_PERKS = new Set<string>(
-  PERK_GROUPS.flatMap((g) => g.perks)
-);
+// Behaviour=4 perks: passive/auto-triggered, present in save files but not
+// visible research nodes. Included in ALL_KNOWN_PERKS for Unlock All
+// completeness, but hidden from the UI.
+export const HIDDEN_PERK_IDS = new Set<string>([
+  "ADDITIONAL_REHEARSAL_1", "ADDITIONAL_REHEARSAL_2",
+  "BANK_LOAN_COOLDOWN_REDUCTION", "BANK_LOAN_MICROLOAN", "BANK_LOAN_REFINANCING",
+  "BROADCAST_MEDIA", "CONTRACT_GROSS",
+  "FOCUS_INHOUSE_RED_PRICE_1", "FOCUS_INHOUSE_RED_TIME_1", "FOCUS_OUTSOURCE",
+  "FOCUS_QLT_1", "FOCUS_QLT_2",
+  "IMPROVEMENT_II", "IMPROVEMENT_III",
+  "IP_CONTRACT_WEIGHT", "IP_HYPE", "IP_HYPE_RED_PRICE_1", "IP_HYPE_RED_TIME_1",
+  "IP_KEEPER", "IP_MOVIE_THEATRE_CHEAP", "IP_TALANTS_LNT_BONUS_XP",
+  "LITERARY_WORK_RESEARCH_TIME_1", "MARKET_INTERVIEW",
+  "MOVIE_PALACE", "MOVIE_PALACE_PP_1",
+  "MOVIE_RELEASE_ATTITUDE_1", "MOVIE_RELEASE_MOOD_1",
+  "PAVILION_RENT_1", "PAVILION_RENT_2",
+  "POWERPLANT_AMT_3", "PREMIERE", "PREMIERE_REP_1",
+  "PRINT_MEDIA", "PUBLIC_DOMAIN",
+  "QUARTERLY_REPORT_CASH_1", "QUARTERLY_REPORT_CASH_2", "QUARTERLY_REPORT_CASH_3",
+  "SCREENPLAYS_AMT_1", "SCREENPLAYS_AMT_2",
+  "STAFF_LARGE1", "STAFF_LARGE2", "START_PROD_NO_ACT",
+  "SUPER_PREMIERE", "SUPER_PREMIERE_PP_1", "SUPER_PREMIERE_REP_1",
+  "TAX_BASE_REDUCTION_1", "TAX_BASE_REDUCTION_2", "TAX_BASE_REDUCTION_3",
+  "WATER_TOWER_AMT_3",
+]);
+
+export const ALL_KNOWN_PERKS = new Set<string>([
+  ...PERK_GROUPS.flatMap((g) => g.perks),
+  ...HIDDEN_PERK_IDS,
+]);
 
 export function getPerkGroup(perkId: string): PerkGroup | undefined {
   return PERK_GROUPS.find((g) => g.perks.includes(perkId));

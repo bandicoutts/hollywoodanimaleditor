@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import ModuleShell from "./ModuleShell";
 import { useSaveFile } from "@/context/SaveFileContext";
-import { PERK_GROUPS, PERK_LABELS, ALL_KNOWN_PERKS, type PerkGroup } from "@/data/perks";
+import { PERK_GROUPS, PERK_LABELS, ALL_KNOWN_PERKS, HIDDEN_PERK_IDS, type PerkGroup } from "@/data/perks";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -193,7 +193,7 @@ export default function ResearchModule() {
 
   // Perks in the save that aren't in our known list
   const unknownOpened = useMemo(
-    () => openedPerks.filter((id) => !ALL_KNOWN_PERKS.has(id)),
+    () => openedPerks.filter((id) => !ALL_KNOWN_PERKS.has(id) && !HIDDEN_PERK_IDS.has(id)),
     [openedPerks]
   );
 
