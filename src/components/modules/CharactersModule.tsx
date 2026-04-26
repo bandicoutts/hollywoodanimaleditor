@@ -704,8 +704,96 @@ function DetailPanel({
 
 // ── Appeal section ────────────────────────────────────────────────────────────
 
+const APPEAL_TIERS = {
+  ART: [
+    { label: "Promising Talent", value: 0.25 },
+    { label: "Commanding Presence", value: 0.50 },
+    { label: "True Artist", value: 0.75 },
+    { label: "Icon", value: 1.0 },
+  ],
+  COM: [
+    { label: "Rising Star", value: 0.25 },
+    { label: "Star", value: 0.50 },
+    { label: "Superstar", value: 0.75 },
+    { label: "Legend", value: 1.0 },
+  ],
+} as const;
+
+function getAppealTierLabel(value: number, type: "ART" | "COM"): string | null {
+  const tiers = APPEAL_TIERS[type];
+  if (value >= 1.0) return tiers[3].label;
+  if (value >= 0.75) return tiers[2].label;
+  if (value >= 0.50) return tiers[1].label;
+  if (value >= 0.25) return tiers[0].label;
+  return null;
+}
+
 function isAppealEligible(professions: Record<string, string>): boolean {
   return "Actor" in professions || "Director" in professions;
+}
+
+function AppealColumn({
+  type,
+  value,
+  color,
+  onSetAppeal,
+}: {
+  type: "ART" | "COM";
+  value: number;
+  color: string;
+  onSetAppeal: (type: "ART" | "COM", value: number) => void;
+}) {
+  const tiers = APPEAL_TIERS[type];
+  const currentTier = getAppealTierLabel(value, type);
+  const label = type === "ART" ? "Artistic Appeal" : "Commercial Appeal";
+
+  return (
+    <div>
+      <StatBar
+        label={label}
+        value={value}
+        cap={1}
+        color={color}
+        onChange={(v) => onSetAppeal(type, v)}
+        scale={1}
+        precision={3}
+      />
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "-6px", marginBottom: "14px" }}>
+        {tiers.map((tier) => {
+          const isActive = currentTier === tier.label;
+          return (
+            <button
+              key={tier.label}
+              onClick={() => onSetAppeal(type, tier.value)}
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "9px",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                color: isActive ? color : "var(--color-text-muted)",
+                background: isActive ? color + "18" : "transparent",
+                border: `1px solid ${isActive ? color + "66" : "var(--color-border)"}`,
+                padding: "3px 6px",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = color;
+                e.currentTarget.style.borderColor = color + "66";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = isActive ? color : "var(--color-text-muted)";
+                e.currentTarget.style.borderColor = isActive ? color + "66" : "var(--color-border)";
+              }}
+            >
+              {tier.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function AppealSection({
@@ -737,24 +825,8 @@ function AppealSection({
         Appeal
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
-        <StatBar
-          label="Artistic Appeal"
-          value={artValue}
-          cap={1}
-          color="#a088c8"
-          onChange={(v) => onSetAppeal("ART", v)}
-          scale={1}
-          precision={3}
-        />
-        <StatBar
-          label="Commercial Appeal"
-          value={comValue}
-          cap={1}
-          color="#c8a040"
-          onChange={(v) => onSetAppeal("COM", v)}
-          scale={1}
-          precision={3}
-        />
+        <AppealColumn type="ART" value={artValue} color="#a088c8" onSetAppeal={onSetAppeal} />
+        <AppealColumn type="COM" value={comValue} color="#c8a040" onSetAppeal={onSetAppeal} />
       </div>
     </>
   );
