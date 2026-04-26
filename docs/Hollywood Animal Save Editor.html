@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hollywood Animal — Studio Archives</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-ui: 'DM Sans', Helvetica, sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      background: #1d1a15;
+      color: #e2d9c8;
+      font-family: var(--font-ui);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #root { min-height: 100vh; display: flex; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #111009; }
+    ::-webkit-scrollbar-thumb { background: #3e3a2e; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #5c5448; }
+
+    /* Range inputs */
+    input[type=range] { -webkit-appearance: none; appearance: none; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 0; height: 0; }
+
+    /* Spinner animation */
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* Focus */
+    button:focus-visible, input:focus-visible {
+      outline: 1px solid #c9a44a66;
+      outline-offset: 2px;
+    }
+    input { color-scheme: dark; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="application/json" id="__tweak_defaults__">
+    {
+      "sidebarStyle": "full",
+      "showMoodDots": true,
+      "showAvgStat": true,
+      "density": "comfortable"
+    }
+  </script>
+
+  <!-- Tweaks panel must load first -->
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <!-- Inject TWEAK_DEFAULTS from the JSON block above so app.jsx can read it -->
+  <script>
+    (function() {
+      const el = document.getElementById('__tweak_defaults__');
+      window.TWEAK_DEFAULTS = el ? JSON.parse(el.textContent) : {};
+    })();
+  </script>
+
+  <!-- Shared components + mock data -->
+  <script type="text/babel" src="shared.jsx"></script>
+
+  <!-- Upload screen -->
+  <script type="text/babel" src="upload-screen.jsx"></script>
+
+  <!-- Sidebar -->
+  <script type="text/babel" src="sidebar.jsx"></script>
+
+  <!-- Characters module -->
+  <script type="text/babel" src="characters-module.jsx"></script>
+
+  <!-- Resources, Writing Tags, Technologies -->
+  <script type="text/babel" src="modules-a.jsx"></script>
+
+  <!-- Research, AI Scripts -->
+  <script type="text/babel" src="modules-b.jsx"></script>
+
+  <!-- Main app — must be last -->
+  <script type="text/babel" src="app.jsx"></script>
+</body>
+</html>

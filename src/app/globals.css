@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+@theme {
+  /* Backgrounds */
+  --color-bg-app: #1d1a15;
+  --color-bg-panel: #111009;
+  --color-bg-raised: #2a2720;
+
+  /* Borders */
+  --color-border: #3e3a2e;
+  --color-border-subtle: #2a2720;
+
+  /* Text */
+  --color-text-primary: #e2d9c8;
+  --color-text-secondary: #9a9280;
+  --color-text-muted: #5c5448;
+  --color-text-faint: #3e3a2e;
+
+  /* Accent */
+  --color-gold: #c9a44a;
+  --color-gold-dim: #c9a44a18;
+  --color-gold-mid: #c9a44a55;
+  --color-success: #8fbc55;
+  --color-warning: #c9a44a;
+  --color-danger: #e08080;
+
+  /* Profession */
+  --color-prof-actor: #c9a44a;
+  --color-prof-director: #4ec9a0;
+  --color-prof-scriptwriter: #a9a4e8;
+  --color-prof-cinematographer: #7ab0e0;
+  --color-prof-composer: #e09090;
+  --color-prof-film-editor: #8fbc55;
+
+  /* Typography */
+  --font-serif: var(--font-playfair), Georgia, serif;
+  --font-ui: var(--font-dm-sans), Helvetica, sans-serif;
+
+  /* Sidebar */
+  --sidebar-width: 148px;
+  --sidebar-width-compact: 56px;
+  --topbar-height: 44px;
+}
+
+/* Base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--color-bg-app);
+  color: var(--color-text-primary);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-panel);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Range input reset */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 0;
+  height: 0;
+}
+
+/* Focus ring */
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 1px solid #c9a44a66;
+  outline-offset: 2px;
+}
+
+/* Spinner */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+input {
+  color-scheme: dark;
+}
+
+/* Gold divider */
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c9a44a55, transparent);
+  border: none;
+  margin: 0;
+}
