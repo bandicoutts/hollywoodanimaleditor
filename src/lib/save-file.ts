@@ -137,7 +137,7 @@ export function parseSaveFile(text: string): ParseResult {
 // ── Serialisation ─────────────────────────────────────────────────────────────
 
 export function serialiseSaveFile(data: SaveFile): string {
-  return UTF8_BOM + JSON.stringify(data, null, 2);
+  return UTF8_BOM + JSON.stringify(data);
 }
 
 export function downloadSaveFile(data: SaveFile, filename: string): void {
