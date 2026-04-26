@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import ModuleShell from "./ModuleShell";
 import { useSaveFile } from "@/context/SaveFileContext";
-import { TAG_GROUPS, ALL_KNOWN_TAGS, type TagGroup } from "@/data/tags";
+import { TAG_GROUPS, TAG_LABELS, ALL_KNOWN_TAGS, type TagGroup } from "@/data/tags";
 import type { TagPoolEntry } from "@/lib/save-file";
 
 // Maps tag ID prefixes to the label of the known group they belong to
@@ -27,6 +27,7 @@ function groupLabelByPrefix(tagId: string): string | null {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatTagLabel(id: string): string {
+  if (id in TAG_LABELS) return TAG_LABELS[id];
   // Strip known category prefix (e.g. PROTAGONIST_, ANTAGONIST_, THEME_, etc.)
   const prefixes = [
     "PROTAGONIST_", "SUPPORTINGCHARACTER_", "ANTAGONIST_",
