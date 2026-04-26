@@ -89,6 +89,38 @@ Filter employed characters by `studioId !== null`.
 **Known profession types:**
 `Actor`, `Director`, `Producer`, `Scriptwriter`, `Cinematographer`, `Composer`, `FilmEditor`, `Agent`, `CptLawyer`, `CptHR`, `CptPR`, `CptFinancier`, `LieutProd`, `LieutPrep`, `LieutTech`, `LieutScript`, `LieutRelease`, `LieutPost`, `LieutSecurity`, `LieutEscort`, `LieutMuseum`, `LieutInfrastructure`, `LieutProducers`
 
+**Display names for Management professions** (`src/data/professions.ts`):
+
+| Key | Display label |
+|---|---|
+| `CptHR` | Human Resources Executive |
+| `CptPR` | Public Relations Executive |
+| `CptLawyer` | Legal Executive |
+| `CptFinancier` | Financial Executive |
+| `LieutProd` | Head of Production |
+| `LieutPrep` | Head of Pre-Production |
+| `LieutTech` | Head of Technology |
+| `LieutScript` | Head of Screenwriting |
+| `LieutRelease` | Head of Release |
+| `LieutPost` | Head of Post-Production |
+| `LieutSecurity` | Head of Security |
+| `LieutEscort` | Head of Escort |
+| `LieutMuseum` | Head of Museum |
+| `LieutInfrastructure` | Head of Infrastructure |
+| `LieutProducers` | Head of Producers |
+
+The profession filter dropdown groups all `Lieut*` and `Cpt*` keys into a single **"Management"** option (sentinel value `"management"`). Individual labels still appear on character cards and in the detail panel.
+
+**Lieutenant upgrade bonuses** — Lieutenant (`Lieut*`) characters only have two bonus fields that are not present on other profession types:
+
+| Field | Type | Notes |
+|---|---|---|
+| `BonusCardMoney` | number | Integer card count; displayed as `value × 10`% money bonus |
+| `BonusCardInfluencePoints` | number | Integer card count; displayed as `value × 10`% influence bonus |
+| `bonusCards` | number[] | Always `[BonusCardMoney, BonusCardInfluencePoints]` — **must be kept in sync** when either scalar is updated |
+
+Observed range: 0–4+ cards. Each card = 10% bonus. A value of 4 displays as 40%.
+
 **Known label values (31 observed):**
 `ALCOHOLIC`, `ARROGANT`, `CALM`, `CHASTE`, `CHEERY`, `DEMANDING`, `DISCIPLINED`, `HARDWORKING`, `HEARTBREAKER`, `HOTHEADED`, `IMMORTAL`, `INDIFFERENT`, `JUNKIE`, `LAZY`, `LEADER`, `LUDOMANIAC`, `MAIN_CHARACTER`, `MELANCHOLIC`, `MISOGYNIST`, `MODEST`, `OPEN_MINDED`, `PERFECTIONIST`, `RACIST`, `SIMPLE`, `STERILE`, `SUPER_IMMORTAL`, `TEAM_PLAYER`, `UNDISCIPLINED`, `UNTOUCHABLE`, `UNWANTED_ACTOR`, `XENOPHOBE`
 
@@ -382,6 +414,17 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
 - Opened perks shown as checked; unchecking removes; checking adds
 - Unlock All button
 - Unknown perks still displayed
+
+**Perk display names** are maintained in `src/data/perks.ts` as `PERK_LABELS: Record<string, string>`. The `formatPerkLabel(id)` helper in `ResearchModule.tsx` checks this map first and falls back to auto-formatting (snake_case → Title Case) for any ID not explicitly mapped. Always add new confirmed names to `PERK_LABELS` rather than relying on auto-format.
+
+Sources used to build `PERK_LABELS`:
+- `Buildings.json` — maps building IDs to `needPerkId` (used for all `BLDG_` perk names)
+- `Presents.json` — maps present types to their unlock perk (used for all `WG_` and `BG_` names)
+- `Party.json` — confirms `PARTY_1/2/3` and `OFFICIAL_RECEPTION_1/2/3` IDs
+- In-game screenshots — used for euphemistic research node labels (e.g. `BG_XXX` → "A Spicy Film Strip", `BG_UNDERAGE` → "Time with a Minor")
+- Web guides — confirmed Film Lab sub-perks (Improved Development, Fast Development, etc.)
+
+**Localization note:** The game's human-readable display strings live in Unity asset bundles, not in the JSON config files. The config files at `StreamingAssets/Data/Configs/` contain only internal IDs and numeric data. For any perk not already in `PERK_LABELS`, derive the label from the ID pattern (e.g. `_QLT_` → "Quality", `_TIME_RED_` → "Time Reduction", `_XP_` → "XP Bonus") and confirm against web guides or a screenshot where precision matters.
 
 ### 6. Research Speedup / Complete Instantly
 - Slider for `overallPerkResearchSpeedup`
