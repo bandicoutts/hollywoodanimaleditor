@@ -1,10 +1,28 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import ModuleShell from "./ModuleShell";
 import { useSaveFile } from "@/context/SaveFileContext";
 import { TAG_GROUPS, ALL_KNOWN_TAGS, type TagGroup } from "@/data/tags";
 import type { TagPoolEntry } from "@/lib/save-file";
+
+// Maps tag ID prefixes to the label of the known group they belong to
+const PREFIX_TO_GROUP: [string, string][] = [
+  ["PROTAGONIST_", "Protagonist"],
+  ["SUPPORTINGCHARACTER_", "Supporting Character"],
+  ["ANTAGONIST_", "Antagonist"],
+  ["THEME_", "Theme"],
+  ["EVENTS_", "Events"],
+  ["EVENT_", "Events"],
+  ["FINALE_", "Finale"],
+];
+
+function groupLabelByPrefix(tagId: string): string | null {
+  for (const [prefix, label] of PREFIX_TO_GROUP) {
+    if (tagId.startsWith(prefix)) return label;
+  }
+  return null;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -181,9 +199,29 @@ export default function WritingTagsModule() {
     [tagPool]
   );
 
-  // Unknown tags: in the save but not in our reference list
-  const unknownActive = useMemo(
-    () => tagPool.filter((t) => !ALL_KNOWN_TAGS.has(t.Item1)).map((t) => t.Item1),
+  // Accumulate all unknown tags ever seen — so deactivating one doesn't make it disappear
+  const seenUnknownRef = useRef<Set<string>>(new Set());
+  useMemo(() => {
+    for (const t of tagPool) {
+      if (!ALL_KNOWN_TAGS.has(t.Item1)) seenUnknownRef.current.add(t.Item1);
+    }
+  }, [tagPool]);
+
+  // Split seen unknowns into prefix-matched groups vs truly unknown
+  const extraByGroup = useMemo<Map<string, string[]>>(() => {
+    const map = new Map<string, string[]>();
+    for (const id of seenUnknownRef.current) {
+      const label = groupLabelByPrefix(id);
+      if (label) {
+        if (!map.has(label)) map.set(label, []);
+        map.get(label)!.push(id);
+      }
+    }
+    return map;
+  }, [tagPool]); // tagPool dep triggers recalc when seenUnknownRef grows
+
+  const trulyUnknown = useMemo(
+    () => [...seenUnknownRef.current].filter((id) => !groupLabelByPrefix(id)),
     [tagPool]
   );
 
@@ -277,23 +315,29 @@ export default function WritingTagsModule() {
         </p>
       ) : (
         <>
-          {TAG_GROUPS.map((group) => (
-            <TagGroupSection
-              key={group.label}
-              group={group}
-              activeSet={activeSet}
-              onToggle={toggleTag}
-              onUnlockAll={unlockAll}
-            />
-          ))}
+          {TAG_GROUPS.map((group) => {
+            const extra = extraByGroup.get(group.label) ?? [];
+            const merged = extra.length > 0
+              ? { ...group, tags: [...group.tags, ...extra] }
+              : group;
+            return (
+              <TagGroupSection
+                key={group.label}
+                group={merged}
+                activeSet={activeSet}
+                onToggle={toggleTag}
+                onUnlockAll={unlockAll}
+              />
+            );
+          })}
 
-          {/* Unknown tags from save */}
-          {unknownActive.length > 0 && (
+          {/* Truly unknown tags — no prefix match */}
+          {trulyUnknown.length > 0 && (
             <TagGroupSection
               group={{
                 label: "Other (unknown)",
                 color: "#9a9280",
-                tags: unknownActive,
+                tags: trulyUnknown,
               }}
               activeSet={activeSet}
               onToggle={toggleTag}
