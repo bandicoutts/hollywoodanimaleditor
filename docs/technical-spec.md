@@ -77,8 +77,8 @@ Top-level fields in `stateJson`:
 | `attitude` | string | Decimal string 0.000–1.000 |
 | `selfEsteem` | string | Decimal string 0.000–1.000 |
 | `xp` | number | Experience points |
-| `firstNameId` | string | References in-game name lookup — do not edit |
-| `lastNameId` | string | References in-game name lookup — do not edit |
+| `firstNameId` | string | Index into embedded name table (`src/data/characterNames.ts`, 1140 entries) — do not edit |
+| `lastNameId` | string | Index into embedded name table — do not edit |
 | `customName` | string \| null | Custom display name written directly to save — preferred over localStorage |
 | `labels` | string[] | Trait labels e.g. `"IMMORTAL"`, `"STERILE"` — editable array |
 
@@ -90,7 +90,7 @@ Filter employed characters by `studioId !== null`.
 **Known label values (31 observed):**
 `ALCOHOLIC`, `ARROGANT`, `CALM`, `CHASTE`, `CHEERY`, `DEMANDING`, `DISCIPLINED`, `HARDWORKING`, `HEARTBREAKER`, `HOTHEADED`, `IMMORTAL`, `INDIFFERENT`, `JUNKIE`, `LAZY`, `LEADER`, `LUDOMANIAC`, `MAIN_CHARACTER`, `MELANCHOLIC`, `MISOGYNIST`, `MODEST`, `OPEN_MINDED`, `PERFECTIONIST`, `RACIST`, `SIMPLE`, `STERILE`, `SUPER_IMMORTAL`, `TEAM_PLAYER`, `UNDISCIPLINED`, `UNTOUCHABLE`, `UNWANTED_ACTOR`, `XENOPHOBE`
 
-Character names are integer IDs referencing an in-game lookup table. The `customName` field exists on character objects in the save file — write display names there directly. Do not edit `firstNameId` or `lastNameId`.
+Character display names are resolved by indexing `firstNameId` and `lastNameId` directly into the embedded `CHARACTER_NAMES` array (e.g. ID `258` → `"Mae"`, ID `654` → `"Lowe"` → displayed as `"Mae Lowe"`). `customName` takes priority when set and is written directly to the save. Do not edit `firstNameId` or `lastNameId`.
 
 ---
 
@@ -340,7 +340,8 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
 - Active tags toggleable — removing deletes from array, adding injects `{ "Item1": id, "Item2": currentGameDate }`
 - Show known tags not yet in pool as available to add
 - Unlock All per category
-- Unknown tags grouped as "Other"
+- Unknown tags (not in the reference list) are grouped by prefix: `EVENTS_`/`EVENT_` → Events, `THEME_` → Theme, `PROTAGONIST_` → Protagonist, etc. Only tags with no matching prefix go to "Other (unknown)"
+- Deactivating an unknown tag keeps it visible (inactive) so it can be re-toggled — it is not removed from the UI
 
 ### 5. Research (Perks)
 - Checklist grouped by functional category
