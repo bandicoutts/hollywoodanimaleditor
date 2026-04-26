@@ -251,31 +251,22 @@ STUDIO_TECH, STUDIO_TECH_ADD_RND, STUDIO_TECH_RED_TIME_1, STUDIO_TECH_RED_TIME_2
 { "Item1": "DRAMA", "Item2": "1929-01-01T00:00:00" }
 ```
 
-`Item1` is the tag ID. `Item2` is the availability date — use the current in-game date when adding new tags. The in-game date is not directly readable from the save, so `"1929-01-01T00:00:00"` is used as a safe fallback (the game accepts any valid date string here). The list below covers 156 known tag IDs. Apply the same rules as perks: reference set only, not a hardcoded enum.
+`Item1` is the tag ID. `Item2` is the availability date — use the current in-game date when adding new tags. The in-game date is not directly readable from the save, so `"1929-01-01T00:00:00"` is used as a safe fallback (the game accepts any valid date string here). Apply the same rules as perks: reference set only, not a hardcoded enum.
 
-**Genre**
-`DRAMA, COMEDY, ACTION, ROMANCE, DETECTIVE, ADVENTURE, THRILLER, HISTORICAL, HORROR, SCIENCE_FICTION`
+The authoritative tag list (253 known IDs across 8 categories) is maintained in `src/data/tags.ts` as `TAG_GROUPS`. See that file for the full set. Summary by category:
 
-**Setting**
-`WILD_WEST, MODERN_AMERICAN_CITY, MODERN_AMERICAN_TOWN, MODERN_AMERICAN_COUNTRYSIDE, FANTASY_KINGDOM, TROPICAL_ISLAND, CARIBBEAN, SPACE, DYSTOPIAN_FUTURISTIC_CITY, UTOPIAN_FUTURISTIC_CITY, GREAT_WAR, AMERICAN_CIVIL_WAR, ARTHURIAN_LEGENDS, MIDDLE_AGES, VICTORIAN_ENGLAND`
+| Category | Count | Notes |
+|---|---|---|
+| Genre | 12 | Includes `MUSICAL`, `SLAPSTICK_COMEDY` (unlock after 1950) |
+| Setting | 29 | Includes WW2 theatres, ancient/Asian settings, European settings, slavery-era settings |
+| Protagonist | 42 | Includes 5 recipe protagonists (discovered by combining elements in-game) |
+| Supporting Character | 23 | |
+| Antagonist | 34 | Includes 6 recipe antagonists |
+| Theme | 43 | |
+| Events | 40 | Note: `EVENT_CURSED_DEAL` (singular) is an inconsistency in the game's own naming |
+| Finale | 30 | `FINALE_PROTAGONIST_GETS_PUNISHED_FOR_A_CRIME` is currently unobtainable in-game (date set to year 3000) but included for completeness |
 
-**Protagonist**
-`PROTAGONIST_COWBOY, PROTAGONIST_WORKING_MAN, PROTAGONIST_DETECTIVE, PROTAGONIST_COP, PROTAGONIST_KNIGHT, PROTAGONIST_CLUMSY_OAF, PROTAGONIST_DARING_ADVENTURER, PROTAGONIST_HOPELESS_ROMANTIC, PROTAGONIST_OUTCAST, PROTAGONIST_SHERIFF, PROTAGONIST_SOLDIER, PROTAGONIST_WAYWARD_SOUL, PROTAGONIST_RETIRED_LEGEND, PROTAGONIST_CHARISMATIC_CRIMINAL, PROTAGONIST_AMBITIOUS_WOMAN, PROTAGONIST_WARRIOR, PROTAGONIST_BOUNTY_HUNTER, PROTAGONIST_ACCIDENTAL_HERO, PROTAGONIST_FARM_GIRL, PROTAGONIST_LOVEABLE_ROGUE, PROTAGONIST_SPIRITED_YOUNG_LADY, PROTAGONIST_LAST_SURVIVOR`
-
-**Supporting Character**
-`SUPPORTINGCHARACTER_LOVE_INTEREST, SUPPORTINGCHARACTER_SIDEKICK, SUPPORTINGCHARACTER_ANGRY_BOSS, SUPPORTINGCHARACTER_FEMME_FATALE, SUPPORTINGCHARACTER_DAMSEL_IN_DISTRESS, SUPPORTINGCHARACTER_RIVAL, SUPPORTINGCHARACTER_STRICT_PARENT, SUPPORTINGCHARACTER_MENTOR, SUPPORTINGCHARACTER_CONCERNED_WIFE, SUPPORTINGCHARACTER_SHERIFF, SUPPORTINGCHARACTER_PARENT_FIGURE, SUPPORTINGCHARACTER_WIZARD, SUPPORTINGCHARACTER_KEY_WITNESS, SUPPORTINGCHARACTER_VILLAINS_RIGHT_HAND, SUPPORTINGCHARACTER_FIRST_VICTIM, SUPPORTINGCHARACTER_MYSTERIOUS_GUIDE`
-
-**Antagonist**
-`ANTAGONIST_CRIMINAL_MASTERMIND, ANTAGONIST_MURDERER, ANTAGONIST_SERIAL_KILLER, ANTAGONIST_EVIL_MONSTER, ANTAGONIST_EVIL_WITCH, ANTAGONIST_BANDIT, ANTAGONIST_TRIBAL_CHIEF, ANTAGONIST_HEARTLESS_BUREAUCRAT, ANTAGONIST_EVIL_SORCERER, ANTAGONIST_PIRATE, ANTAGONIST_CRIMINAL_GANG, ANTAGONIST_CORRUPT_OFFICIAL, ANTAGONIST_ENEMY_FROM_THE_PAST, ANTAGONIST_TYRANT, ANTAGONIST_RULE_ENFORCER, ANTAGONIST_PATRIARCH, ANTAGONIST_VAMPIRE, ANTAGONIST_ALIEN, ANTAGONIST_ANCIENT_EVIL, ANTAGONIST_ROBOT, ANTAGONIST_MAD_SCIENTIST, ANTAGONIST_OLD_FRIEND_ENEMY, ANTAGONIST_VENGEFUL_SPIRIT, ANTAGONIST_UNDEAD`
-
-**Theme**
-`THEME_TREASURE_HUNT, THEME_WINNING_THE_BELOVED, THEME_LOVE_TRIANGLE, THEME_AVENGING_LOVED_ONES, THEME_STRUGGLE_FOR_BETTER_LIFE, THEME_UNREQUITED_LOVE, THEME_SEARCH_KILLER, THEME_SLAPSTICK_MAYHEM, THEME_GENERATIONAL_CONFLICT, THEME_FIGHT_HYPOCRITICAL_AMERICAN, THEME_UNIFORM_HEROISM, THEME_ALCOHOL_FREEDOM, THEME_PROTAGONIST_ROPED_BACK_IN, THEME_MOB_WAR, THEME_ONE_LAST_JOB, THEME_SOCIAL_REJECTION, THEME_FROM_SMALL_TOWN_TO_BIG_TIME, THEME_A_CURSE, THEME_LONG_JOURNEY, THEME_EVIL_TRANSFORMATION, THEME_PROTECTING_THE_WITNESS, THEME_LOWBROW_HUMOR, THEME_HIGHBROW_HUMOR`
-
-**Events**
-`EVENTS_PRISON_BREAK, EVENTS_BANK_ROBBERY, EVENTS_JOUSTING_TOURNAMENT, EVENTS_SHOOTOUT, EVENTS_ANCIENT_PUZZLE, EVENTS_PROMISCUITY, EVENTS_CHEATING_SPOUSE, EVENTS_TRAIN_JOB, EVENTS_NUDITY, EVENTS_ABUNDANT_PROFANITY, EVENTS_DIVORCE, EVENTS_CRIME_OF_NECESSITY, EVENTS_RUNAWAY, EVENTS_EXCESSIVE_VIOLENCE, EVENTS_RAPE, EVENTS_SAVING_BELOVED, EVENTS_AMBUSH, EVENTS_BIG_BATTLE_SCENES, EVENTS_STAGECOACH_ROBBERY, EVENTS_BETRAYAL, EVENTS_FINAL_SHOWDOWN, EVENT_CURSED_DEAL`
-
-**Finale**
-`FINALE_ANTAGONIST_GETS_PUNISHED, FINALE_PROTAGONIST_DIES_HEROICALLY, FINALE_ANTAGONIST_GETS_KILLED, FINALE_ANTAGONIST_REPENTS, FINALE_PROTAGONIST_RESCUES_HOSTAGE, FINALE_SWEETHEARTS_STAY_TOGETHER, FINALE_PROTAGONIST_GETS_CHANCE_FOR_BETTER_LIFE, FINALE_PROTAGONIST_OVERCAME_SELFDOUBT, FINALE_PROTAGONIST_FINDS_TREASURE, FINALE_ANTAGONIST_ESCAPES_JUSTICE, FINALE_PROTAGONIST_FINDS_LOVE, FINALE_COUPLE_GETS_MARRIED, FINALE_PROTAGONIST_GETS_PUNISHED_FOR_CRIME, FINALE_PROTAGONIST_COMMITS_SUICIDE, FINALE_PROTAGONIST_AVOIDS_PUNISHMENT, FINALE_PROTAGONIST_RETIRES_FOR_GOOD, FINALE_EVERYONE_LEARNS_A_LESSON, FINALE_PROTAGONISTS_DREAMS_CRUSHED, FINALE_FAMILY_REUNION, FINALE_EVIL_EXPOSED, FINALE_STARCROSSED_LOVERS, FINALE_ANTAGONIST_DEFEATED_EVIL_PERSISTS, FINALE_PROTAGONIST_TAKES_ANTAGONIST_WITH_THEM`
+**Display names** for IDs where auto-formatting would be wrong (e.g. `EVENTS_CHEATING_SPOUSE` → "Adultery", `FINALE_HAPPY_ENDING` → "And Everyone Lived Happily...") are maintained in `TAG_LABELS: Record<string, string>` in `src/data/tags.ts`. The `formatTagLabel()` helper in `WritingTagsModule.tsx` checks this map first and falls back to prefix-stripping + title-case for any ID not explicitly mapped.
 
 ---
 
@@ -402,10 +393,11 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
 - Write decimal values back as 3-decimal strings: `"1.000"`
 
 ### 4. Writing Tags
-- Show `tagPool` grouped by category
+- Show `tagPool` grouped by category (Genre, Setting, Protagonist, Supporting Character, Antagonist, Theme, Events, Finale)
 - Active tags toggleable — removing deletes from array, adding injects `{ "Item1": id, "Item2": currentGameDate }`
-- Show known tags not yet in pool as available to add
-- Unlock All per category
+- Show known tags not yet in pool as available to add (greyed out pills)
+- Unlock All per category; global Unlock All in header
+- Display names resolved via `TAG_LABELS` in `src/data/tags.ts` first; falls back to prefix-stripping + title-case (strips `PROTAGONIST_`, `ANTAGONIST_`, `THEME_`, `EVENTS_`/`EVENT_`, `FINALE_`, `SUPPORTINGCHARACTER_` prefixes before formatting)
 - Unknown tags (not in the reference list) are grouped by prefix: `EVENTS_`/`EVENT_` → Events, `THEME_` → Theme, `PROTAGONIST_` → Protagonist, etc. Only tags with no matching prefix go to "Other (unknown)"
 - Deactivating an unknown tag keeps it visible (inactive) so it can be re-toggled — it is not removed from the UI
 
@@ -417,14 +409,17 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
 
 **Perk display names** are maintained in `src/data/perks.ts` as `PERK_LABELS: Record<string, string>`. The `formatPerkLabel(id)` helper in `ResearchModule.tsx` checks this map first and falls back to auto-formatting (snake_case → Title Case) for any ID not explicitly mapped. Always add new confirmed names to `PERK_LABELS` rather than relying on auto-format.
 
-Sources used to build `PERK_LABELS`:
-- `Buildings.json` — maps building IDs to `needPerkId` (used for all `BLDG_` perk names)
-- `Presents.json` — maps present types to their unlock perk (used for all `WG_` and `BG_` names)
-- `Party.json` — confirms `PARTY_1/2/3` and `OFFICIAL_RECEPTION_1/2/3` IDs
-- In-game screenshots — used for euphemistic research node labels (e.g. `BG_XXX` → "A Spicy Film Strip", `BG_UNDERAGE` → "Time with a Minor")
-- Web guides — confirmed Film Lab sub-perks (Improved Development, Fast Development, etc.)
+**PERK_GROUPS** groups visible research nodes into 20 functional categories matching the game's in-game section/building names (e.g. "Legal Department", "Pre-Production", "Theater Management", "Story Workshop"). Group names and membership are maintained in `src/data/perks.ts`.
 
-**Localization note:** The game's human-readable display strings live in Unity asset bundles, not in the JSON config files. The config files at `StreamingAssets/Data/Configs/` contain only internal IDs and numeric data. For any perk not already in `PERK_LABELS`, derive the label from the ID pattern (e.g. `_QLT_` → "Quality", `_TIME_RED_` → "Time Reduction", `_XP_` → "XP Bonus") and confirm against web guides or a screenshot where precision matters.
+**Hidden perks (`HIDDEN_PERK_IDS`):** 49 perk IDs have `behaviour=4` in the game's `Perks.json` — these are passive/auto-triggered effects that are not visible nodes in the research tree UI. They appear in `openedPerks` in save files (e.g. `BANK_LOAN_REFINANCING`, `TAX_BASE_REDUCTION_1`). They are included in `ALL_KNOWN_PERKS` so "Unlock All" covers them, but are excluded from `PERK_GROUPS` so they don't appear as interactive cards in the Research module. They are also filtered from the "Other (unknown)" fallback group. The full set is `HIDDEN_PERK_IDS` in `src/data/perks.ts`.
+
+Sources used to build `PERK_LABELS`:
+- Game localisation strings — extracted directly from the installed game; authoritative source for all ~230 labelled entries (added 2026-04-27)
+- `Buildings.json` — maps building IDs to `needPerkId` (used for all `BLDG_` perk names, now superseded by localisation strings)
+- `Presents.json` — maps present types to their unlock perk (used for `WG_` and `BG_` names, now superseded)
+- `Party.json` — confirms `PARTY_1/2/3` and `OFFICIAL_RECEPTION_1/2/3` IDs
+
+**Localization note:** The game's human-readable display strings live in Unity asset bundles, not in the JSON config files. The config files at `StreamingAssets/Data/Configs/` contain only internal IDs and numeric data. For any perk added by a future game update and not yet in `PERK_LABELS`, derive a provisional label from the ID pattern (e.g. `_QLT_` → "Quality", `_TIME_RED_` → "Time Reduction", `_XP_` → "XP Bonus") until the localisation string can be confirmed.
 
 ### 6. Research Speedup / Complete Instantly
 - Slider for `overallPerkResearchSpeedup`
