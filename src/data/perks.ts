@@ -51,6 +51,11 @@ export const PERK_LABELS: Record<string, string> = {
   CONCERT_INHOUSE_MPROVED: "Improved Concert",
   CONCERT_INHOUSE_TIME_1:  "Faster Concert",
 
+  // ── Personal services ─────────────────────────────────────────────────────────
+  PERSONAL_DRIVER:         "Star Car Driver",
+  PERSONAL_DRIVER_PREMIUM: "Luxury Car and Chauffeur",
+  INSURANCE_PLUS:          "Extended Medical Coverage",
+
   // ── Welfare perks (WM_ prefix) ────────────────────────────────────────────────
   WM_HOSPICE:              "Hospice",
   WM_ORPHANAGE:            "Orphanage",
@@ -58,24 +63,32 @@ export const PERK_LABELS: Record<string, string> = {
   WM_HOMELESS:             "Homeless",
   WM_DEBT:                 "Debt Relief",
 
-  // ── Gift perks (WG_ prefix) ───────────────────────────────────────────────────
-  WG_WATCHES:              "Watches",
-  WG_ALCOHOL:              "Alcohol",
-  WG_HAUTE_WARDROBE:       "Haute Wardrobe",
-  WG_SPORTCAR:             "Sports Car",
+  // ── Luxury gifts (WG_ prefix) — sourced from Presents.json ───────────────────
+  WG_WATCHES:              "Watch",
   WG_CIGARS:               "Cigars",
+  WG_ALCOHOL:              "Alcohol",
+  WG_HAUTE_WARDROBE:       "Couture Wardrobe",
+  WG_SPORTCAR:             "European Sports Car",
 
-  // ── Black Gate perks (BG_ prefix) ────────────────────────────────────────────
-  BG_UNLOCK:               "Unlock Black Gate",
-  BG_NARCOTICS:            "Narcotics",
+  // ── Illegal gifts (BG_ prefix) — sourced from Presents.json ──────────────────
+  BG_UNLOCK:               "Illegal Gifts",
+  BG_NARCOTICS:            "Heroin",
   BG_METH:                 "Meth",
-  BG_NARCOTICS_2:          "Narcotics II",
-  BG_SAFARI:               "Safari",
-  BG_XXX:                  "Adult Films",
-  BG_BRAINS:               "Brains",
-  BG_KILLING:              "Killing",
-  BG_CANNIBAL:             "Cannibalism",
-  BG_UNDERAGE:             "Underage",
+  BG_NARCOTICS_2:          "Cocaine",
+  BG_SAFARI:               "Animal Murder",
+  BG_XXX:                  "A Spicy Film Strip",
+  BG_BRAINS:               "Monkey Brains",
+  BG_KILLING:              "Illegal Safari",
+  BG_CANNIBAL:             "Cannibal Dinner",
+  BG_UNDERAGE:             "Time with a Minor",
+
+  // ── Event perks — sourced from in-game Services tree ─────────────────────────
+  OFFICIAL_RECEPTION_1:    "Banquet",
+  OFFICIAL_RECEPTION_2:    "Luxurious Banquet",
+  OFFICIAL_RECEPTION_3:    "Grand Banquet",
+  PARTY_1:                 "Corporate Party",
+  PARTY_2:                 "Luxurious Corporate Party",
+  PARTY_3:                 "Corporate Blow-Out",
 };
 
 export const PERK_GROUPS: PerkGroup[] = [
@@ -377,7 +390,7 @@ export const PERK_GROUPS: PerkGroup[] = [
     ],
   },
   {
-    label: "Welfare & Morale",
+    label: "Services",
     color: "#4ec9a0",
     perks: [
       "WM_HOSPICE",
@@ -404,7 +417,7 @@ export const PERK_GROUPS: PerkGroup[] = [
     ],
   },
   {
-    label: "Black Gate",
+    label: "Illegal Gifts",
     color: "#e08080",
     perks: [
       "BG_UNLOCK",
