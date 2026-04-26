@@ -424,7 +424,18 @@ function DetailPanel({
   const setAppeal = (type: "ART" | "COM", value: number) =>
     onUpdate((c) => {
       const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
-      if (wt?.[type]) wt[type].value = formatDecimalString(value);
+      if (!wt) return;
+      if (!wt[type]) {
+        wt[type] = {
+          overallValues: [],
+          id: type,
+          dateAdded: "0001-01-01T00:00:00",
+          movieId: 0,
+          value: "0.000",
+          IsOverall: false,
+        };
+      }
+      wt[type].value = formatDecimalString(value);
     });
 
   const setXp = (value: number) =>
@@ -438,8 +449,21 @@ function DetailPanel({
       c.mood = "1.000";
       c.attitude = "1.000";
       const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
-      if (wt?.ART) wt.ART.value = "1.000";
-      if (wt?.COM) wt.COM.value = "1.000";
+      if (wt && isAppealEligible(c.professions)) {
+        for (const type of ["ART", "COM"] as const) {
+          if (!wt[type]) {
+            wt[type] = {
+              overallValues: [],
+              id: type,
+              dateAdded: "0001-01-01T00:00:00",
+              movieId: 0,
+              value: "0.000",
+              IsOverall: false,
+            };
+          }
+          wt[type].value = "1.000";
+        }
+      }
     });
   };
 
@@ -680,6 +704,10 @@ function DetailPanel({
 
 // ── Appeal section ────────────────────────────────────────────────────────────
 
+function isAppealEligible(professions: Record<string, string>): boolean {
+  return "Actor" in professions || "Director" in professions;
+}
+
 function AppealSection({
   char,
   onSetAppeal,
@@ -687,11 +715,11 @@ function AppealSection({
   char: Character;
   onSetAppeal: (type: "ART" | "COM", value: number) => void;
 }) {
-  const wt = char.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
-  const artEntry = wt?.ART;
-  const comEntry = wt?.COM;
+  if (!isAppealEligible(char.professions)) return null;
 
-  if (!artEntry && !comEntry) return null;
+  const wt = char.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
+  const artValue = parseFloat(String(wt?.ART?.value)) || 0;
+  const comValue = parseFloat(String(wt?.COM?.value)) || 0;
 
   return (
     <>
@@ -709,28 +737,24 @@ function AppealSection({
         Appeal
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
-        {artEntry && (
-          <StatBar
-            label="Artistic Appeal"
-            value={parseFloat(String(artEntry.value)) || 0}
-            cap={1}
-            color="#a088c8"
-            onChange={(v) => onSetAppeal("ART", v)}
-            scale={1}
-            precision={3}
-          />
-        )}
-        {comEntry && (
-          <StatBar
-            label="Commercial Appeal"
-            value={parseFloat(String(comEntry.value)) || 0}
-            cap={1}
-            color="#c8a040"
-            onChange={(v) => onSetAppeal("COM", v)}
-            scale={1}
-            precision={3}
-          />
-        )}
+        <StatBar
+          label="Artistic Appeal"
+          value={artValue}
+          cap={1}
+          color="#a088c8"
+          onChange={(v) => onSetAppeal("ART", v)}
+          scale={1}
+          precision={3}
+        />
+        <StatBar
+          label="Commercial Appeal"
+          value={comValue}
+          cap={1}
+          color="#c8a040"
+          onChange={(v) => onSetAppeal("COM", v)}
+          scale={1}
+          precision={3}
+        />
       </div>
     </>
   );
