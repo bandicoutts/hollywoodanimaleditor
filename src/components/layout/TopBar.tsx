@@ -153,33 +153,47 @@ export default function TopBar() {
           <div
             style={{ width: "1px", height: "20px", background: "var(--color-border)" }}
           />
-          <button
-            onClick={download}
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: "11px",
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "var(--color-gold)",
-              background: "transparent",
-              border: "1px solid var(--color-gold-mid)",
-              padding: "5px 14px",
-              cursor: "pointer",
-              transition: "all 0.15s ease",
-              whiteSpace: "nowrap",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "var(--color-gold)";
-              e.currentTarget.style.background = "var(--color-gold-dim)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "var(--color-gold-mid)";
-              e.currentTarget.style.background = "transparent";
-            }}
-          >
-            Download Save
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+            <button
+              onClick={download}
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: "var(--color-gold)",
+                background: "transparent",
+                border: "1px solid var(--color-gold-mid)",
+                padding: "5px 14px",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--color-gold)";
+                e.currentTarget.style.background = "var(--color-gold-dim)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--color-gold-mid)";
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              Download Save
+            </button>
+            <span
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "8px",
+                letterSpacing: "0.06em",
+                color: "var(--color-text-muted)",
+                textTransform: "uppercase",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Overwrite an existing slot
+            </span>
+          </div>
         </div>
       )}
     </header>
