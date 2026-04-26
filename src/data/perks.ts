@@ -4,64 +4,200 @@ export interface PerkGroup {
   perks: string[];
 }
 
-// Human-readable labels sourced from Buildings.json (building unlock perks) and
-// confirmed guide research (sub-perks). Unrecognised IDs fall back to auto-formatting.
+// Human-readable labels sourced from: Buildings.json (BLDG_ perks), Presents.json (WG_/BG_),
+// in-game research tree screenshots, and Perks.json dependency tree cross-reference.
+// Unrecognised IDs fall back to auto-formatting in formatPerkLabel().
 export const PERK_LABELS: Record<string, string> = {
-  // ── Building unlock perks ─────────────────────────────────────────────────────
+  // ── Buildings ─────────────────────────────────────────────────────────────────
   BLDG_CONSTRUCTOR:        "Constructor",
   BLDG_FREELANCE:          "Freelance Office",
   BLDG_SUPPLY:             "Supply",
-  BLDG_CASTING:            "Casting",
-  BLDG_SCOUT:              "Scouting",
-  BLDG_WORKSHOP:           "Workshop",
-  BLDG_LINE_PRODUCTION:    "Line Production",
-  BLDG_LOGISTICS:          "Logistics",
-  BLDG_PAVILION_II:        "Pavilion II",
-  BLDG_PAVILION_III:       "Pavilion III",
-  BLDG_PAVILION_IV:        "Pavilion IV",
+  BLDG_CASTING:            "Casting Office",
+  BLDG_SCOUT:              "Scouting Office",
+  BLDG_WORKSHOP:           "Sets and Props",
+  BLDG_LINE_PRODUCTION:    "Line Production Office",
+  BLDG_LOGISTICS:          "Production Support",
+  BLDG_PAVILION_II:        "Level 2 Soundstage",
+  BLDG_PAVILION_III:       "Level 3 Soundstage",
+  BLDG_PAVILION_IV:        "Level 4 Soundstage",
   BLDG_SOUND:              "Sound Studio",
   BLDG_CONCERT:            "Concert Hall",
   BLDG_LAB:                "Film Lab",
-  BLDG_DISTRIBUTION:       "Distribution",
-  BLDG_ANALYTICS:          "Analytics",
-  BLDG_PRINT:              "Printing",
-  BLDG_MARKETING:          "Marketing",
-  BLDG_SHENANIGANS:        "Shenanigans",
-  BLDG_SPIES:              "Espionage",
+  BLDG_DISTRIBUTION:       "Distribution Department",
+  BLDG_ANALYTICS:          "Analytics and Statistics",
+  BLDG_PRINT:              "Printing Office",
+  BLDG_MARKETING:          "Marketing and Outreach",
+  BLDG_SHENANIGANS:        "Offensive Operations",
+  BLDG_SPIES:              "Defensive Operations",
   BLDG_ESCORT_DOMINION:    "Escort Dominion",
   BLDG_EVENTS_STAGE:       "Events Stage",
   BLDG_POWERPLANT_I:       "Power Plant",
   BLDG_WATER_TOWER_I:      "Water Tower",
-  BLDG_RND_I:              "R&D Lab",
+  BLDG_RND_I:              "Research Group 2",
 
-  // ── Film Lab sub-perks (confirmed) ────────────────────────────────────────────
-  LAB_INHOUSE_IMPROVED:    "Improved Development",
-  LAB_INHOUSE_TIME_1:      "Fast Development",
+  // ── Maintenance ───────────────────────────────────────────────────────────────
+  REPAIR_TEAM_1:           "Repair Crew",
 
-  // ── Printing sub-perks (confirmed) ───────────────────────────────────────────
-  PRINT_INHOUSE_QLT_1:     "Printing in 3 Weeks",
-  PRINT_INHOUSE_QLT_2:     "Printing in 1 Week",
-  PRINT_EMERGENCY:         "Emergency Printing",
+  // ── Legal Department ──────────────────────────────────────────────────────────
+  LEGAL_DEFENSE_1:                "Mid-level legal protection",
+  LEGAL_DEFENSE_2:                "High-level legal protection",
+  LEGAL_DEFENSE_3:                "Amazing legal protection",
+  CONTRACT_PAYMENTS_50_50:        "Terminate contracts with half the buyout",
+  CONTRACT_TERMINATION_FEE_1:     "Full recuperation",
 
-  // ── Sound Studio sub-perks (confirmed) ───────────────────────────────────────
-  SOUND_INHOUSE_IMPROVED:  "Superior Sound Studio",
-  SOUND_INHOUSE_TIME_1:    "Fast Track Studio",
+  // ── Financial Department ──────────────────────────────────────────────────────
+  BANK_LOAN:                      "$1,000,000 loan",
+  BANK_LOAN_EARLY_REPAYMENT:      "Early repayment",
+  BANK_LOAN_INT_RATE_REDUCTION_1: "Loan at 18%",
+  BANK_LOAN_INT_RATE_REDUCTION_2: "Loan at 14%",
+  BANK_LOAN_TERM_1:               "3 year loan",
+  BANK_LOAN_TERM_2:               "5 year loan",
+  CASH_FLOW_1:                    "$500 cash per month",
+  CASH_FLOW_2:                    "$1,500 cash per month",
 
-  // ── Concert Hall sub-perks ────────────────────────────────────────────────────
-  CONCERT_INHOUSE_MPROVED: "Improved Concert",
-  CONCERT_INHOUSE_TIME_1:  "Faster Concert",
+  // ── HR Department ─────────────────────────────────────────────────────────────
+  ETHNIC_COMPOSITION:      "Ethnic composition",
+  ILLEGAL_WORKERS:         "Illegals",
+  BUILDINGS_CONSERVATION:  "Mothball buildings",
+  CONSERVATION_COOLDOWN:   "Agile mothballing",
+  SALARY_CUT:              "Cheaper while closed",
+
+  // ── PR Department ─────────────────────────────────────────────────────────────
+  CHARITY_TO_REP:          "Charity",
+  GENERATION_IP_AND_REP:   "Generate IP or Reputation",
+  GENERATION_IP_X2:        "Double IP Generation",
+  GENERATION_REP_X2:       "Double Reputation Generation",
+  PROFITABLE_MOVIE_REP_2:  "Double Reputation for Profitable Films",
+  GOOD_ATTITUDE_REP_1:     "Reputation for Loyalty",
+  GOOD_ATTITUDE_REP_2:     "Double Reputation for Loyalty",
+  ICON_REP_1:              "Double Reputation for Loans",
+  LEGEND_REP_1:            "Double Reputation for Idols",
+  TOP1_TOP3:               "IP and Reputation for Top 3",
+  TECH_SALE_PP:            "Double IP for Selling Technologies",
+  SKILLED_ACTOR_REP:       "Reputation Boost for Hiring Actors",
+  INITIATIVE_PP_FREE:      "Owning the Initiative",
+
+  // ── Script Department ─────────────────────────────────────────────────────────
+  SCREENPLAY_TIME_RED_1:        "Writers write 15% faster",
+  SCREENPLAY_TIME_RED_2:        "Writers write 30% faster",
+  SCREENPLAY_TIME_RED_3:        "Writers write twice as fast",
+  NEW_SCREENPLAY_XP_BONUS_1:    "Additional 15% exp per script",
+  NEW_SCREENPLAY_XP_BONUS_2:    "Additional 30% exp per script",
+  NEW_SCREENPLAY_XP_BONUS_3:    "Additional 50% exp per script",
+  NEW_SCREENPLAY_PP_BONUS_1:    "Double IP per script",
+  NEW_SCREENPLAY_PP_BONUS_2:    "Triple IP per script",
+  SCEN_IDEAS_STORAGE_1:         "Story Ideas last +6 months",
+  SCEN_IDEAS_GEN_AMT_1:         "3–4 Story Ideas per month",
+  SCEN_IDEAS_GEN_AMT_2:         "5–6 Story Ideas per month",
+  EDITS_ON_GO:                  "Rolling edits",
+  SCRIPT_DOCTORS:               "Script Doctor",
+  SCRIPT_DOCTORS_FASTER:        "Faster script doctor",
+  SCRIPT_DOCTORS_CHEAPER:       "Cheaper script doctor",
+  SCRIPT_DOCTORS_RANGE:         "Hard working script doctor",
+  SCRIPT_DOCTORS_SCORES:        "More careful script doctor",
+  MOVIE_RELEASE_XP_1:           "Additional 25% exp per release",
+  MOVIE_RELEASE_XP_2:           "Additional 50% exp per release",
+  MOVIE_RELEASE_XP_3:           "Additional 100% exp per release",
+  MOVIE_RELEASE_TOP10_ART_XP_1: "Experience for critical acclaim",
+  MOVIE_RELEASE_TOP10_AUD_XP_1: "Experience for high ticket sales",
+  MOVIE_RELEASE_TOP10_COM_XP_1: "Experience for recognition by the audience",
+  MOVIE_SEQUEL:                 "Fresh take",
+  MOVIE_SEQUEL_ORIGINALITY:     "Worthy successor",
+
+  // ── Pre-Production ────────────────────────────────────────────────────────────
+  PREPROD_PROD_DIR_CIN_XP_1: "Exp for directors and cinematographers",
+  PREPROD_PROD_DIR_CIN_XP_2: "Double exp for directors and cinematographers",
+  EXTRAS_2:                  "Up to 100 extras",
+  EXTRAS_3:                  "Up to 500 extras",
+  EXTRAS_4:                  "Over 500 extras",
+  LOCATION_QLT_1:            "High quality locations",
+  LOCATION_QLT_2:            "Amazing locations",
+  LOCATION_SEARCH_TIME_1:    "Scouts work 20% faster",
+  LOCATION_SEARCH_TIME_2:    "Scouts work 40% faster",
+  LOCATION_SEARCH_WORLD:     "International location scouting",
+  SETS_QLT_2:                "High quality sets",
+  SETS_QLT_3:                "Amazing quality sets",
+  SETS_TIME_RED_1:           "Sets and Props staff work 10% faster",
+  SETS_TIME_RED_2:           "Sets and Props staff work 20% faster",
+  SETS_TIME_RED_3:           "Sets and Props staff work 30% faster",
+  PROPS_QLT_2:               "High quality costumes and props",
+  PROPS_QLT_3:               "Amazing quality costumes and props",
+
+  // ── Production Department ─────────────────────────────────────────────────────
+  SECOND_UNIT:           "Auxiliary Film Crew",
+  URGENT_DOUBLE_SEARCH:  "Emergency search for double",
+  URGENT_EXTRAS_SEARCH:  "Emergency search for extras",
+  URGENT_CREW_SEARCH:    "Emergency search for technical personnel",
+  URGENT_LOCATION_SEARCH:"Emergency location search",
+  FLEX_SCHEDULE:         "Flexible schedule",
+  TEAM_SERVICE_1:        "High service level",
+  TEAM_SERVICE_2:        "Exceptional service level",
+
+  // ── Producers Offices ─────────────────────────────────────────────────────────
+  NEGOTIATION_SCALE_50:  "50% of the request",
+  NEGOTIATION_SCALE_75:  "75% of the request",
+  TWO_PROJECTS:          "Two projects per producer",
+  CONTRACT_WEIGHT:       "Influential producer",
+  PRODUCERS_ON_FILM_2:   "Two producers per project",
+  PRODUCERS_ON_FILM_3:   "Three producers per project",
+
+  // ── Engineering ───────────────────────────────────────────────────────────────
+  STUDIO_TECH:           "Technology Incentive",
+  STUDIO_TECH_ADD_RND:   "Additional research groups",
+  STUDIO_TECH_RED_TIME_1:"Invention speed +25%",
+  STUDIO_TECH_RED_TIME_2:"Invention speed +50%",
+
+  // ── Security ──────────────────────────────────────────────────────────────────
+  SHENANIGANS_BEATING:          "Beatings",
+  SHENANIGANS_KIDNAPPING:       "Kidnapping",
+  SHENANIGANS_MURDER:           "Murder",
+  LEAK_RISK_REDUCE_1:           "Reliable Cover",
+  SPYING_SINS:                  "Compromising Information",
+  SPYING_ILLEGALPREFERENCES:    "Illegal Tendencies",
+  SPYING_XP_BONUS_1:            "50% more experience for information",
+  SPYING_XP_BONUS_2:            "Double experience for information",
+  FAIL_NO_DISCLOSURE:           "Search for information without risk of exposure",
+  ACTIVE_PROTECTION:            "Enhanced Protection",
+  ACTIVE_PROTECTION_XP_BONUS_1: "90% more experience for repelling an attack",
+  ACTIVE_PROTECTION_XP_BONUS_2: "Double experience for repelling an attack",
+  SECRETS_HIDE_EFFECT_BOOST:    "Secret keepers",
+  FAIL_DISCLOSURE_NO_LEAK:      "Covering Up Traces",
+  SECURITY_SCHOOL:              "Agent training",
+  SECURITY_SCHOOL_FAST:         "Accelerated Training",
+  SECURITY_SCHOOL_STRONG:       "Efficient Training",
+
+  // ── Post-Production ───────────────────────────────────────────────────────────
+  LAB_INHOUSE_IMPROVED:    "Improved development",
+  LAB_INHOUSE_TIME_1:      "Fast development",
+  SOUND_INHOUSE_IMPROVED:  "Superior sound studio",
+  SOUND_INHOUSE_TIME_1:    "Fast track studio",
+  CONCERT_INHOUSE_MPROVED: "Superior concert hall",
+  CONCERT_INHOUSE_TIME_1:  "Orchestral recording setup",
+  PRINT_INHOUSE_QLT_1:     "Printing in 3 weeks",
+  PRINT_INHOUSE_QLT_2:     "Printing in one week",
+  PRINT_EMERGENCY:         "Emergency printing",
+
+  // ── Distribution / Marketing ──────────────────────────────────────────────────
+  WM_HOSPICE:               "Hospice visit",
+  WM_ORPHANAGE:             "Orphanage visit",
+  WM_WEDDING:               "Surprise wedding appearance",
+  WM_HOMELESS:              "Aid for the homeless",
+  WM_DEBT:                  "Payment of debts",
+  SCANDAL_COVER_UP_MONEY:   "Hush money",
+  SCANDAL_COVER_UP_PP:      "Hush scandal for IP",
+  ANALYSIS_GROUPS:          "Audience analytics",
+  POSTRELEASE_ANALYSIS:     "Post-release analytics",
+  ANALYSIS_ENTIRE_CAST:     "Competitor actors",
+  ANALYSIS_SCREENPLAY:      "Competitor screenplay estimates",
+  ANALYSIS_TAGS:            "Competitor Story Elements",
+  ANALYSIS_BUDGET:          "Competitor budgets",
+  MOVIE_THEATRE_SLOT_ADD_1: "Cinema optimization",
+  MOVIE_THEATRE_SLOT_RENT:  "Cinemas for rent",
 
   // ── Personal services ─────────────────────────────────────────────────────────
   PERSONAL_DRIVER:         "Star Car Driver",
   PERSONAL_DRIVER_PREMIUM: "Luxury Car and Chauffeur",
   INSURANCE_PLUS:          "Extended Medical Coverage",
-
-  // ── Welfare perks (WM_ prefix) ────────────────────────────────────────────────
-  WM_HOSPICE:              "Hospice",
-  WM_ORPHANAGE:            "Orphanage",
-  WM_WEDDING:              "Wedding",
-  WM_HOMELESS:             "Homeless",
-  WM_DEBT:                 "Debt Relief",
 
   // ── Luxury gifts (WG_ prefix) — sourced from Presents.json ───────────────────
   WG_WATCHES:              "Watch",
@@ -82,7 +218,7 @@ export const PERK_LABELS: Record<string, string> = {
   BG_CANNIBAL:             "Cannibal Dinner",
   BG_UNDERAGE:             "Time with a Minor",
 
-  // ── Event perks — sourced from in-game Services tree ─────────────────────────
+  // ── Event perks ───────────────────────────────────────────────────────────────
   OFFICIAL_RECEPTION_1:    "Banquet",
   OFFICIAL_RECEPTION_2:    "Luxurious Banquet",
   OFFICIAL_RECEPTION_3:    "Grand Banquet",
