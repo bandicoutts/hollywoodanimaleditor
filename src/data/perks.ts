@@ -4,6 +4,80 @@ export interface PerkGroup {
   perks: string[];
 }
 
+// Human-readable labels sourced from Buildings.json (building unlock perks) and
+// confirmed guide research (sub-perks). Unrecognised IDs fall back to auto-formatting.
+export const PERK_LABELS: Record<string, string> = {
+  // ── Building unlock perks ─────────────────────────────────────────────────────
+  BLDG_CONSTRUCTOR:        "Constructor",
+  BLDG_FREELANCE:          "Freelance Office",
+  BLDG_SUPPLY:             "Supply",
+  BLDG_CASTING:            "Casting",
+  BLDG_SCOUT:              "Scouting",
+  BLDG_WORKSHOP:           "Workshop",
+  BLDG_LINE_PRODUCTION:    "Line Production",
+  BLDG_LOGISTICS:          "Logistics",
+  BLDG_PAVILION_II:        "Pavilion II",
+  BLDG_PAVILION_III:       "Pavilion III",
+  BLDG_PAVILION_IV:        "Pavilion IV",
+  BLDG_SOUND:              "Sound Studio",
+  BLDG_CONCERT:            "Concert Hall",
+  BLDG_LAB:                "Film Lab",
+  BLDG_DISTRIBUTION:       "Distribution",
+  BLDG_ANALYTICS:          "Analytics",
+  BLDG_PRINT:              "Printing",
+  BLDG_MARKETING:          "Marketing",
+  BLDG_SHENANIGANS:        "Shenanigans",
+  BLDG_SPIES:              "Espionage",
+  BLDG_ESCORT_DOMINION:    "Escort Dominion",
+  BLDG_EVENTS_STAGE:       "Events Stage",
+  BLDG_POWERPLANT_I:       "Power Plant",
+  BLDG_WATER_TOWER_I:      "Water Tower",
+  BLDG_RND_I:              "R&D Lab",
+
+  // ── Film Lab sub-perks (confirmed) ────────────────────────────────────────────
+  LAB_INHOUSE_IMPROVED:    "Improved Development",
+  LAB_INHOUSE_TIME_1:      "Fast Development",
+
+  // ── Printing sub-perks (confirmed) ───────────────────────────────────────────
+  PRINT_INHOUSE_QLT_1:     "Printing in 3 Weeks",
+  PRINT_INHOUSE_QLT_2:     "Printing in 1 Week",
+  PRINT_EMERGENCY:         "Emergency Printing",
+
+  // ── Sound Studio sub-perks (confirmed) ───────────────────────────────────────
+  SOUND_INHOUSE_IMPROVED:  "Superior Sound Studio",
+  SOUND_INHOUSE_TIME_1:    "Fast Track Studio",
+
+  // ── Concert Hall sub-perks ────────────────────────────────────────────────────
+  CONCERT_INHOUSE_MPROVED: "Improved Concert",
+  CONCERT_INHOUSE_TIME_1:  "Faster Concert",
+
+  // ── Welfare perks (WM_ prefix) ────────────────────────────────────────────────
+  WM_HOSPICE:              "Hospice",
+  WM_ORPHANAGE:            "Orphanage",
+  WM_WEDDING:              "Wedding",
+  WM_HOMELESS:             "Homeless",
+  WM_DEBT:                 "Debt Relief",
+
+  // ── Gift perks (WG_ prefix) ───────────────────────────────────────────────────
+  WG_WATCHES:              "Watches",
+  WG_ALCOHOL:              "Alcohol",
+  WG_HAUTE_WARDROBE:       "Haute Wardrobe",
+  WG_SPORTCAR:             "Sports Car",
+  WG_CIGARS:               "Cigars",
+
+  // ── Black Gate perks (BG_ prefix) ────────────────────────────────────────────
+  BG_UNLOCK:               "Unlock Black Gate",
+  BG_NARCOTICS:            "Narcotics",
+  BG_METH:                 "Meth",
+  BG_NARCOTICS_2:          "Narcotics II",
+  BG_SAFARI:               "Safari",
+  BG_XXX:                  "Adult Films",
+  BG_BRAINS:               "Brains",
+  BG_KILLING:              "Killing",
+  BG_CANNIBAL:             "Cannibalism",
+  BG_UNDERAGE:             "Underage",
+};
+
 export const PERK_GROUPS: PerkGroup[] = [
   {
     label: "Legal",

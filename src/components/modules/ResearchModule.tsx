@@ -3,11 +3,12 @@
 import { useCallback, useMemo } from "react";
 import ModuleShell from "./ModuleShell";
 import { useSaveFile } from "@/context/SaveFileContext";
-import { PERK_GROUPS, ALL_KNOWN_PERKS, type PerkGroup } from "@/data/perks";
+import { PERK_GROUPS, PERK_LABELS, ALL_KNOWN_PERKS, type PerkGroup } from "@/data/perks";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatPerkLabel(id: string): string {
+  if (id in PERK_LABELS) return PERK_LABELS[id];
   return id
     .replace(/_/g, " ")
     .toLowerCase()
