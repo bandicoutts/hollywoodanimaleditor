@@ -16,7 +16,9 @@ Parse → modify only touched fields → re-serialise. Any field the editor does
 
 ## Save file format
 
-Files use **UTF-8 with BOM** (`utf-8-sig`). Handle the BOM on read; write it back on download.
+Files use **UTF-8 with BOM** (`utf-8-sig`). Handle the BOM on read; write it back on download. Serialise output as **compact JSON** (no indentation, no extra whitespace) — the game's parser is sensitive to file size and hangs indefinitely on pretty-printed output.
+
+**Save slot structure:** each slot in the game's save directory consists of three files — a `.json` (game state), a `.png` (thumbnail), and a `.map` file. The editor produces only the JSON. Users must overwrite the JSON of an existing slot; creating a new slot from a JSON alone will fail to load because the companion files are absent.
 
 Top-level structure:
 
@@ -91,6 +93,21 @@ Filter employed characters by `studioId !== null`.
 `ALCOHOLIC`, `ARROGANT`, `CALM`, `CHASTE`, `CHEERY`, `DEMANDING`, `DISCIPLINED`, `HARDWORKING`, `HEARTBREAKER`, `HOTHEADED`, `IMMORTAL`, `INDIFFERENT`, `JUNKIE`, `LAZY`, `LEADER`, `LUDOMANIAC`, `MAIN_CHARACTER`, `MELANCHOLIC`, `MISOGYNIST`, `MODEST`, `OPEN_MINDED`, `PERFECTIONIST`, `RACIST`, `SIMPLE`, `STERILE`, `SUPER_IMMORTAL`, `TEAM_PLAYER`, `UNDISCIPLINED`, `UNTOUCHABLE`, `UNWANTED_ACTOR`, `XENOPHOBE`
 
 **Artistic and commercial appeal** are stored as special entries in `whiteTagsNEW` under the abbreviated keys `"ART"` (artistic) and `"COM"` (commercial). Only Actors and Directors are eligible for appeal. The `value` field is a decimal string 0.000–1.000. Edit only `value`; `overallValues` is a history log written by the game and must not be edited.
+
+If a character has never earned appeal in-game the key will be absent from `whiteTagsNEW`. When the editor writes a value for the first time, create the full entry structure:
+
+```json
+{
+  "overallValues": [],
+  "id": "COM",
+  "dateAdded": "0001-01-01T00:00:00",
+  "movieId": 0,
+  "value": "0.000",
+  "IsOverall": false
+}
+```
+
+`overallValues` starts empty; the game appends to it on subsequent movie releases. `dateAdded` uses the default date sentinel `"0001-01-01T00:00:00"`.
 
 **Appeal tiers** (confirmed via in-game testing; thresholds are identical for ART and COM):
 
@@ -335,18 +352,21 @@ Require confirmation before setting `isDead: true` — it permanently removes th
 ### 1. Upload / Download
 - Drag and drop or click to upload a `.json` save file
 - Parse with BOM handling
-- Display studio name, save version, in-game date
-- Download button re-serialises and triggers file download, preserving all unmodified fields
-- Warn if save version is newer than `0.8.69EA`
+- Display studio name and save version in the header; warn if version is newer than `0.8.69EA`
+- Download button re-serialises as compact JSON (no indentation) with BOM and triggers file download, preserving all unmodified fields
+- UI note beneath the download button reminds users to overwrite an existing save slot, not create a new one
 
 ### 2. Resources
-Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric display. Preserve original types on write.
+Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric display and preset buttons (25 / 50 / 75 / 100%). Preserve original types on write.
 
 ### 3. Character Editor
-- List all characters, filterable by employed/all, profession type, name search
-- Each row: character identifier, profession badge, skill bar showing current vs cap
-- Click to open detail panel: edit skill, `limit`/`Limit` (always update both), `mood`, `attitude`, `selfEsteem`, `xp`
-- Bulk actions: Max All Stats, Remove All Caps
+- List all characters, filterable by employed/all, profession type, name/ID search
+- Each row: character name, profession badge, top skill value
+- Click to open detail panel:
+  - Edit profession skill(s), `limit`/`Limit` (always update both), `mood` (Happiness), `attitude` (Loyalty), `xp`
+  - `selfEsteem` passes through untouched — not surfaced in UI
+  - Appeal section (Actors and Directors only): ART and COM sliders (0.000–1.000), with tier preset buttons (Promising Talent / Commanding Presence / True Artist / Icon for ART; Rising Star / Star / Superstar / Legend for COM). Active tier highlighted. Setting a value for the first time creates the `whiteTagsNEW` entry.
+- Bulk actions: Max All Stats (including appeal for eligible characters), Remove All Caps
 - Write decimal values back as 3-decimal strings: `"1.000"`
 
 ### 4. Writing Tags
