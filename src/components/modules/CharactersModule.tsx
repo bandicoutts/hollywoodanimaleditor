@@ -10,6 +10,7 @@ import {
   getProfessionLabel,
   PROFESSIONS,
 } from "@/data/professions";
+import { resolveCharacterName } from "@/data/characterNames";
 
 // ── Known labels ──────────────────────────────────────────────────────────────
 
@@ -34,7 +35,11 @@ function moodColor(val: string): string {
 function displayName(char: Character): string {
   if (char.customName && typeof char.customName === "string")
     return char.customName;
-  return `Character #${char.id}`;
+  const resolved = resolveCharacterName(
+    char.firstNameId as string,
+    char.lastNameId as string,
+  );
+  return resolved || `Character #${char.id}`;
 }
 
 function topSkill(char: Character): { prof: string; value: number } | null {
