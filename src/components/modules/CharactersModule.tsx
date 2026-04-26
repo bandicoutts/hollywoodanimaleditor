@@ -442,6 +442,15 @@ function DetailPanel({
   const setXp = (value: number) =>
     onUpdate((c) => { c.xp = Math.max(0, Math.round(value)); });
 
+  const setBonusCard = (field: "BonusCardMoney" | "BonusCardInfluencePoints", pct: number) =>
+    onUpdate((c) => {
+      const val = Math.max(0, Math.round(pct / 10));
+      c[field] = val;
+      const cards = Array.isArray(c.bonusCards) ? [...(c.bonusCards as number[])] : [0, 0];
+      if (field === "BonusCardMoney") cards[0] = val; else cards[1] = val;
+      c.bonusCards = cards;
+    });
+
   const maxAllStats = () => {
     onUpdate((c) => {
       for (const k of Object.keys(c.professions)) c.professions[k] = "1.000";
@@ -690,6 +699,11 @@ function DetailPanel({
         </div>
       </div>
 
+      {/* Upgrade Bonuses */}
+      {isLieutenant(char.professions) && (
+        <UpgradeBonusSection char={char} onSetBonus={setBonusCard} />
+      )}
+
       {/* Appeal */}
       <AppealSection char={char} onSetAppeal={setAppeal} />
 
@@ -731,6 +745,10 @@ function getAppealTierLabel(value: number, type: "ART" | "COM"): string | null {
 
 function isAppealEligible(professions: Record<string, string>): boolean {
   return "Actor" in professions || "Director" in professions;
+}
+
+function isLieutenant(professions: Record<string, string>): boolean {
+  return Object.keys(professions).some((k) => k.startsWith("Lieut"));
 }
 
 function AppealColumn({
@@ -946,6 +964,103 @@ function LabelsEditor({
           ))}
         </div>
       )}
+    </>
+  );
+}
+
+function BonusEditor({ pct, onChange }: { pct: number; onChange: (v: number) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState("");
+
+  const commit = () => {
+    const parsed = parseInt(val.replace(/[^\d]/g, ""), 10) || 0;
+    onChange(Math.round(parsed / 10) * 10);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") setEditing(false);
+        }}
+        style={{
+          fontFamily: "var(--font-serif)",
+          fontSize: "13px",
+          fontWeight: 600,
+          color: "var(--color-text-primary)",
+          background: "transparent",
+          border: "none",
+          borderBottom: "1px solid var(--color-gold)",
+          outline: "none",
+          width: "60px",
+          textAlign: "right",
+          padding: "0 0 1px",
+        }}
+      />
+    );
+  }
+
+  return (
+    <span
+      onClick={() => { setVal(String(pct)); setEditing(true); }}
+      title="Click to edit"
+      style={{
+        fontFamily: "var(--font-serif)",
+        fontSize: "13px",
+        fontWeight: 600,
+        color: "var(--color-text-primary)",
+        borderBottom: "1px dashed var(--color-border)",
+        cursor: "text",
+      }}
+    >
+      {pct}%
+    </span>
+  );
+}
+
+function UpgradeBonusSection({
+  char,
+  onSetBonus,
+}: {
+  char: Character;
+  onSetBonus: (field: "BonusCardMoney" | "BonusCardInfluencePoints", pct: number) => void;
+}) {
+  const moneyPct = Math.round((char.BonusCardMoney ?? 0) * 10);
+  const ipPct = Math.round((char.BonusCardInfluencePoints ?? 0) * 10);
+
+  const rowStyle: React.CSSProperties = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "10px",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontFamily: "var(--font-ui)",
+    fontSize: "10px",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "var(--color-text-muted)",
+  };
+
+  return (
+    <>
+      <hr className="gold-divider" style={{ margin: "8px 0 20px" }} />
+      <p style={{ ...labelStyle, marginBottom: "14px" }}>Upgrade Bonuses</p>
+      <div style={rowStyle}>
+        <span style={labelStyle}>Money</span>
+        <BonusEditor pct={moneyPct} onChange={(v) => onSetBonus("BonusCardMoney", v)} />
+      </div>
+      <div style={rowStyle}>
+        <span style={labelStyle}>Influence Points</span>
+        <BonusEditor pct={ipPct} onChange={(v) => onSetBonus("BonusCardInfluencePoints", v)} />
+      </div>
     </>
   );
 }

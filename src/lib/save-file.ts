@@ -23,6 +23,9 @@ export interface Character {
   firstNameId: string;
   lastNameId: string;
   labels: string[];
+  BonusCardMoney?: number;
+  BonusCardInfluencePoints?: number;
+  bonusCards?: number[];
   [key: string]: unknown;
 }
 
