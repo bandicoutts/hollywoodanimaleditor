@@ -90,7 +90,19 @@ Filter employed characters by `studioId !== null`.
 **Known label values (31 observed):**
 `ALCOHOLIC`, `ARROGANT`, `CALM`, `CHASTE`, `CHEERY`, `DEMANDING`, `DISCIPLINED`, `HARDWORKING`, `HEARTBREAKER`, `HOTHEADED`, `IMMORTAL`, `INDIFFERENT`, `JUNKIE`, `LAZY`, `LEADER`, `LUDOMANIAC`, `MAIN_CHARACTER`, `MELANCHOLIC`, `MISOGYNIST`, `MODEST`, `OPEN_MINDED`, `PERFECTIONIST`, `RACIST`, `SIMPLE`, `STERILE`, `SUPER_IMMORTAL`, `TEAM_PLAYER`, `UNDISCIPLINED`, `UNTOUCHABLE`, `UNWANTED_ACTOR`, `XENOPHOBE`
 
-**Artistic and commercial appeal** are stored as special entries in `whiteTagsNEW` under the keys `"ART"` and `"COMMERCIAL"`. Only characters who have earned appeal through movie work have these entries. The `value` field is a decimal string 0.000–1.000. Edit only the `value` field; `overallValues` is a history log written by the game. Render an Appeal section only when at least one entry is present.
+**Artistic and commercial appeal** are stored as special entries in `whiteTagsNEW` under the abbreviated keys `"ART"` (artistic) and `"COM"` (commercial). Only characters who have earned appeal through movie work have these entries — absence of the key means no appeal, not zero. The `value` field is a decimal string 0.000–1.000. Edit only `value`; `overallValues` is a history log written by the game and must not be edited. Render an Appeal section only when at least one entry is present.
+
+**Commercial appeal tiers** (confirmed from save data; exact thresholds unconfirmed — pending further testing):
+
+| Tier | Approx. COM range |
+|---|---|
+| None | no `COM` key |
+| Rising Star | ~0.10 – 0.49 |
+| Star | ~0.50 – 0.79 |
+| Superstar | ~0.80 – ? |
+| Legend | above Superstar |
+
+Sample data points: Rising Star = 0.177–0.180, Star = 0.537–0.585, Superstar = 0.800–0.815. Thresholds are likely at 0.5 and 0.8; Rising Star floor and Legend floor unknown. Update this table once threshold testing is complete. ART tiers are assumed to follow the same scale but have not been independently verified — confirm when updated save file is available.
 
 Character display names are resolved by indexing `firstNameId` and `lastNameId` directly into the embedded `CHARACTER_NAMES` array (e.g. ID `258` → `"Mae"`, ID `654` → `"Lowe"` → displayed as `"Mae Lowe"`). `customName` takes priority when set and is written directly to the save. Do not edit `firstNameId` or `lastNameId`.
 
