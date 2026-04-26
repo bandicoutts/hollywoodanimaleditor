@@ -70,12 +70,12 @@ Top-level fields in `stateJson`:
 |---|---|---|
 | `id` | number | Unique identifier |
 | `studioId` | any \| null | `null` = uncontracted; non-null = employed |
-| `professions` | object | e.g. `{ "Actor": "0.810" }` — skill as decimal string |
-| `limit` | string | Skill cap as decimal string |
+| `professions` | object | e.g. `{ "Actor": "0.810" }` — skill as decimal string 0.000–1.000, displayed ×10 (0–10) |
+| `limit` | string | Skill cap as decimal string 0.000–1.000, displayed ×10 |
 | `Limit` | string | Duplicate of `limit` — **both must be updated together** |
-| `mood` | string | Decimal string 0.000–1.000 |
-| `attitude` | string | Decimal string 0.000–1.000 |
-| `selfEsteem` | string | Decimal string 0.000–1.000 |
+| `mood` | string | Decimal string 0.000–1.000 — displayed as **Happiness** ×100 (0–100) |
+| `attitude` | string | Decimal string 0.000–1.000 — displayed as **Loyalty** ×100 (0–100) |
+| `selfEsteem` | string | Internal calculation value; ranges outside 0–1, not surfaced in game UI — pass through only, do not edit |
 | `xp` | number | Experience points |
 | `firstNameId` | string | Index into embedded name table (`src/data/characterNames.ts`, 1140 entries) — do not edit |
 | `lastNameId` | string | Index into embedded name table — do not edit |
@@ -89,6 +89,8 @@ Filter employed characters by `studioId !== null`.
 
 **Known label values (31 observed):**
 `ALCOHOLIC`, `ARROGANT`, `CALM`, `CHASTE`, `CHEERY`, `DEMANDING`, `DISCIPLINED`, `HARDWORKING`, `HEARTBREAKER`, `HOTHEADED`, `IMMORTAL`, `INDIFFERENT`, `JUNKIE`, `LAZY`, `LEADER`, `LUDOMANIAC`, `MAIN_CHARACTER`, `MELANCHOLIC`, `MISOGYNIST`, `MODEST`, `OPEN_MINDED`, `PERFECTIONIST`, `RACIST`, `SIMPLE`, `STERILE`, `SUPER_IMMORTAL`, `TEAM_PLAYER`, `UNDISCIPLINED`, `UNTOUCHABLE`, `UNWANTED_ACTOR`, `XENOPHOBE`
+
+**Artistic and commercial appeal** are stored as special entries in `whiteTagsNEW` under the keys `"ART"` and `"COMMERCIAL"`. Only characters who have earned appeal through movie work have these entries. The `value` field is a decimal string 0.000–1.000. Edit only the `value` field; `overallValues` is a history log written by the game. Render an Appeal section only when at least one entry is present.
 
 Character display names are resolved by indexing `firstNameId` and `lastNameId` directly into the embedded `CHARACTER_NAMES` array (e.g. ID `258` → `"Mae"`, ID `654` → `"Lowe"` → displayed as `"Mae Lowe"`). `customName` takes priority when set and is written directly to the save. Do not edit `firstNameId` or `lastNameId`.
 

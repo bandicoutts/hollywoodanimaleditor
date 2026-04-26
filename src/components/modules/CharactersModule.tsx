@@ -86,23 +86,29 @@ function StatBar({
   cap,
   color,
   onChange,
+  scale = 1,
+  precision = 3,
 }: {
   label: string;
   value: number;
   cap: number;
   color: string;
   onChange: (v: number) => void;
+  scale?: number;
+  precision?: number;
 }) {
   const [editing, setEditing] = useState(false);
   const [inputVal, setInputVal] = useState("");
 
+  const displayValue = value * scale;
+
   const startEdit = () => {
-    setInputVal(value.toFixed(3));
+    setInputVal(displayValue.toFixed(precision));
     setEditing(true);
   };
   const commit = () => {
-    const v = Math.max(0, Math.min(1, parseFloat(inputVal) || 0));
-    onChange(v);
+    const v = Math.max(0, Math.min(scale, parseFloat(inputVal) || 0));
+    onChange(v / scale);
     setEditing(false);
   };
 
@@ -164,7 +170,7 @@ function StatBar({
               cursor: "text",
             }}
           >
-            {value.toFixed(3)}
+            {displayValue.toFixed(precision)}
           </span>
         )}
       </div>
@@ -357,7 +363,7 @@ function CharRow({
             flexShrink: 0,
           }}
         >
-          {skill.value.toFixed(2)}
+          {(skill.value * 10).toFixed(1)}
         </span>
       )}
     </button>
@@ -414,8 +420,12 @@ function DetailPanel({
     onUpdate((c) => { c.mood = formatDecimalString(value); });
   const setAttitude = (value: number) =>
     onUpdate((c) => { c.attitude = formatDecimalString(value); });
-  const setSelfEsteem = (value: number) =>
-    onUpdate((c) => { c.selfEsteem = formatDecimalString(value); });
+
+  const setAppeal = (type: "ART" | "COMMERCIAL", value: number) =>
+    onUpdate((c) => {
+      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
+      if (wt?.[type]) wt[type].value = formatDecimalString(value);
+    });
 
   const setXp = (value: number) =>
     onUpdate((c) => { c.xp = Math.max(0, Math.round(value)); });
@@ -427,7 +437,9 @@ function DetailPanel({
       c.Limit = "1.000";
       c.mood = "1.000";
       c.attitude = "1.000";
-      c.selfEsteem = "1.000";
+      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
+      if (wt?.ART) wt.ART.value = "1.000";
+      if (wt?.COMMERCIAL) wt.COMMERCIAL.value = "1.000";
     });
   };
 
@@ -511,9 +523,9 @@ function DetailPanel({
                 color: "var(--color-text-muted)",
               }}
             >
-              · Mood{" "}
+              · Happiness{" "}
               <span style={{ color: moodColor(char.mood) }}>
-                {parseFloat(char.mood).toFixed(2)}
+                {Math.round(parseFloat(char.mood) * 100)}
               </span>
             </span>
           </div>
@@ -585,6 +597,8 @@ function DetailPanel({
             cap={cap}
             color={getProfessionColor(key)}
             onChange={(v) => setSkill(key, v)}
+            scale={10}
+            precision={1}
           />
         ))}
         <StatBar
@@ -593,6 +607,8 @@ function DetailPanel({
           cap={1}
           color={profColor + "88"}
           onChange={setLimit}
+          scale={10}
+          precision={1}
         />
       </div>
 
@@ -613,25 +629,22 @@ function DetailPanel({
       </p>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
         <StatBar
-          label="Mood"
+          label="Happiness"
           value={parseFloat(char.mood) || 0}
           cap={1}
           color={moodColor(char.mood)}
           onChange={setMood}
+          scale={100}
+          precision={0}
         />
         <StatBar
-          label="Attitude"
+          label="Loyalty"
           value={parseFloat(char.attitude) || 0}
           cap={1}
           color="#9a9280"
           onChange={setAttitude}
-        />
-        <StatBar
-          label="Self-Esteem"
-          value={parseFloat(char.selfEsteem) || 0}
-          cap={1}
-          color="#9a9280"
-          onChange={setSelfEsteem}
+          scale={100}
+          precision={0}
         />
         {/* XP */}
         <div style={{ marginBottom: "14px" }}>
@@ -652,6 +665,9 @@ function DetailPanel({
         </div>
       </div>
 
+      {/* Appeal */}
+      <AppealSection char={char} onSetAppeal={setAppeal} />
+
       {/* Labels */}
       <LabelsEditor
         labels={Array.isArray(char.labels) ? (char.labels as string[]) : []}
@@ -659,6 +675,64 @@ function DetailPanel({
         onRemove={(label) => onUpdate((c) => { if (Array.isArray(c.labels)) c.labels = (c.labels as string[]).filter((l) => l !== label); })}
       />
     </div>
+  );
+}
+
+// ── Appeal section ────────────────────────────────────────────────────────────
+
+function AppealSection({
+  char,
+  onSetAppeal,
+}: {
+  char: Character;
+  onSetAppeal: (type: "ART" | "COMMERCIAL", value: number) => void;
+}) {
+  const wt = char.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
+  const artEntry = wt?.ART;
+  const comEntry = wt?.COMMERCIAL;
+
+  if (!artEntry && !comEntry) return null;
+
+  return (
+    <>
+      <hr className="gold-divider" style={{ margin: "8px 0 20px" }} />
+      <p
+        style={{
+          fontFamily: "var(--font-ui)",
+          fontSize: "10px",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: "var(--color-text-muted)",
+          marginBottom: "16px",
+        }}
+      >
+        Appeal
+      </p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
+        {artEntry && (
+          <StatBar
+            label="Artistic Appeal"
+            value={parseFloat(String(artEntry.value)) || 0}
+            cap={1}
+            color="#a088c8"
+            onChange={(v) => onSetAppeal("ART", v)}
+            scale={1}
+            precision={3}
+          />
+        )}
+        {comEntry && (
+          <StatBar
+            label="Commercial Appeal"
+            value={parseFloat(String(comEntry.value)) || 0}
+            cap={1}
+            color="#c8a040"
+            onChange={(v) => onSetAppeal("COMMERCIAL", v)}
+            scale={1}
+            precision={3}
+          />
+        )}
+      </div>
+    </>
   );
 }
 
@@ -897,7 +971,9 @@ export default function CharactersModule() {
         c.Limit = "1.000";
         c.mood = "1.000";
         c.attitude = "1.000";
-        c.selfEsteem = "1.000";
+        const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
+        if (wt?.ART) wt.ART.value = "1.000";
+        if (wt?.COMMERCIAL) wt.COMMERCIAL.value = "1.000";
       }
     });
   }, [updateStateJson, showAll]);
