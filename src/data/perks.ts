@@ -37,13 +37,18 @@ export const PERK_LABELS: Record<string, string> = {
 
   // ── Maintenance ───────────────────────────────────────────────────────────────
   REPAIR_TEAM_1:           "Repair Crew",
+  IMPROVEMENT_I:           "Medium Landscaping",
 
   // ── Legal Department ──────────────────────────────────────────────────────────
   LEGAL_DEFENSE_1:                "Mid-level legal protection",
   LEGAL_DEFENSE_2:                "High-level legal protection",
   LEGAL_DEFENSE_3:                "Amazing legal protection",
-  CONTRACT_PAYMENTS_50_50:        "Terminate contracts with half the buyout",
+  CONTRACT_PAYMENTS_50_50:        "Delay contract payment",
   CONTRACT_TERMINATION_FEE_1:     "Full recuperation",
+  CONTRACT_5_MOVIES:              "5 film contract",
+  CONTRACT_10_MOVIES:             "10 film contract",
+  CONTRACT_5_YEARS:               "5 year contract",
+  CONTRACT_10_YEARS:              "10 year contract",
 
   // ── Financial Department ──────────────────────────────────────────────────────
   BANK_LOAN:                      "$1,000,000 loan",
@@ -56,11 +61,17 @@ export const PERK_LABELS: Record<string, string> = {
   CASH_FLOW_2:                    "$1,500 cash per month",
 
   // ── HR Department ─────────────────────────────────────────────────────────────
-  ETHNIC_COMPOSITION:      "Ethnic composition",
-  ILLEGAL_WORKERS:         "Illegals",
-  BUILDINGS_CONSERVATION:  "Mothball buildings",
-  CONSERVATION_COOLDOWN:   "Agile mothballing",
-  SALARY_CUT:              "Cheaper while closed",
+  ETHNIC_COMPOSITION:         "Ethnic composition",
+  ILLEGAL_WORKERS:            "Illegals",
+  CHEAP_ILLEGALS:             "Cheap illegals",
+  BUILDINGS_CONSERVATION:     "Mothball buildings",
+  CONSERVATION_COOLDOWN:      "Agile mothballing",
+  SALARY_CUT:                 "Cheaper while closed",
+  IMPROVEMENT_0_NO_SADNESS:   "Ascetic Staff",
+  HIRING_BONUSES:             "Enthusiastic newbies",
+  NOMINATION_LOSS_NO_SADNESS: "Professional achievement",
+  MOVIE_RELEASE_MOOD_BOOST:   "Positive attitude",
+  BAD_ATTITUDE_NO_SADNESS:    "Philosophical perspective",
 
   // ── PR Department ─────────────────────────────────────────────────────────────
   CHARITY_TO_REP:          "Charity",
@@ -101,8 +112,8 @@ export const PERK_LABELS: Record<string, string> = {
   MOVIE_RELEASE_TOP10_ART_XP_1: "Experience for critical acclaim",
   MOVIE_RELEASE_TOP10_AUD_XP_1: "Experience for high ticket sales",
   MOVIE_RELEASE_TOP10_COM_XP_1: "Experience for recognition by the audience",
-  MOVIE_SEQUEL:                 "Fresh take",
-  MOVIE_SEQUEL_ORIGINALITY:     "Worthy successor",
+  MOVIE_SEQUEL_ORIGINALITY:     "Fresh take",
+  MOVIE_SEQUEL_LEGACY:          "Worthy successor",
 
   // ── Pre-Production ────────────────────────────────────────────────────────────
   PREPROD_PROD_DIR_CIN_XP_1: "Exp for directors and cinematographers",
@@ -124,6 +135,7 @@ export const PERK_LABELS: Record<string, string> = {
   PROPS_QLT_3:               "Amazing quality costumes and props",
 
   // ── Production Department ─────────────────────────────────────────────────────
+  PROD_DIR_CIN_ACT_XP_1: "Doubles for directors, actors and cinematographers",
   SECOND_UNIT:           "Auxiliary Film Crew",
   URGENT_DOUBLE_SEARCH:  "Emergency search for double",
   URGENT_EXTRAS_SEARCH:  "Emergency search for extras",
@@ -167,6 +179,7 @@ export const PERK_LABELS: Record<string, string> = {
   SECURITY_SCHOOL_STRONG:       "Efficient Training",
 
   // ── Post-Production ───────────────────────────────────────────────────────────
+  POST_DIR_MONT_COMP_XP_1: "Professional post-production facilities",
   LAB_INHOUSE_IMPROVED:    "Improved development",
   LAB_INHOUSE_TIME_1:      "Fast development",
   SOUND_INHOUSE_IMPROVED:  "Superior sound studio",
