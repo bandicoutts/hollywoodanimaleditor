@@ -201,7 +201,7 @@ function TagGroupSection({
             id={id}
             active={activeSet.has(id)}
             color={group.color}
-            lockHint={lockHintFor(id)}
+            lockHint={activeSet.has(id) ? null : lockHintFor(id)}
             onToggle={() => onToggle(id)}
           />
         ))}

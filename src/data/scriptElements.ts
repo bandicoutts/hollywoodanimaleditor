@@ -183,7 +183,7 @@ export const PROTAGONISTS: ScriptElement[] = [
   { id: "PROTAGONIST_SOLDIER",                                       label: "Soldier",                                           art:  0.20, com:  0.00, unlock: ">=02-01-1929" },
   { id: "PROTAGONIST_SOUTHERN_BELLE",                                label: "Southern Belle",                                    art:  0.00, com:  0.00, unlock: "1950" },
   { id: "PROTAGONIST_SPIRITED_YOUNG_LADY",                           label: "Spirited Young Lady",                               art:  0.10, com:  0.00, unlock: ">=01-01-1935" },
-  { id: "PROTAGONIST_TOXIC_VIGILANTE",                               label: "Toxic Revenger",                                    art:  0.05, com:  0.30, unlock: "Recipe (RECIPE_TRASH): Clumsy Oaf + Avenging Loved Ones" },
+  { id: "PROTAGONIST_TOXIC_VIGILANTE",                               label: "Toxic Revenger",                                    art:  0.05, com:  0.30, unlock: ">=1929" },
   { id: "PROTAGONIST_WAR_VETERAN",                                   label: "War Veteran",                                       art:  0.10, com: -0.10, unlock: ">=01-01-1945" },
   { id: "PROTAGONIST_WAR_WIDOW",                                     label: "War Widow",                                         art:  0.20, com: -0.10, unlock: ">=01-01-1945" },
   { id: "PROTAGONIST_WARRIOR",                                       label: "Warrior",                                           art:  0.00, com:  0.00, unlock: ">=01-01-1935" },
@@ -239,7 +239,7 @@ export const ANTAGONISTS: ScriptElement[] = [
   { id: "ANTAGONIST_EVIL_WITCH",                    label: "Evil Witch",                      art:  0.00, com:  0.05, unlock: ">=1929" },
   { id: "ANTAGONIST_HEADLESS_MIDGETS_HYPNOTISTS",   label: "Headless Dwarven Hypnotists",     art: -0.30, com:  0.20, unlock: "Recipe (RECIPE): Parent Figure + City Siege + Long Journey" },
   { id: "ANTAGONIST_HEARTLESS_BUREAUCRAT",          label: "Heartless Bureaucrat",            art:  0.10, com:  0.00, unlock: ">=02-01-1929" },
-  { id: "ANTAGONIST_TOASTER_KILLER",                label: "Killer Toaster",                  art: -0.20, com:  0.30, unlock: "Recipe (RECIPE_TRASH): Knight + Serial Killer" },
+  { id: "ANTAGONIST_TOASTER_KILLER",                label: "Killer Toaster",                  art: -0.20, com:  0.30, unlock: ">=1929" },
   { id: "ANTAGONIST_MAD_SCIENTIST",                 label: "Mad Scientist",                   art:  0.10, com:  0.10, unlock: ">=01-01-1935" },
   { id: "ANTAGONIST_MURDERER",                      label: "Murderer",                        art:  0.00, com:  0.00, unlock: ">=1929" },
   { id: "ANTAGONIST_OLD_FRIEND_ENEMY",              label: "Old Friend Turned Enemy",         art:  0.05, com:  0.10, unlock: ">=01-01-1936" },
@@ -304,7 +304,7 @@ export const THEMES: ScriptElement[] = [
   { id: "THEME_WAR_IS_HELL",                  label: "War Is Hell",                            art:  0.10, com: -0.10, unlock: ">=01-09-1939" },
   { id: "THEME_WHITE_SUPREMACY",              label: "White Supremacy",                        art:  0.00, com:  0.05, unlock: "Before 1929" },
   { id: "THEME_WINNING_THE_BELOVED",          label: "Winning the Beloved",                    art:  0.05, com:  0.00, unlock: ">=1929" },
-  { id: "THEME_WAR_WITH_SORCERERS",           label: "Wizard War",                             art: -0.40, com:  0.30, unlock: "Recipe (RECIPE_TRASH): Evil Witch + Jousting Tournament" },
+  { id: "THEME_WAR_WITH_SORCERERS",           label: "Wizard War",                             art: -0.40, com:  0.30, unlock: ">=1929" },
   { id: "THEME_WRONGFULLY_ACCUSED",           label: "Wrongfully Accused",                     art:  0.10, com:  0.05, unlock: "1950" },
 ];
 
