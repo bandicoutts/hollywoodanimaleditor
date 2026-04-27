@@ -75,57 +75,57 @@ function ScriptCard({ combo, index }: { combo: ScriptCombo; index: number }) {
       }}
     >
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", flex: 1, minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+        <span
+          style={{
+            fontFamily: "var(--font-ui)",
+            fontSize: "9px",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "var(--color-text-muted)",
+            minWidth: "20px",
+            paddingTop: "2px",
+            flexShrink: 0,
+          }}
+        >
+          #{index + 1}
+        </span>
+        <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
           <span
             style={{
               fontFamily: "var(--font-ui)",
-              fontSize: "9px",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "var(--color-text-muted)",
-              minWidth: "20px",
-              paddingTop: "2px",
-              flexShrink: 0,
+              fontSize: "12px",
+              fontWeight: 600,
+              letterSpacing: "0.06em",
+              color: "var(--color-gold)",
             }}
           >
-            #{index + 1}
+            {genre.label}
+            {genre2 && <span style={{ color: "var(--color-text-muted)", fontWeight: 400 }}> / {genre2.label}</span>}
           </span>
-          <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
-            <span
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: "12px",
-                fontWeight: 600,
-                letterSpacing: "0.06em",
-                color: "var(--color-gold)",
-              }}
-            >
-              {genre.label}
-              {genre2 && <span style={{ color: "var(--color-text-muted)", fontWeight: 400 }}> / {genre2.label}</span>}
-            </span>
-            <span
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: "10px",
-                color: "var(--color-text-muted)",
-                letterSpacing: "0.04em",
-              }}
-            >
-              {setting.label}
-            </span>
-          </div>
+          <span
+            style={{
+              fontFamily: "var(--font-ui)",
+              fontSize: "10px",
+              color: "var(--color-text-muted)",
+              letterSpacing: "0.04em",
+            }}
+          >
+            {setting.label}
+          </span>
         </div>
-        <div style={{ display: "flex", gap: "5px", flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <ScoreBadge label="Art" value={scores.art} color="#7ec8a0" />
-          <ScoreBadge label="Com" value={scores.com} color="#7ab4d4" />
-          {scores.synergy > 0 && (
-            <ScoreBadge label="Compat" value={scores.synergy} color="var(--color-gold)" />
-          )}
-          {scores.pollux > 0 && (
-            <ScoreBadge label="Pol" value={scores.pollux} color="#b8a0d4" />
-          )}
-        </div>
+      </div>
+
+      {/* Score badges */}
+      <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+        <ScoreBadge label="Art" value={scores.art} color="#7ec8a0" />
+        <ScoreBadge label="Com" value={scores.com} color="#7ab4d4" />
+        {scores.synergy > 0 && (
+          <ScoreBadge label="Compat" value={scores.synergy} color="var(--color-gold)" />
+        )}
+        {scores.pollux > 0 && (
+          <ScoreBadge label="Pol" value={scores.pollux} color="#b8a0d4" />
+        )}
       </div>
 
       {/* Cast row */}
