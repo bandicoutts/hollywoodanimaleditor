@@ -21,6 +21,7 @@ const POLLUX_TOOLTIP = "Pollux Award score — the game's prestige prize for art
 
 type SectionKey =
   | "genre"
+  | "genre2"
   | "setting"
   | "protagonist"
   | "supporting"
@@ -29,7 +30,7 @@ type SectionKey =
   | "finale";
 
 const BUILDER_SECTION_ORDER: SectionKey[] = [
-  "genre", "setting", "protagonist", "supporting", "antagonist", "themesEvents", "finale",
+  "genre", "genre2", "setting", "protagonist", "supporting", "antagonist", "themesEvents", "finale",
 ];
 
 const BIAS_OPTIONS: { value: Bias; label: string }[] = [
@@ -296,6 +297,12 @@ export default function ScriptBuilder({
   const themeIds = useMemo(() => new Set(themes.map(t => t.id)), [themes]);
   const supportingIds = useMemo(() => new Set(sel.supporting.map(s => s.id)), [sel.supporting]);
 
+  // Genre2 section only appears when ≥2 genres are unlocked
+  const sectionOrder = useMemo(
+    () => pool.genres.length > 1 ? BUILDER_SECTION_ORDER : BUILDER_SECTION_ORDER.filter(k => k !== "genre2"),
+    [pool.genres.length]
+  );
+
   // Content tag budget: protagonist + supporting[] + antagonist + themes/events + finale
   // must all fit within budget (base 5, up to 10 with TAGS_SLOTS_N perks).
   const charCount = sel.supporting.length + (sel.antagonist ? 1 : 0);
@@ -310,7 +317,9 @@ export default function ScriptBuilder({
   const hasSelection = selectedElements.length > 0;
 
   function selectSingle(key: Exclude<SectionKey, "themesEvents" | "supporting">, item: ScriptElement) {
-    const newSel = { ...sel, [key]: item };
+    let newSel = { ...sel, [key]: item };
+    // Changing primary genre invalidates any current second genre
+    if (key === "genre") newSel = { ...newSel, genre2: null };
     setSel(newSel);
     // Selecting antagonist may reduce available theme slots — trim to stay in budget
     if (key === "antagonist") {
@@ -320,9 +329,9 @@ export default function ScriptBuilder({
         setThemes(prev => prev.slice(0, maxAllowedThemes));
       }
     }
-    const idx = BUILDER_SECTION_ORDER.indexOf(key);
-    for (let i = idx + 1; i < BUILDER_SECTION_ORDER.length; i++) {
-      const next = BUILDER_SECTION_ORDER[i];
+    const idx = sectionOrder.indexOf(key);
+    for (let i = idx + 1; i < sectionOrder.length; i++) {
+      const next = sectionOrder[i];
       const isEmpty =
         next === "themesEvents"
           ? contentTagsUsed < MIN_CONTENT_TAGS
@@ -355,6 +364,19 @@ export default function ScriptBuilder({
     if (themes.length > maxAllowedThemes) {
       setThemes(prev => prev.slice(0, maxAllowedThemes));
     }
+  }
+
+  function skipGenre2() {
+    const idx = sectionOrder.indexOf("genre2");
+    for (let i = idx + 1; i < sectionOrder.length; i++) {
+      const next = sectionOrder[i];
+      const isEmpty =
+        next === "themesEvents" ? contentTagsUsed < MIN_CONTENT_TAGS
+        : next === "supporting" ? sel.supporting.length === 0
+        : sel[next as keyof SelState] === null;
+      if (isEmpty) { setActiveSection(next); return; }
+    }
+    setActiveSection(null);
   }
 
   function handleComplete() {
@@ -399,6 +421,7 @@ export default function ScriptBuilder({
 
   const sectionLabel: Record<SectionKey, string> = {
     genre:        sel.genre       ? `Genre — ${sel.genre.label}`            : "Genre",
+    genre2:       sel.genre2      ? `Second Genre — ${sel.genre2.label}`    : "Second Genre (optional)",
     setting:      sel.setting     ? `Setting — ${sel.setting.label}`         : "Setting",
     protagonist:  sel.protagonist ? `Protagonist — ${sel.protagonist.label}` : "Protagonist",
     supporting:   sel.supporting.length > 0
@@ -478,6 +501,30 @@ export default function ScriptBuilder({
           {polluxPartial !== null && (
             <ScoreBadge label="Pol" value={polluxPartial} color="#b8a0d4" title={POLLUX_TOOLTIP} />
           )}
+          <span
+            style={{
+              fontFamily: "var(--font-ui)",
+              fontSize: "11px",
+              fontWeight: 600,
+              color: contentTagsUsed >= contentTagBudget
+                ? "var(--color-text-muted)"
+                : "var(--color-text-secondary)",
+              marginLeft: "4px",
+            }}
+          >
+            {contentTagBudget - contentTagsUsed}/{contentTagBudget}
+          </span>
+          <span
+            style={{
+              fontFamily: "var(--font-ui)",
+              fontSize: "9px",
+              letterSpacing: "0.07em",
+              textTransform: "uppercase",
+              color: "var(--color-text-muted)",
+            }}
+          >
+            slots left
+          </span>
         </div>
       )}
 
@@ -489,49 +536,25 @@ export default function ScriptBuilder({
           marginBottom: "16px",
         }}
       >
-        {BUILDER_SECTION_ORDER.map((key) => {
+        {sectionOrder.map((key) => {
           const isThemes = key === "themesEvents";
           const isSupporting = key === "supporting";
+          const isGenre2 = key === "genre2";
           const isDone = isThemes
             ? contentTagsUsed >= MIN_CONTENT_TAGS
             : isSupporting
               ? sel.supporting.length > 0
               : sel[key as keyof SelState] !== null;
-          const rankedList = ranked[key as keyof typeof ranked];
+          const rankedList = isGenre2 ? [] : ranked[key as keyof typeof ranked];
 
-          const genre2Footer = key === "genre" && sel.genre ? (
-            <div style={{ borderTop: "1px solid var(--color-border-subtle)", padding: "8px 12px 10px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                <span
-                  style={{
-                    fontFamily: "var(--font-ui)",
-                    fontSize: "9px",
-                    letterSpacing: "0.07em",
-                    textTransform: "uppercase",
-                    color: "var(--color-text-muted)",
-                  }}
-                >
-                  Second genre
-                  {sel.genre2 && <span style={{ color: "var(--color-gold)", marginLeft: "6px" }}>— {sel.genre2.label}</span>}
-                </span>
-                {sel.genre2 && (
-                  <button
-                    onClick={() => setSel(prev => ({ ...prev, genre2: null }))}
-                    style={{
-                      fontFamily: "var(--font-ui)",
-                      fontSize: "9px",
-                      color: "var(--color-text-muted)",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+          let sectionBody: React.ReactNode;
+          if (isGenre2) {
+            sectionBody = !sel.genre ? (
+              <p style={{ padding: "6px 12px 8px", fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)", fontStyle: "italic" }}>
+                Select a genre first
+              </p>
+            ) : (
+              <>
                 {rankedGenre2.map(({ item, artMod, comMod }) => {
                   const total = artMod + comMod;
                   const isSelected = sel.genre2?.id === item.id;
@@ -539,33 +562,62 @@ export default function ScriptBuilder({
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setSel(prev => ({ ...prev, genre2: isSelected ? null : item }))}
+                      onClick={() => {
+                        if (isSelected) {
+                          setSel(prev => ({ ...prev, genre2: null }));
+                        } else {
+                          selectSingle("genre2", item);
+                        }
+                      }}
                       style={{
-                        fontFamily: "var(--font-ui)",
-                        fontSize: "10px",
-                        padding: "3px 8px",
-                        border: `1px solid ${isSelected ? "var(--color-gold)" : "var(--color-border)"}`,
-                        background: isSelected ? "rgba(184,156,84,0.09)" : "transparent",
-                        color: isSelected ? "var(--color-gold)" : "var(--color-text-secondary)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "5px 12px",
+                        width: "100%",
+                        background: isSelected ? "rgba(184,156,84,0.06)" : "transparent",
+                        border: "none",
+                        borderLeft: `2px solid ${isSelected ? "var(--color-gold)" : "transparent"}`,
                         cursor: "pointer",
-                        whiteSpace: "nowrap",
+                        textAlign: "left",
                       }}
                     >
-                      {item.label}
+                      <span style={{
+                        fontFamily: "var(--font-ui)",
+                        fontSize: "11px",
+                        flex: 1,
+                        color: isSelected ? "var(--color-gold)" : "var(--color-text-secondary)",
+                      }}>
+                        {item.label}
+                      </span>
                       {Math.abs(total) > 0.01 && (
-                        <span style={{ marginLeft: "5px", fontSize: "9px", color: modColor }}>
+                        <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", color: modColor }}>
                           {total > 0 ? "+" : ""}{total.toFixed(2)}
                         </span>
                       )}
                     </button>
                   );
                 })}
-              </div>
-            </div>
-          ) : undefined;
-
-          let sectionBody: React.ReactNode;
-          if (isThemes) {
+                <div style={{ borderTop: "1px solid var(--color-border-subtle)", padding: "6px 12px 8px", marginTop: "2px" }}>
+                  <button
+                    onClick={skipGenre2}
+                    style={{
+                      fontFamily: "var(--font-ui)",
+                      fontSize: "10px",
+                      letterSpacing: "0.04em",
+                      color: "var(--color-text-muted)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    Skip →
+                  </button>
+                </div>
+              </>
+            );
+          } else if (isThemes) {
             sectionBody = (
               <>
                 {themes.map(t => (
@@ -657,7 +709,6 @@ export default function ScriptBuilder({
               isOpen={activeSection === key}
               isComplete={isDone}
               onToggle={() => setActiveSection(prev => prev === key ? null : key)}
-              footer={genre2Footer}
             >
               {sectionBody}
             </CategorySection>
