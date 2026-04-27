@@ -137,10 +137,14 @@ export function isUnlocked(
 // ── Pool building ─────────────────────────────────────────────────────────────
 
 export function getUnlockedPool(stateJson: StateJson): UnlockedPool {
-  const gameDate = parseGameDate(stateJson);
+  // Use tagPool (actually researched tags) as the source of truth.
+  // Date conditions only determine when an element becomes researchable — the
+  // player must still explicitly research it before it appears in their tagPool.
+  const tagPoolIds = new Set((stateJson.tagPool ?? []).map((t) => t.Item1));
   const recipesPool: string[] = stateJson.tagRecipesPool ?? [];
 
-  const check = (el: ScriptElement) => isUnlocked(el, gameDate, recipesPool);
+  const check = (el: ScriptElement) =>
+    tagPoolIds.has(el.id) || recipesPool.includes(el.id);
 
   return {
     genres: GENRES.filter(check),
