@@ -335,6 +335,7 @@ function ScriptBuilder({ pool }: { pool: UnlockedPool }) {
   const [activeSection, setActiveSection] = useState<SectionKey | null>("genre");
   const [showGenre2, setShowGenre2] = useState(false);
   const [finalCombo, setFinalCombo] = useState<ScriptCombo | null>(null);
+  const [bias, setBias] = useState<Bias>("balanced");
 
   const selectedElements = useMemo(() =>
     [sel.genre, sel.genre2, sel.setting, sel.protagonist, sel.supporting, sel.antagonist, sel.finale, ...themes]
@@ -417,7 +418,7 @@ function ScriptBuilder({ pool }: { pool: UnlockedPool }) {
     }
     const suggestions = generateSuggestions(pool, {
       genreFilter: sel.genre?.id ?? null,
-      bias: "balanced",
+      bias,
       themeEventCount: Math.max(3, themes.length),
     });
     if (!suggestions.length) return;
@@ -441,6 +442,7 @@ function ScriptBuilder({ pool }: { pool: UnlockedPool }) {
     setActiveSection("genre");
     setShowGenre2(false);
     setFinalCombo(null);
+    setBias("balanced");
   }
 
   const sectionLabel: Record<SectionKey, string> = {
@@ -674,6 +676,29 @@ function ScriptBuilder({ pool }: { pool: UnlockedPool }) {
           )}
         </div>
       )}
+
+      {/* Optimise for */}
+      <div style={{ marginBottom: "16px" }}>
+        <p
+          style={{
+            fontFamily: "var(--font-ui)",
+            fontSize: "10px",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--color-text-muted)",
+            marginBottom: "8px",
+          }}
+        >
+          Optimise for
+        </p>
+        <div style={{ display: "flex", gap: "6px" }}>
+          {BIAS_OPTIONS.map(({ value, label }) => (
+            <PillButton key={value} active={bias === value} onClick={() => setBias(value)}>
+              {label}
+            </PillButton>
+          ))}
+        </div>
+      </div>
 
       {/* Complete / Auto-complete */}
       {hasSelection && !finalCombo && (
