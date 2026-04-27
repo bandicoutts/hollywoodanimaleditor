@@ -294,6 +294,34 @@ export function generateSuggestions(
   return results;
 }
 
+// ── Builder helpers ───────────────────────────────────────────────────────────
+
+export function scoreElementCompatibility(
+  candidate: ScriptElement,
+  selected: ScriptElement[]
+): number {
+  let score = 0;
+  for (const s of selected) {
+    const key = [candidate.id, s.id].sort().join("|");
+    score += COMPAT_SCORES.get(key) ?? 0;
+  }
+  return score;
+}
+
+export function scorePartialBuild(
+  elements: ScriptElement[]
+): Pick<ScoreResult, "art" | "com" | "synergy"> {
+  let art = 0, com = 0, synergy = 0;
+  for (const e of elements) { art += e.art; com += e.com; }
+  for (let i = 0; i < elements.length; i++) {
+    for (let j = i + 1; j < elements.length; j++) {
+      const key = [elements[i].id, elements[j].id].sort().join("|");
+      synergy += COMPAT_SCORES.get(key) ?? 0;
+    }
+  }
+  return { art, com, synergy };
+}
+
 // ── Lock hint ─────────────────────────────────────────────────────────────────
 
 export function getLockHint(
