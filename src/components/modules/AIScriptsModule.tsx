@@ -122,6 +122,9 @@ function ScriptCard({ combo, index }: { combo: ScriptCombo; index: number }) {
           {scores.synergy > 0 && (
             <ScoreBadge label="Syn" value={scores.synergy} color="var(--color-gold)" />
           )}
+          {scores.pollux > 0 && (
+            <ScoreBadge label="Pol" value={scores.pollux} color="#b8a0d4" />
+          )}
         </div>
       </div>
 

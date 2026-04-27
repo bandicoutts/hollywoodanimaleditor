@@ -13,6 +13,7 @@ export interface ScoreResult {
   art: number;
   com: number;
   synergy: number;
+  pollux: number;
 }
 
 // ── Genres ────────────────────────────────────────────────────────────────────
@@ -1499,3 +1500,18 @@ export const ELEMENT_BY_ID: Record<string, ScriptElement> = Object.fromEntries(
   [...GENRES, ...SETTINGS, ...PROTAGONISTS, ...SUPPORTING_CHARS,
    ...ANTAGONISTS, ...THEMES, ...EVENTS, ...FINALES].map((e) => [e.id, e])
 );
+
+// From GameVariables.json: pollux_genre_factors
+// Art weight 2× com weight (art_status_bonus max 4 vs com_status_bonus max 2)
+export const POLLUX_GENRE_FACTORS: Record<string, number> = {
+  DRAMA:            1.0,
+  ROMANCE:          0.9,
+  COMEDY:           0.8,
+  DETECTIVE:        0.8,
+  ADVENTURE:        0.8,
+  ACTION:           0.7,
+  THRILLER:         0.6,
+  SCIENCE_FICTION:  0.5,
+  HISTORICAL:       0.5,
+  HORROR:           0.3,
+};

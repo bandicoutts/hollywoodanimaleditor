@@ -10,6 +10,7 @@ import {
   FINALES,
   GENRE_PAIR_MODIFIERS,
   SYNERGY_PAIRS,
+  POLLUX_GENRE_FACTORS,
   type ScriptElement,
   type ScoreResult,
 } from "@/data/scriptElements";
@@ -187,7 +188,14 @@ export function scoreCombination(combo: Omit<ScriptCombo, "scores">): ScoreResul
     }
   }
 
-  return { art, com, synergy };
+  // Pollux: genre_factor × (art×2 + com), per GameVariables pollux_genre_factors
+  // art_status_bonus max 4, com_status_bonus max 2 → art weighted 2× com
+  const primaryFactor = POLLUX_GENRE_FACTORS[combo.genre.id] ?? 0;
+  const secondaryFactor = combo.genre2 ? (POLLUX_GENRE_FACTORS[combo.genre2.id] ?? 0) * 0.5 : 0;
+  const genreFactor = Math.min(1, primaryFactor + secondaryFactor);
+  const pollux = genreFactor * (art * 2 + com);
+
+  return { art, com, synergy, pollux };
 }
 
 function biasScore(scores: ScoreResult, bias: Bias): number {
@@ -196,7 +204,7 @@ function biasScore(scores: ScoreResult, bias: Bias): number {
     case "art":        return scores.art * 2 + syn;
     case "commercial": return scores.com * 2 + syn;
     case "balanced":   return scores.art + scores.com + syn;
-    case "pollux":     return scores.art * 3 + scores.synergy * 0.2;
+    case "pollux":     return scores.pollux + scores.synergy * 0.1;
   }
 }
 
