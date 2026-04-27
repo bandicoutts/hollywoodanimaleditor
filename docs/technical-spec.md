@@ -540,34 +540,41 @@ Named constants in `script-suggestions.ts`: `CANDIDATE_COUNT = 300`, `DUAL_GENRE
 
 **Script composition constraints** (from `GameVariables.json`):
 
-The game uses a shared **content tag budget** across supporting characters, antagonists, and themes/events:
+The game uses a shared **content tag budget** stored in `contentIds` (confirmed from `PreconfiguredMoviesConfigs.json`):
 - `content_tags_in_script_range = 3_5` — minimum 3 content tags per script (base range)
 - `max_content_tags_amount = 5` — base maximum (no perks)
 - `TAGS_SLOTS_6` through `TAGS_SLOTS_10` in `stateJson.openedPerks` each extend the budget by 1 (up to 10). `getContentTagBudget(openedPerks)` in `script-suggestions.ts` resolves the active budget.
-- **Supporting character** (0 or 1): optional, consumes 1 content tag slot
-- **Antagonist** (0 or 1): optional, consumes 1 content tag slot
-- **Themes/Events**: fill remaining slots — max = `contentTagBudget − charSlotsUsed`, min = 3 total content tags
-- **Protagonist**: mandatory, separate slot (not part of content tag budget)
-- **Genre, Setting, Finale**: mandatory, each a separate fixed slot
+- **Protagonist**: mandatory, consumes **1 fixed content tag slot**
+- **Finale**: mandatory, consumes **1 fixed content tag slot**
+- **Supporting characters** (0 to N): optional, each consumes 1 slot (`max_content_tags_supporting_character_amount = 5` in `GameVariables.json`)
+- **Antagonist** (0 or 1): optional, consumes 1 slot
+- **Themes/Events**: fill remaining slots — max = `contentTagBudget − charSlotsUsed − FIXED_CONTENT_TAGS`, min 1 (enforced by the budget formula, ≥3 total enforced by `MIN_CONTENT_TAGS`)
+- **Genre, Setting**: stored in separate fields, **not counted against the budget**
 
-`ScriptCombo.supporting` and `ScriptCombo.antagonist` are `ScriptElement | undefined`. `scoreCombination` handles absent chars by conditional spreading. `UnlockedPool` includes `contentTagBudget: number`.
+`FIXED_CONTENT_TAGS = 2` is a constant in both `ScriptBuilder.tsx` and `script-suggestions.ts`. The correct budget formula is: `protagonist(1) + supporting(0–N) + antagonist(0–1) + themesEvents(N) + finale(1) ≤ contentTagBudget`.
+
+`ScriptCombo.supporting` is `ScriptElement[]` (always an array, possibly empty). `ScriptCombo.antagonist` is `ScriptElement | undefined`. `UnlockedPool` includes `contentTagBudget: number`.
 
 **UI — two modes** (toggled by tab at the top of the module):
 
 **Generate Ideas mode:**
 - Genre filter pills (only unlocked genres shown)
 - Bias toggle: Art / Balanced / Commercial / Pollux
-- Themes/Events per film stepper (min 3, max = `pool.contentTagBudget` — reflects TAGS_SLOTS perks). The generator clamps the actual theme count to `contentTagBudget − charCount` so generated combos never exceed the budget regardless of the stepper value.
+- Themes/Events per film stepper (min 3, max = `pool.contentTagBudget − 2` — reserves 2 fixed slots for protagonist + finale). The generator clamps the actual theme count to `contentTagBudget − charCount − FIXED_CONTENT_TAGS` so generated combos never exceed the budget regardless of the stepper value.
 - Pool stats bar (element counts by category)
 - 6 result cards: genre(s), setting, cast (protagonist + any optional chars), themes/events, finale, Art / Com / Compat / Pol score badges
 
 **Build Your Script mode:**
-- 7 collapsible accordion sections (Genre → Setting → Protagonist → Supporting Character (optional) → Antagonist (optional) → Themes/Events → Finale), one open at a time
+- 7 collapsible accordion sections (Genre → Setting → Protagonist → Supporting Characters (optional) → Antagonist (optional) → Themes/Events → Finale), one open at a time
 - Selecting any element closes its section, auto-opens the next incomplete section, and **instantly re-ranks every other category list** by compatibility with the current selection set
-- Compatibility ranking: each candidate scored via `scoreElementCompatibility(candidate, ctx)` where `ctx` = `selectedElements` with the **current category's selection excluded**. This gives honest "swap to this" scores when re-opening a filled section. Themes/Events is multi-select so no exclusion applies there.
+- Compatibility ranking: each candidate scored via `scoreElementCompatibility(candidate, ctx)` where `ctx` = `selectedElements` with the **current category's selection excluded**. This gives honest "swap to this" scores when re-opening a filled section. Themes/Events and Supporting Characters are multi-select so no exclusion applies there.
 - **Running score bar** (Art / Com / Compat badges) appears once ≥2 elements are selected, computed by `scorePartialBuild(selectedElements)`. Pollux requires a complete combo and is omitted from partial display.
 - **Themes/Events** is multi-select (budget-aware): selected themes pin to the top with a remove button; picking a supporting char or antagonist reduces the live theme max. Label shows `N / maxThemes`. `isComplete` requires `contentTagsUsed ≥ 3` (not specific chars).
-- **Optional char budget enforcement** (two layers): (1) Supporting/Antagonist `ElementRow` items are disabled when `sel[key] === null && contentTagsUsed >= contentTagBudget` — prevents adding a new char when the budget is full (swapping an already-selected char is still allowed since charCount doesn't change). (2) `selectSingle` trims `themes` to `contentTagBudget - newCharCount` as a safety net after any char selection, so the builder can never produce an over-budget combo regardless of selection order.
+- **Supporting Characters** is multi-select (same UX pattern as Themes/Events): selected chars pin to top with remove buttons; adding a char reduces available theme slots. Section label shows selected names.
+- **Budget enforcement** (`FIXED_CONTENT_TAGS = 2` for protagonist + finale, always deducted):
+  - `contentTagsUsed = themes.length + charCount + FIXED_CONTENT_TAGS`
+  - `maxThemes = contentTagBudget − charCount − FIXED_CONTENT_TAGS`
+  - **Two enforcement layers**: (1) Supporting/Antagonist rows are disabled when `contentTagsUsed >= contentTagBudget` — prevents adding when full. (2) `selectSingle` (for antagonist) and `toggleSupporting` both trim `themes` to `maxAllowedThemes` as a safety net so the builder can never produce an over-budget combo regardless of selection order.
 - **Second genre** (optional): rendered as a **footer below the scrollable genre list** inside the Genre accordion — always visible when the section is open and a primary genre is chosen, no extra click required. Sorted by `GENRE_PAIR_MODIFIERS` art+com sum. Each option shows its modifier value.
 - **"Optimise for" bias selector** (Art / Balanced / Commercial / Pollux pills, default Balanced): same options as Generate Ideas. The selected bias is passed to `generateSuggestions` when auto-completing and resets to Balanced on "Start Over".
 - **"Auto-complete Script"** button (visible once ≥1 element selected, hidden after finalising): calls `generateSuggestions` with the player's genre filter and chosen bias, then merges the top result with whatever the player has already selected. If all slots are filled manually, shows **"Complete Script"** instead (just scores what's there).
