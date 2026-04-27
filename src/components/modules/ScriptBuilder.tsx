@@ -44,7 +44,7 @@ type SelState = {
   genre2: ScriptElement | null;
   setting: ScriptElement | null;
   protagonist: ScriptElement | null;
-  supporting: ScriptElement | null;
+  supporting: ScriptElement[];
   antagonist: ScriptElement | null;
   finale: ScriptElement | null;
 };
@@ -172,6 +172,8 @@ function CategorySection({
 // ── Content tag constants ─────────────────────────────────────────────────────
 
 const MIN_CONTENT_TAGS = 3;
+// Protagonist + finale always occupy 2 content tag slots in the game's contentIds array
+const FIXED_CONTENT_TAGS = 2;
 
 // ── Script builder ────────────────────────────────────────────────────────────
 
@@ -191,20 +193,20 @@ export default function ScriptBuilder({
     genre2:      initialCombo.genre2 ?? null,
     setting:     initialCombo.setting,
     protagonist: initialCombo.protagonist,
-    supporting:  initialCombo.supporting ?? null,
+    supporting:  initialCombo.supporting,
     antagonist:  initialCombo.antagonist ?? null,
     finale:      initialCombo.finale,
   } : {
     genre: null, genre2: null, setting: null,
-    protagonist: null, supporting: null, antagonist: null, finale: null,
+    protagonist: null, supporting: [], antagonist: null, finale: null,
   });
   const [themes, setThemes] = useState<ScriptElement[]>(() => initialCombo?.themesEvents ?? []);
   const [activeSection, setActiveSection] = useState<SectionKey | null>(initialCombo ? null : "genre");
   const [finalCombo, setFinalCombo] = useState<ScriptCombo | null>(null);
 
   const selectedElements = useMemo(() =>
-    [sel.genre, sel.genre2, sel.setting, sel.protagonist, sel.supporting, sel.antagonist, sel.finale, ...themes]
-      .filter((e): e is ScriptElement => e !== null),
+    [sel.genre, sel.genre2, sel.setting, sel.protagonist, ...sel.supporting, sel.antagonist, sel.finale, ...themes]
+      .filter((e): e is ScriptElement => e !== null && e !== undefined),
     [sel, themes]
   );
 
@@ -256,9 +258,9 @@ export default function ScriptBuilder({
       genre:        rank(pool.genres, true,  sel.genre?.id),
       setting:      rank(pool.settings, false, sel.setting?.id),
       protagonist:  rank(pool.protagonists, false, sel.protagonist?.id),
-      supporting:   rank(pool.supportingChars, false, sel.supporting?.id),
+      supporting:   rank(pool.supportingChars), // multi-select: no single exclusion
       antagonist:   rank(pool.antagonists, false, sel.antagonist?.id),
-      themesEvents: rank(pool.themesEvents),   // multi-select: no exclusion
+      themesEvents: rank(pool.themesEvents),    // multi-select: no exclusion
       finale:       rank(pool.finales, false,  sel.finale?.id),
     };
     // selectedElements used inside but selectedKey is the stable equality signal
@@ -290,15 +292,16 @@ export default function ScriptBuilder({
     return factor * (art * 2 + com);
   }, [selectedElements, sel.genre]);
 
-  // Precompute theme IDs as a Set to avoid O(pool × themes) in the filter
+  // Precompute theme/supporting IDs as Sets to avoid O(pool × selected) in filters
   const themeIds = useMemo(() => new Set(themes.map(t => t.id)), [themes]);
+  const supportingIds = useMemo(() => new Set(sel.supporting.map(s => s.id)), [sel.supporting]);
 
-  // Content tag budget: shared pool for supporting, antagonist, and themes/events.
-  // Budget grows with TAGS_SLOTS_N research perks (base 5, up to 10).
-  const charCount = (sel.supporting ? 1 : 0) + (sel.antagonist ? 1 : 0);
+  // Content tag budget: protagonist + supporting[] + antagonist + themes/events + finale
+  // must all fit within budget (base 5, up to 10 with TAGS_SLOTS_N perks).
+  const charCount = sel.supporting.length + (sel.antagonist ? 1 : 0);
   const contentTagBudget = pool.contentTagBudget;
-  const contentTagsUsed = themes.length + charCount;
-  const maxThemes = contentTagBudget - charCount;
+  const contentTagsUsed = themes.length + charCount + FIXED_CONTENT_TAGS;
+  const maxThemes = contentTagBudget - charCount - FIXED_CONTENT_TAGS;
 
   const isComplete = !!(
     sel.genre && sel.setting && sel.protagonist &&
@@ -306,13 +309,13 @@ export default function ScriptBuilder({
   );
   const hasSelection = selectedElements.length > 0;
 
-  function selectSingle(key: Exclude<SectionKey, "themesEvents">, item: ScriptElement) {
+  function selectSingle(key: Exclude<SectionKey, "themesEvents" | "supporting">, item: ScriptElement) {
     const newSel = { ...sel, [key]: item };
     setSel(newSel);
-    // Adding an optional char consumes a content tag slot — trim excess themes to stay in budget
-    if (key === "supporting" || key === "antagonist") {
-      const newCharCount = (newSel.supporting ? 1 : 0) + (newSel.antagonist ? 1 : 0);
-      const maxAllowedThemes = contentTagBudget - newCharCount;
+    // Selecting antagonist may reduce available theme slots — trim to stay in budget
+    if (key === "antagonist") {
+      const newCharCount = sel.supporting.length + (newSel.antagonist ? 1 : 0);
+      const maxAllowedThemes = contentTagBudget - newCharCount - FIXED_CONTENT_TAGS;
       if (themes.length > maxAllowedThemes) {
         setThemes(prev => prev.slice(0, maxAllowedThemes));
       }
@@ -322,8 +325,10 @@ export default function ScriptBuilder({
       const next = BUILDER_SECTION_ORDER[i];
       const isEmpty =
         next === "themesEvents"
-          ? themes.length < MIN_CONTENT_TAGS
-          : newSel[next as keyof SelState] === null;
+          ? contentTagsUsed < MIN_CONTENT_TAGS
+          : next === "supporting"
+            ? newSel.supporting.length === 0
+            : newSel[next as keyof SelState] === null;
       if (isEmpty) { setActiveSection(next); return; }
     }
     setActiveSection(null);
@@ -332,10 +337,24 @@ export default function ScriptBuilder({
   function toggleTheme(item: ScriptElement) {
     setThemes(prev => {
       if (prev.find(t => t.id === item.id)) return prev.filter(t => t.id !== item.id);
-      const usedNow = prev.length + charCount;
-      if (usedNow >= contentTagBudget) return prev;
+      if (prev.length + charCount + FIXED_CONTENT_TAGS >= contentTagBudget) return prev;
       return [...prev, item];
     });
+  }
+
+  function toggleSupporting(item: ScriptElement) {
+    const already = sel.supporting.find(s => s.id === item.id);
+    if (already) {
+      setSel(prev => ({ ...prev, supporting: prev.supporting.filter(s => s.id !== item.id) }));
+      return;
+    }
+    const newCharCount = sel.supporting.length + 1 + (sel.antagonist ? 1 : 0);
+    const maxAllowedThemes = contentTagBudget - newCharCount - FIXED_CONTENT_TAGS;
+    if (maxAllowedThemes < 0) return; // no budget remaining
+    setSel(prev => ({ ...prev, supporting: [...prev.supporting, item] }));
+    if (themes.length > maxAllowedThemes) {
+      setThemes(prev => prev.slice(0, maxAllowedThemes));
+    }
   }
 
   function handleComplete() {
@@ -343,7 +362,7 @@ export default function ScriptBuilder({
       const combo = {
         genre: sel.genre!, genre2: sel.genre2 ?? undefined,
         setting: sel.setting!, protagonist: sel.protagonist!,
-        supporting: sel.supporting ?? undefined,
+        supporting: sel.supporting,
         antagonist: sel.antagonist ?? undefined,
         finale: sel.finale!, themesEvents: themes,
       };
@@ -353,7 +372,7 @@ export default function ScriptBuilder({
     const suggestions = generateSuggestions(pool, {
       genreFilter: sel.genre?.id ?? null,
       bias,
-      themeEventCount: Math.max(MIN_CONTENT_TAGS, themes.length),
+      themeEventCount: Math.max(1, themes.length),
     });
     if (!suggestions.length) return;
     const base = suggestions[0];
@@ -362,16 +381,16 @@ export default function ScriptBuilder({
       genre2:      sel.genre2      ?? base.genre2,
       setting:     sel.setting     ?? base.setting,
       protagonist: sel.protagonist ?? base.protagonist,
-      supporting:  sel.supporting  ?? base.supporting,
+      supporting:  sel.supporting.length > 0 ? sel.supporting : base.supporting,
       antagonist:  sel.antagonist  ?? base.antagonist,
       finale:      sel.finale      ?? base.finale,
-      themesEvents: themes.length >= MIN_CONTENT_TAGS ? themes : base.themesEvents,
+      themesEvents: themes.length > 0 ? themes : base.themesEvents,
     };
     setFinalCombo({ ...merged, scores: scoreCombination(merged) });
   }
 
   function startOver() {
-    setSel({ genre: null, genre2: null, setting: null, protagonist: null, supporting: null, antagonist: null, finale: null });
+    setSel({ genre: null, genre2: null, setting: null, protagonist: null, supporting: [], antagonist: null, finale: null });
     setThemes([]);
     setActiveSection("genre");
     setFinalCombo(null);
@@ -382,7 +401,9 @@ export default function ScriptBuilder({
     genre:        sel.genre       ? `Genre — ${sel.genre.label}`            : "Genre",
     setting:      sel.setting     ? `Setting — ${sel.setting.label}`         : "Setting",
     protagonist:  sel.protagonist ? `Protagonist — ${sel.protagonist.label}` : "Protagonist",
-    supporting:   sel.supporting  ? `Supporting — ${sel.supporting.label}`   : "Supporting Character (optional)",
+    supporting:   sel.supporting.length > 0
+      ? `Supporting — ${sel.supporting.map(s => s.label).join(", ")}`
+      : "Supporting Character (optional)",
     antagonist:   sel.antagonist  ? `Antagonist — ${sel.antagonist.label}`   : "Antagonist (optional)",
     themesEvents: themes.length > 0 ? `Themes / Events — ${themes.length} / ${maxThemes}` : "Themes / Events",
     finale:       sel.finale      ? `Finale — ${sel.finale.label}`           : "Finale",
@@ -470,7 +491,12 @@ export default function ScriptBuilder({
       >
         {BUILDER_SECTION_ORDER.map((key) => {
           const isThemes = key === "themesEvents";
-          const isDone = isThemes ? contentTagsUsed >= MIN_CONTENT_TAGS : sel[key as keyof SelState] !== null;
+          const isSupporting = key === "supporting";
+          const isDone = isThemes
+            ? contentTagsUsed >= MIN_CONTENT_TAGS
+            : isSupporting
+              ? sel.supporting.length > 0
+              : sel[key as keyof SelState] !== null;
           const rankedList = ranked[key as keyof typeof ranked];
 
           const genre2Footer = key === "genre" && sel.genre ? (
@@ -538,6 +564,92 @@ export default function ScriptBuilder({
             </div>
           ) : undefined;
 
+          let sectionBody: React.ReactNode;
+          if (isThemes) {
+            sectionBody = (
+              <>
+                {themes.map(t => (
+                  <div
+                    key={t.id}
+                    style={{ display: "flex", alignItems: "center", padding: "5px 12px", borderLeft: "2px solid var(--color-gold)" }}
+                  >
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#7ec8a0", flexShrink: 0, marginRight: "10px" }} />
+                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "11px", flex: 1, color: "var(--color-gold)" }}>
+                      {t.label}
+                    </span>
+                    <button
+                      onClick={() => toggleTheme(t)}
+                      style={{ fontFamily: "var(--font-ui)", fontSize: "12px", color: "var(--color-text-muted)", background: "none", border: "none", cursor: "pointer", padding: "0 4px", lineHeight: 1 }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {rankedList
+                  .filter(({ item }) => !themeIds.has(item.id))
+                  .map(({ item, score }) => (
+                    <ElementRow
+                      key={item.id}
+                      item={item}
+                      score={score}
+                      selected={false}
+                      disabled={contentTagsUsed >= contentTagBudget}
+                      onSelect={() => toggleTheme(item)}
+                    />
+                  ))}
+              </>
+            );
+          } else if (isSupporting) {
+            sectionBody = (
+              <>
+                {sel.supporting.map(s => (
+                  <div
+                    key={s.id}
+                    style={{ display: "flex", alignItems: "center", padding: "5px 12px", borderLeft: "2px solid var(--color-gold)" }}
+                  >
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#7ec8a0", flexShrink: 0, marginRight: "10px" }} />
+                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "11px", flex: 1, color: "var(--color-gold)" }}>
+                      {s.label}
+                    </span>
+                    <button
+                      onClick={() => toggleSupporting(s)}
+                      style={{ fontFamily: "var(--font-ui)", fontSize: "12px", color: "var(--color-text-muted)", background: "none", border: "none", cursor: "pointer", padding: "0 4px", lineHeight: 1 }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {rankedList
+                  .filter(({ item }) => !supportingIds.has(item.id))
+                  .map(({ item, score }) => (
+                    <ElementRow
+                      key={item.id}
+                      item={item}
+                      score={score}
+                      selected={false}
+                      disabled={contentTagsUsed >= contentTagBudget}
+                      onSelect={() => toggleSupporting(item)}
+                    />
+                  ))}
+              </>
+            );
+          } else {
+            sectionBody = rankedList.map(({ item, score }) => {
+              const wouldAddNewChar = key === "antagonist" && sel.antagonist === null;
+              const disabled = wouldAddNewChar && contentTagsUsed >= contentTagBudget;
+              return (
+                <ElementRow
+                  key={item.id}
+                  item={item}
+                  score={score}
+                  selected={(sel[key as keyof SelState] as ScriptElement | null)?.id === item.id}
+                  disabled={disabled}
+                  onSelect={() => selectSingle(key as Exclude<SectionKey, "themesEvents" | "supporting">, item)}
+                />
+              );
+            });
+          }
+
           return (
             <CategorySection
               key={key}
@@ -547,70 +659,7 @@ export default function ScriptBuilder({
               onToggle={() => setActiveSection(prev => prev === key ? null : key)}
               footer={genre2Footer}
             >
-              {isThemes ? (
-                <>
-                  {themes.map(t => (
-                    <div
-                      key={t.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        padding: "5px 12px",
-                        borderLeft: "2px solid var(--color-gold)",
-                      }}
-                    >
-                      <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#7ec8a0", flexShrink: 0, marginRight: "10px" }} />
-                      <span style={{ fontFamily: "var(--font-ui)", fontSize: "11px", flex: 1, color: "var(--color-gold)" }}>
-                        {t.label}
-                      </span>
-                      <button
-                        onClick={() => toggleTheme(t)}
-                        style={{
-                          fontFamily: "var(--font-ui)",
-                          fontSize: "12px",
-                          color: "var(--color-text-muted)",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          padding: "0 4px",
-                          lineHeight: 1,
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                  {rankedList
-                    .filter(({ item }) => !themeIds.has(item.id))
-                    .map(({ item, score }) => (
-                      <ElementRow
-                        key={item.id}
-                        item={item}
-                        score={score}
-                        selected={false}
-                        disabled={contentTagsUsed >= contentTagBudget}
-                        onSelect={() => toggleTheme(item)}
-                      />
-                    ))}
-                </>
-              ) : (
-                rankedList.map(({ item, score }) => {
-                  const isOptionalChar = key === "supporting" || key === "antagonist";
-                  // Disable if this would be a *new* optional char addition (not a swap) and budget is full
-                  const wouldAddNewChar = isOptionalChar && sel[key as keyof SelState] === null;
-                  const disabled = wouldAddNewChar && contentTagsUsed >= contentTagBudget;
-                  return (
-                    <ElementRow
-                      key={item.id}
-                      item={item}
-                      score={score}
-                      selected={sel[key as keyof SelState]?.id === item.id}
-                      disabled={disabled}
-                      onSelect={() => selectSingle(key as Exclude<SectionKey, "themesEvents">, item)}
-                    />
-                  );
-                })
-              )}
+              {sectionBody}
             </CategorySection>
           );
         })}

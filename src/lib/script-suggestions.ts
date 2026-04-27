@@ -30,7 +30,7 @@ export interface ScriptCombo {
   genre2?: ScriptElement;
   setting: ScriptElement;
   protagonist: ScriptElement;
-  supporting?: ScriptElement;
+  supporting: ScriptElement[];
   antagonist?: ScriptElement;
   themesEvents: ScriptElement[];
   finale: ScriptElement;
@@ -194,7 +194,7 @@ export function scoreCombination(combo: Omit<ScriptCombo, "scores">): ScoreResul
     combo.genre,
     combo.setting,
     combo.protagonist,
-    ...(combo.supporting ? [combo.supporting] : []),
+    ...combo.supporting,
     ...(combo.antagonist ? [combo.antagonist] : []),
     ...combo.themesEvents,
     combo.finale,
@@ -285,12 +285,22 @@ export function generateSuggestions(
       if (mod && mod.art + mod.com > 0) genre2 = g2;
     }
 
-    // Supporting and antagonist are optional content tags — include when available
-    const supporting = pool.supportingChars.length > 0 ? pick(pool.supportingChars) : undefined;
-    const antagonist = pool.antagonists.length > 0 ? pick(pool.antagonists) : undefined;
-    const charCount = (supporting ? 1 : 0) + (antagonist ? 1 : 0);
-    // Chars consume content tag slots — cap themes so total stays within budget
-    const effectiveThemeCount = Math.min(themeEventCount, pool.contentTagBudget - charCount);
+    // Protagonist + finale always consume 2 slots; chars and themes share the rest.
+    // Antagonist and supporting are optional — include each ~50% of the time for variety.
+    const antagonist = pool.antagonists.length > 0 && Math.random() > 0.5
+      ? pick(pool.antagonists) : undefined;
+    // Determine how many supporting chars can fit while leaving room for at least 1 theme
+    const maxSupportingSlots = Math.max(0,
+      pool.contentTagBudget - 2 - (antagonist ? 1 : 0) - 1);
+    const supportingCount = pool.supportingChars.length > 0
+      ? Math.floor(Math.random() * (maxSupportingSlots + 1))
+      : 0;
+    const supporting = supportingCount > 0
+      ? pickN(pool.supportingChars, supportingCount)
+      : [];
+    const charCount = supporting.length + (antagonist ? 1 : 0);
+    // Cap themes so protagonist + supporting + antagonist + themes + finale ≤ budget
+    const effectiveThemeCount = Math.min(themeEventCount, pool.contentTagBudget - charCount - 2);
 
     const base: Omit<ScriptCombo, "scores"> = {
       genre,
@@ -299,7 +309,7 @@ export function generateSuggestions(
       protagonist: pick(pool.protagonists),
       supporting,
       antagonist,
-      themesEvents: pickN(pool.themesEvents, effectiveThemeCount),
+      themesEvents: pickN(pool.themesEvents, Math.max(1, effectiveThemeCount)),
       finale: pick(pool.finales),
     };
 

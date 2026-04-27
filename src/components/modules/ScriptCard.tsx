@@ -117,7 +117,7 @@ export default function ScriptCard({
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
         <span style={ROW_LABEL}>Cast</span>
         <Chip label={protagonist.label} />
-        {supporting && <Chip label={supporting.label} />}
+        {supporting.map(s => <Chip key={s.id} label={s.label} />)}
         {antagonist && <Chip label={antagonist.label} />}
       </div>
 

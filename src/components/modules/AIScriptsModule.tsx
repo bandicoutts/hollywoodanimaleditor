@@ -133,7 +133,7 @@ export default function AIScriptsModule() {
                     <p style={{ ...LABEL_STYLE, marginBottom: "8px" }}>Themes / Events per film</p>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       {(() => {
-                        const maxThemeCount = pool?.contentTagBudget ?? 5;
+                        const maxThemeCount = (pool?.contentTagBudget ?? 5) - 2; // reserve protagonist + finale
                         return (
                           <>
                             <button
