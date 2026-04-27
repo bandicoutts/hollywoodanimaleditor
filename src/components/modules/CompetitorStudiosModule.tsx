@@ -5,6 +5,8 @@ import ModuleShell, { EmptyState } from "./ModuleShell";
 import { useSaveFile } from "@/context/SaveFileContext";
 import type { CompetitorStudio } from "@/lib/save-file";
 import { formatDecimalString } from "@/lib/save-file";
+import { COMPETITOR_META } from "@/data/competitors";
+import type { AttackTier } from "@/data/competitors";
 
 // ── Confirmation dialog ───────────────────────────────────────────────────────
 
@@ -102,6 +104,14 @@ function ConfirmDialog({
   );
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function attackTierColor(tier: AttackTier): string {
+  if (tier === "Nuclear") return "var(--color-danger)";
+  if (tier === "Very Aggressive") return "var(--color-warning)";
+  return "var(--color-text-muted)";
+}
+
 // ── Studio row ────────────────────────────────────────────────────────────────
 
 function CompetitorRow({
@@ -118,6 +128,7 @@ function CompetitorRow({
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetVal, setBudgetVal] = useState("");
 
+  const meta = COMPETITOR_META[id] ?? null;
   const aggression = parseFloat(studio.aggression) || 0;
 
   const commitBudget = () => {
@@ -145,24 +156,61 @@ function CompetitorRow({
       <div
         style={{
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-start",
           justifyContent: "space-between",
-          marginBottom: "12px",
+          marginBottom: "10px",
           gap: "12px",
         }}
       >
         <div>
-          <p
-            style={{
-              fontFamily: "var(--font-serif)",
-              fontSize: "15px",
-              fontWeight: 600,
-              color: studio.isDead ? "var(--color-text-muted)" : "var(--color-text-primary)",
-            }}
-          >
-            Studio {id}
-          </p>
-          <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+          {/* Name + ID badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <p
+              style={{
+                fontFamily: "var(--font-serif)",
+                fontSize: "15px",
+                fontWeight: 600,
+                color: studio.isDead ? "var(--color-text-muted)" : "var(--color-text-primary)",
+              }}
+            >
+              {meta?.name ?? `Studio ${id}`}
+            </p>
+            <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--color-text-muted)", border: "1px solid var(--color-border-subtle)", padding: "1px 5px" }}>
+              {id}
+            </span>
+          </div>
+
+          {/* Reference context row */}
+          {meta && (
+            <div style={{ display: "flex", alignItems: "center", gap: "0", marginTop: "5px", flexWrap: "wrap" }}>
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-gold-mid)" }}>
+                {meta.tier}
+              </span>
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-border)", margin: "0 6px" }}>·</span>
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", letterSpacing: "0.06em", textTransform: "uppercase", color: attackTierColor(meta.attackTier) }}>
+                {meta.attackTier === "None" ? "No Attack" : `${meta.attackTier} Attack`}
+              </span>
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-border)", margin: "0 6px" }}>·</span>
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)" }}>
+                {meta.qualityRange} quality
+              </span>
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-border)", margin: "0 6px" }}>·</span>
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)" }}>
+                {meta.releases}
+              </span>
+              {meta.defenceless && (
+                <>
+                  <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-border)", margin: "0 6px" }}>·</span>
+                  <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-danger)" }}>
+                    Defenceless
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Status badges */}
+          <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
             {studio.isDead && (
               <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-danger)", border: "1px solid var(--color-danger)", padding: "1px 6px" }}>
                 Eliminated
@@ -375,7 +423,7 @@ export default function CompetitorStudiosModule() {
 
       {confirmKill && (
         <ConfirmDialog
-          message={`Permanently eliminate Studio ${confirmKill}? This removes them from the game and may affect event chains. This action cannot be undone without re-uploading your original save.`}
+          message={`Permanently eliminate ${COMPETITOR_META[confirmKill]?.name ?? `Studio ${confirmKill}`}? This removes them from the game and may affect event chains. This action cannot be undone without re-uploading your original save.`}
           onConfirm={() => killStudio(confirmKill)}
           onCancel={() => setConfirmKill(null)}
         />
