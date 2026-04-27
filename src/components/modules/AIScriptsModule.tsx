@@ -40,6 +40,14 @@ export default function AIScriptsModule() {
   const [themeCount, setThemeCount] = useState(MIN_THEME_COUNT);
   const [results, setResults] = useState<ScriptCombo[]>([]);
   const [generated, setGenerated] = useState(false);
+  const [builderPreload, setBuilderPreload] = useState<ScriptCombo | undefined>(undefined);
+  const [builderKey, setBuilderKey] = useState(0);
+
+  function useCombo(combo: ScriptCombo) {
+    setBuilderPreload(combo);
+    setBuilderKey((k) => k + 1);
+    setMode("build");
+  }
 
   const pool = useMemo<UnlockedPool | null>(() => {
     if (!isLoaded || !saveData) return null;
@@ -71,10 +79,10 @@ export default function AIScriptsModule() {
           {/* Mode tabs */}
           <div style={{ display: "flex", gap: "6px", marginBottom: "24px" }}>
             <PillButton active={mode === "generate"} onClick={() => setMode("generate")}>
-              Generate Ideas
+              Explore Ideas
             </PillButton>
             <PillButton active={mode === "build"} onClick={() => setMode("build")}>
-              Build Your Script
+              Refine &amp; Score
             </PillButton>
           </div>
 
@@ -114,6 +122,7 @@ export default function AIScriptsModule() {
                           key={value}
                           active={bias === value}
                           onClick={() => setBias(value)}
+                          title={value === "pollux" ? "Optimise for the Pollux Award — the game's prestige prize for artistic films" : undefined}
                         >
                           {label}
                         </PillButton>
@@ -267,18 +276,26 @@ export default function AIScriptsModule() {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(min(380px, 100%), 1fr))",
                     gap: "12px",
                   }}
                 >
                   {results.map((combo, i) => (
-                    <ScriptCard key={i} combo={combo} index={i} />
+                    <ScriptCard key={i} combo={combo} index={i} onUse={useCombo} />
                   ))}
                 </div>
               )}
             </>
           ) : (
-            pool ? <ScriptBuilder pool={pool} /> : null
+            pool ? (
+              <ScriptBuilder
+                key={builderKey}
+                pool={pool}
+                bias={bias}
+                onBiasChange={setBias}
+                initialCombo={builderPreload}
+              />
+            ) : null
           )}
         </>
       )}

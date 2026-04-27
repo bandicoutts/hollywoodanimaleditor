@@ -37,7 +37,7 @@
   --font-ui: var(--font-dm-sans), Helvetica, sans-serif;
 
   /* Sidebar */
-  --sidebar-width: 148px;
+  --sidebar-width: 172px;
   --sidebar-width-compact: 56px;
   --topbar-height: 44px;
 }

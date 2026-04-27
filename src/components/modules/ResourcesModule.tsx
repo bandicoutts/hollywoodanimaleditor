@@ -56,7 +56,7 @@ const RESOURCES: ResourceConfig[] = [
 
 const REPUTATION: ReputationConfig = {
   label: "Reputation",
-  description: "Studio reputation (float string)",
+  description: "Studio reputation score",
   max: 200_000,
   color: "#a9a4e8",
 };
@@ -321,9 +321,10 @@ export default function ResourcesModule() {
 
   const handleNumberChange = useCallback(
     (key: "budget" | "cash" | "influence", value: number) => {
+      const label = key.charAt(0).toUpperCase() + key.slice(1);
       updateStateJson((s) => {
         s[key] = Math.round(value);
-      });
+      }, `${label} updated`);
     },
     [updateStateJson]
   );
@@ -332,7 +333,7 @@ export default function ResourcesModule() {
     (value: number) => {
       updateStateJson((s) => {
         s.reputation = formatDecimalString(value);
-      });
+      }, "Reputation updated");
     },
     [updateStateJson]
   );

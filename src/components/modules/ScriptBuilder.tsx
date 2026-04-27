@@ -169,16 +169,33 @@ const MAX_THEMES = 5;
 
 // ── Script builder ────────────────────────────────────────────────────────────
 
-export default function ScriptBuilder({ pool }: { pool: UnlockedPool }) {
-  const [sel, setSel] = useState<SelState>({
+export default function ScriptBuilder({
+  pool,
+  bias,
+  onBiasChange,
+  initialCombo,
+}: {
+  pool: UnlockedPool;
+  bias: Bias;
+  onBiasChange: (b: Bias) => void;
+  initialCombo?: ScriptCombo;
+}) {
+  const [sel, setSel] = useState<SelState>(() => initialCombo ? {
+    genre:       initialCombo.genre,
+    genre2:      initialCombo.genre2 ?? null,
+    setting:     initialCombo.setting,
+    protagonist: initialCombo.protagonist,
+    supporting:  initialCombo.supporting,
+    antagonist:  initialCombo.antagonist,
+    finale:      initialCombo.finale,
+  } : {
     genre: null, genre2: null, setting: null,
     protagonist: null, supporting: null, antagonist: null, finale: null,
   });
-  const [themes, setThemes] = useState<ScriptElement[]>([]);
-  const [activeSection, setActiveSection] = useState<SectionKey | null>("genre");
-  const [showGenre2, setShowGenre2] = useState(false);
+  const [themes, setThemes] = useState<ScriptElement[]>(() => initialCombo?.themesEvents ?? []);
+  const [activeSection, setActiveSection] = useState<SectionKey | null>(initialCombo ? null : "genre");
+  const [showGenre2, setShowGenre2] = useState(() => !!(initialCombo?.genre2));
   const [finalCombo, setFinalCombo] = useState<ScriptCombo | null>(null);
-  const [bias, setBias] = useState<Bias>("balanced");
 
   const selectedElements = useMemo(() =>
     [sel.genre, sel.genre2, sel.setting, sel.protagonist, sel.supporting, sel.antagonist, sel.finale, ...themes]
@@ -295,7 +312,7 @@ export default function ScriptBuilder({ pool }: { pool: UnlockedPool }) {
     setActiveSection("genre");
     setShowGenre2(false);
     setFinalCombo(null);
-    setBias("balanced");
+    onBiasChange("balanced");
   }
 
   const sectionLabel: Record<SectionKey, string> = {
@@ -546,7 +563,12 @@ export default function ScriptBuilder({ pool }: { pool: UnlockedPool }) {
         </p>
         <div style={{ display: "flex", gap: "6px" }}>
           {BIAS_OPTIONS.map(({ value, label }) => (
-            <PillButton key={value} active={bias === value} onClick={() => setBias(value)}>
+            <PillButton
+              key={value}
+              active={bias === value}
+              onClick={() => onBiasChange(value)}
+              title={value === "pollux" ? "Optimise for the Pollux Award — the game's prestige prize for artistic films" : undefined}
+            >
               {label}
             </PillButton>
           ))}

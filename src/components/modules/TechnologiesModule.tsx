@@ -195,6 +195,7 @@ function TechCard({
           </p>
           {info?.isQuest && (
             <span
+              title="Unlocked through a quest, not purchased directly"
               style={{
                 fontFamily: "var(--font-ui)",
                 fontSize: "9px",
@@ -227,6 +228,7 @@ function TechCard({
           )}
           {tech.isOutDated && (
             <span
+              title="An upgraded version of this technology is available"
               style={{
                 fontFamily: "var(--font-ui)",
                 fontSize: "9px",

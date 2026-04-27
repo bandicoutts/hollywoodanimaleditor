@@ -11,6 +11,7 @@ import {
   MANAGEMENT_KEYS,
 } from "@/data/professions";
 import DetailPanel, { moodColor, displayName } from "./CharacterDetailPanel";
+import ConfirmDialog from "./ConfirmDialog";
 import { GHOST_BTN, goldHover } from "@/lib/styles";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -143,6 +144,8 @@ export default function CharactersModule() {
   const [showAll, setShowAll] = useState(false);
   const [profFilter, setProfFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<"default" | "name" | "skill-desc" | "mood-asc">("default");
+  const [pendingBulk, setPendingBulk] = useState<"maxAll" | "removeCaps" | null>(null);
 
   const characters = saveData?.stateJson?.characters ?? [];
   const gameDate = useMemo(
@@ -166,8 +169,15 @@ export default function CharactersModule() {
         return name.includes(q) || String(c.id).includes(q);
       });
     }
+    if (sortKey === "name") {
+      list = [...list].sort((a, b) => displayName(a).localeCompare(displayName(b)));
+    } else if (sortKey === "skill-desc") {
+      list = [...list].sort((a, b) => (topSkill(b)?.value ?? 0) - (topSkill(a)?.value ?? 0));
+    } else if (sortKey === "mood-asc") {
+      list = [...list].sort((a, b) => parseFloat(a.mood) - parseFloat(b.mood));
+    }
     return list;
-  }, [characters, showAll, profFilter, search]);
+  }, [characters, showAll, profFilter, search, sortKey]);
 
   const availableProfs = useMemo(() => {
     const base = showAll ? characters : characters.filter((c) => c.studioId !== null);
@@ -202,7 +212,8 @@ export default function CharactersModule() {
     [updateStateJson]
   );
 
-  const bulkMaxAll = useCallback(() => {
+  const confirmBulkMaxAll = useCallback(() => {
+    const scope = showAll ? "all characters" : "employed characters";
     updateStateJson((s) => {
       for (const c of s.characters) {
         if (!showAll && c.studioId === null) continue;
@@ -215,17 +226,20 @@ export default function CharactersModule() {
         if (wt?.ART) wt.ART.value = "1.000";
         if (wt?.COM) wt.COM.value = "1.000";
       }
-    });
+    }, `Characters — max all stats (${scope})`);
+    setPendingBulk(null);
   }, [updateStateJson, showAll]);
 
-  const bulkRemoveCaps = useCallback(() => {
+  const confirmBulkRemoveCaps = useCallback(() => {
+    const scope = showAll ? "all characters" : "employed characters";
     updateStateJson((s) => {
       for (const c of s.characters) {
         if (!showAll && c.studioId === null) continue;
         c.limit = "1.000";
         c.Limit = "1.000";
       }
-    });
+    }, `Characters — remove caps (${scope})`);
+    setPendingBulk(null);
   }, [updateStateJson, showAll]);
 
   if (!isLoaded) {
@@ -242,6 +256,21 @@ export default function CharactersModule() {
   }
 
   return (
+    <>
+    {pendingBulk === "maxAll" && (
+      <ConfirmDialog
+        message={`This will set all skills, morale, and appeal to maximum for ${filtered.length} ${showAll ? "" : "employed "}character${filtered.length !== 1 ? "s" : ""}. This cannot be undone without re-uploading your original save.`}
+        onConfirm={confirmBulkMaxAll}
+        onCancel={() => setPendingBulk(null)}
+      />
+    )}
+    {pendingBulk === "removeCaps" && (
+      <ConfirmDialog
+        message={`This will remove skill caps for ${filtered.length} ${showAll ? "" : "employed "}character${filtered.length !== 1 ? "s" : ""}. This cannot be undone without re-uploading your original save.`}
+        onConfirm={confirmBulkRemoveCaps}
+        onCancel={() => setPendingBulk(null)}
+      />
+    )}
     <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
       {/* ── List panel ── */}
       <div
@@ -298,9 +327,10 @@ export default function CharactersModule() {
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 transition: "all 0.15s ease",
+                flexShrink: 0,
               }}
             >
-              {showAll ? "All" : "Employed"}
+              {showAll ? "All (incl. fired)" : "Employed"}
             </button>
             <select
               value={profFilter}
@@ -313,6 +343,7 @@ export default function CharactersModule() {
                 border: "1px solid var(--color-border)",
                 padding: "3px 6px",
                 flex: 1,
+                minWidth: 0,
                 cursor: "pointer",
                 outline: "none",
               }}
@@ -325,23 +356,57 @@ export default function CharactersModule() {
               ))}
             </select>
           </div>
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
+            style={{
+              fontFamily: "var(--font-ui)",
+              fontSize: "10px",
+              color: "var(--color-text-secondary)",
+              background: "var(--color-bg-raised)",
+              border: "1px solid var(--color-border)",
+              padding: "3px 6px",
+              width: "100%",
+              cursor: "pointer",
+              outline: "none",
+            }}
+          >
+            <option value="default">Sort: hire order</option>
+            <option value="name">Sort: name A–Z</option>
+            <option value="skill-desc">Sort: top skill ↓</option>
+            <option value="mood-asc">Sort: mood ↑ (triage)</option>
+          </select>
           <p style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)" }}>
             {filtered.length} character{filtered.length !== 1 ? "s" : ""}
           </p>
         </div>
 
-        {/* Bulk actions */}
+        {/* Bulk actions — visually separated from filter bar */}
         <div
           style={{
-            padding: "8px 12px",
+            padding: "6px 12px",
             borderBottom: "1px solid var(--color-border-subtle)",
             display: "flex",
             gap: "6px",
             flexShrink: 0,
+            background: "var(--color-bg-raised)",
           }}
         >
-          <BulkBtn label="Max All Stats" onClick={bulkMaxAll} />
-          <BulkBtn label="Remove Caps" onClick={bulkRemoveCaps} />
+          <span
+            style={{
+              fontFamily: "var(--font-ui)",
+              fontSize: "9px",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "var(--color-text-muted)",
+              alignSelf: "center",
+              marginRight: "2px",
+            }}
+          >
+            Bulk
+          </span>
+          <BulkBtn label="Max All Characters" onClick={() => setPendingBulk("maxAll")} />
+          <BulkBtn label="Remove Caps" onClick={() => setPendingBulk("removeCaps")} />
         </div>
 
         {/* List */}
@@ -402,5 +467,6 @@ export default function CharactersModule() {
         )}
       </div>
     </div>
+    </>
   );
 }

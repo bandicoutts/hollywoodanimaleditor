@@ -56,8 +56,21 @@ function cornerPos(p: string) {
   }[p];
 }
 
+function formatDraftDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "recently";
+  }
+}
+
 export default function UploadScreen() {
-  const { loadFile, versionWarning } = useSaveFile();
+  const { loadFile, versionWarning, draftInfo, resumeDraft, discardDraft } = useSaveFile();
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -145,6 +158,84 @@ export default function UploadScreen() {
       >
         Upload Save File
       </p>
+
+      {/* Draft resume banner */}
+      {draftInfo && (
+        <div
+          style={{
+            width: "100%",
+            maxWidth: "420px",
+            marginBottom: "16px",
+            padding: "12px 16px",
+            border: "1px solid var(--color-gold-mid)",
+            background: "#c9a44a0a",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+          }}
+        >
+          <div>
+            <p
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "11px",
+                color: "var(--color-gold)",
+                fontWeight: 500,
+                marginBottom: "2px",
+              }}
+            >
+              Resume unsaved session?
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "10px",
+                color: "var(--color-text-muted)",
+              }}
+            >
+              {draftInfo.filename} · saved {formatDraftDate(draftInfo.timestamp)}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+            <button
+              onClick={resumeDraft}
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "10px",
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                color: "var(--color-gold)",
+                background: "transparent",
+                border: "1px solid var(--color-gold-mid)",
+                padding: "4px 10px",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Resume
+            </button>
+            <button
+              onClick={discardDraft}
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "10px",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                color: "var(--color-text-muted)",
+                background: "transparent",
+                border: "1px solid var(--color-border)",
+                padding: "4px 10px",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Drop zone */}
       <div

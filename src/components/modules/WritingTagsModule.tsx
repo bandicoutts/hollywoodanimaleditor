@@ -122,7 +122,7 @@ function TagGroupSection({
   group: TagGroup & { tags: string[] };
   activeSet: Set<string>;
   onToggle: (id: string) => void;
-  onUnlockAll: (ids: string[]) => void;
+  onUnlockAll: (ids: string[], groupLabel?: string) => void;
   lockHintFor: (id: string) => string | null;
 }) {
   const activeCount = group.tags.filter((id) => activeSet.has(id)).length;
@@ -171,7 +171,7 @@ function TagGroupSection({
           {activeCount}/{group.tags.length}
         </span>
         <button
-          onClick={() => onUnlockAll(group.tags)}
+          onClick={() => onUnlockAll(group.tags, group.label)}
           style={{
             fontFamily: "var(--font-ui)",
             fontSize: "10px",
@@ -279,7 +279,7 @@ export default function WritingTagsModule() {
   );
 
   const unlockAll = useCallback(
-    (ids: string[]) => {
+    (ids: string[], groupLabel?: string) => {
       updateStateJson((s) => {
         const existing = new Set(s.tagPool.map((t) => t.Item1));
         for (const id of ids) {
@@ -287,7 +287,7 @@ export default function WritingTagsModule() {
             s.tagPool.push({ Item1: id, Item2: gameDate.toISOString().replace("Z", "") });
           }
         }
-      });
+      }, groupLabel ? `Writing Tags — unlocked all in ${groupLabel}` : undefined);
     },
     [updateStateJson, gameDate]
   );
@@ -300,7 +300,7 @@ export default function WritingTagsModule() {
           s.tagPool.push({ Item1: id, Item2: gameDate.toISOString().replace("Z", "") });
         }
       }
-    });
+    }, "Writing Tags — unlocked all known tags");
   }, [updateStateJson, gameDate]);
 
   const totalActive = activeSet.size;

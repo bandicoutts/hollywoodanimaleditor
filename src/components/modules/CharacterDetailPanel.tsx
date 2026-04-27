@@ -390,7 +390,10 @@ function AppealColumn({
         scale={1}
         precision={3}
       />
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "-6px", marginBottom: "14px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "-6px", marginBottom: "14px", alignItems: "center" }}>
+        <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", marginRight: "2px", flexShrink: 0 }}>
+          Set tier:
+        </span>
         {tiers.map((tier) => {
           const isActive = currentTier === tier.label;
           return (
@@ -721,9 +724,6 @@ export default function DetailPanel({
 
           <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
             {profKey && <ProfBadge profKey={profKey} />}
-            <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)", letterSpacing: "0.06em" }}>
-              ID #{char.id}
-            </span>
             {gameDate && (
               <>
                 <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)" }}>·</span>
@@ -769,7 +769,7 @@ export default function DetailPanel({
             e.currentTarget.style.borderColor = "var(--color-border)";
           }}
         >
-          Max All Stats
+          Max This Character
         </button>
       </div>
 

@@ -8,13 +8,16 @@ export default function ScoreBadge({
   label,
   value,
   color,
+  title,
 }: {
   label: string;
   value: number;
   color: string;
+  title?: string;
 }) {
   return (
     <span
+      title={title}
       style={{
         fontFamily: "var(--font-ui)",
         fontSize: "10px",

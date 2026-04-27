@@ -121,18 +121,27 @@ export interface ParseResult {
   versionWarning: string | null;
 }
 
+const NOT_A_SAVE_FILE =
+  "This doesn't look like a Hollywood Animal save file. Make sure you're uploading the correct .json file from your game's save folder.";
+
 export function parseSaveFile(text: string): ParseResult {
   const stripped = text.startsWith(UTF8_BOM) ? text.slice(1) : text;
-  const data = JSON.parse(stripped) as SaveFile;
+
+  let data: SaveFile;
+  try {
+    data = JSON.parse(stripped) as SaveFile;
+  } catch {
+    throw new Error(NOT_A_SAVE_FILE);
+  }
 
   if (!data.stateJson || typeof data.stateJson !== "object") {
-    throw new Error("Invalid save file: missing stateJson");
+    throw new Error(NOT_A_SAVE_FILE);
   }
 
   let versionWarning: string | null = null;
   const version = data.currentMeta?.lastSaveVersion;
   if (version && version > KNOWN_VERSION) {
-    versionWarning = `Save version ${version} is newer than the verified version ${KNOWN_VERSION}. Some fields may not be recognised.`;
+    versionWarning = `This save is from a newer game version (${version}) than this editor was built for (${KNOWN_VERSION}). Most features will still work, but some newer fields may not appear correctly. Proceed with caution and keep a backup of your original save.`;
   }
 
   return { data, versionWarning };

@@ -101,7 +101,7 @@ function PerkCard({
   group: PerkGroup;
   openedSet: Set<string>;
   onToggle: (id: string) => void;
-  onToggleAll: (ids: string[]) => void;
+  onToggleAll: (ids: string[], groupLabel?: string) => void;
 }) {
   const checkedCount = group.perks.filter((id) => openedSet.has(id)).length;
   const allChecked = checkedCount === group.perks.length;
@@ -149,7 +149,7 @@ function PerkCard({
           </span>
         </div>
         <button
-          onClick={() => onToggleAll(group.perks)}
+          onClick={() => onToggleAll(group.perks, group.label)}
           style={{
             fontFamily: "var(--font-ui)",
             fontSize: "10px",
@@ -213,13 +213,13 @@ export default function ResearchModule() {
   );
 
   const unlockGroup = useCallback(
-    (ids: string[]) => {
+    (ids: string[], groupLabel?: string) => {
       updateStateJson((s) => {
         const existing = new Set(s.openedPerks);
         for (const id of ids) {
           if (!existing.has(id)) s.openedPerks.push(id);
         }
-      });
+      }, groupLabel ? `Research — unlocked all in ${groupLabel}` : undefined);
     },
     [updateStateJson]
   );
@@ -230,7 +230,7 @@ export default function ResearchModule() {
       for (const id of ALL_KNOWN_PERKS) {
         if (!existing.has(id)) s.openedPerks.push(id);
       }
-    });
+    }, "Research — unlocked all perks");
   }, [updateStateJson]);
 
   const totalKnown = ALL_KNOWN_PERKS.size;

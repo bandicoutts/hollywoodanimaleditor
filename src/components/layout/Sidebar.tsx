@@ -152,11 +152,20 @@ export default function Sidebar({ activeModule, onNavigate }: SidebarProps) {
       }}
     >
       <nav style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 0" }}>
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.map((item, index) => {
           const isActive = item.id === activeModule;
           return (
-            <button
-              key={item.id}
+            <div key={item.id}>
+              {index === NAV_ITEMS.length - 1 && (
+                <div
+                  style={{
+                    height: "1px",
+                    background: "var(--color-border-subtle)",
+                    margin: "4px 0",
+                  }}
+                />
+              )}
+              <button
               onClick={() => onNavigate(item.id)}
               title={compact ? item.label : undefined}
               style={{
@@ -204,7 +213,8 @@ export default function Sidebar({ activeModule, onNavigate }: SidebarProps) {
                   {item.label}
                 </span>
               )}
-            </button>
+              </button>
+            </div>
           );
         })}
       </nav>

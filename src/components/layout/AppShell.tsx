@@ -55,6 +55,8 @@ export default function AppShell() {
           style={{
             flex: 1,
             overflowY: "auto",
+            overflowX: "hidden",
+            minWidth: 0,
             background: "var(--color-bg-app)",
           }}
         >
