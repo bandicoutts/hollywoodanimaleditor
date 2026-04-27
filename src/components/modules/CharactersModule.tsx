@@ -275,7 +275,7 @@ export default function CharactersModule() {
       {/* ── List panel ── */}
       <div
         style={{
-          width: 360,
+          width: 420,
           flexShrink: 0,
           borderRight: "1px solid var(--color-border-subtle)",
           display: "flex",
