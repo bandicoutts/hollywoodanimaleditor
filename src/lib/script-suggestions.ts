@@ -288,6 +288,9 @@ export function generateSuggestions(
     // Supporting and antagonist are optional content tags — include when available
     const supporting = pool.supportingChars.length > 0 ? pick(pool.supportingChars) : undefined;
     const antagonist = pool.antagonists.length > 0 ? pick(pool.antagonists) : undefined;
+    const charCount = (supporting ? 1 : 0) + (antagonist ? 1 : 0);
+    // Chars consume content tag slots — cap themes so total stays within budget
+    const effectiveThemeCount = Math.min(themeEventCount, pool.contentTagBudget - charCount);
 
     const base: Omit<ScriptCombo, "scores"> = {
       genre,
@@ -296,7 +299,7 @@ export function generateSuggestions(
       protagonist: pick(pool.protagonists),
       supporting,
       antagonist,
-      themesEvents: pickN(pool.themesEvents, themeEventCount),
+      themesEvents: pickN(pool.themesEvents, effectiveThemeCount),
       finale: pick(pool.finales),
     };
 
