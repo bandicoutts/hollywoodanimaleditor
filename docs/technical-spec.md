@@ -83,6 +83,7 @@ Top-level fields in `stateJson`:
 | `lastNameId` | string | Index into embedded name table — do not edit |
 | `customName` | string \| null | Custom display name written directly to save — preferred over localStorage |
 | `labels` | string[] | Trait labels e.g. `"IMMORTAL"`, `"STERILE"` — editable array |
+| `birthDate` | string \| undefined | Character date of birth, format `"DD-MM-YYYY"` e.g. `"17-08-1897"`. Used to compute in-game age. Write back in the same format. |
 
 Filter employed characters by `studioId !== null`.
 
@@ -411,11 +412,14 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
 - List all characters, filterable by employed/all, profession type, name/ID search
 - Each row: character name, profession badge, top skill value
 - Click to open detail panel:
+  - Header shows: name (click to set custom name), profession badge, ID, **Age** (click to edit), Happiness
   - Edit profession skill(s), `limit`/`Limit` (always update both), `mood` (Happiness), `attitude` (Loyalty), `xp`
   - `selfEsteem` passes through untouched — not surfaced in UI
   - Appeal section (Actors and Directors only): ART and COM sliders (0.000–1.000), with tier preset buttons (Promising Talent / Commanding Presence / True Artist / Icon for ART; Rising Star / Star / Superstar / Legend for COM). Active tier highlighted. Setting a value for the first time creates the `whiteTagsNEW` entry.
 - Bulk actions: Max All Stats (including appeal for eligible characters), Remove All Caps
 - Write decimal values back as 3-decimal strings: `"1.000"`
+
+**Age editing:** `birthDate` is stored as `"DD-MM-YYYY"` on every character. Current in-game age is computed as `floor((gameDate − birthDate) / 365.25)` where `gameDate = parseGameDate(stateJson)`. Editing age writes a new `birthDate` with the same day and month but a new year: `year = gameDate.year − newAge`. Characters missing `birthDate` show no age field. The `parseGameDate` function is exported from `src/lib/script-suggestions.ts` and is also used by the Writing Tags module for lock hints.
 
 ### 4. Writing Tags
 - Show `tagPool` grouped by category (Genre, Setting, Protagonist, Supporting Character, Antagonist, Theme, Events, Finale)
@@ -536,12 +540,31 @@ pollux  = genre_factor × (art × 2 + com)
 - All 3 character types (protagonist, supporting character, antagonist) are **mandatory** — each has `slotRange.from = 1`
 - Themes/Events range: **3–5** per film (`content_tags_in_script_range: 3_5`)
 
-**UI controls**:
+**UI — two modes** (toggled by tab at the top of the module):
+
+**Generate Ideas mode:**
 - Genre filter pills (only unlocked genres shown)
 - Bias toggle: Art / Balanced / Commercial / Pollux
 - Themes/Events per film stepper (3–5, min enforced by game rules)
 - Pool stats bar (element counts by category)
 - 6 result cards: genre(s), setting, cast (protagonist / supporting / antagonist), themes/events, finale, Art / Com / Compat / Pol score badges
+
+**Build Your Script mode:**
+- 7 collapsible accordion sections (Genre → Setting → Protagonist → Supporting → Antagonist → Themes/Events → Finale), one open at a time
+- Selecting any element closes its section, auto-opens the next incomplete section, and **instantly re-ranks every other category list** by compatibility with the current selection set
+- Compatibility ranking: each candidate element is scored via `scoreElementCompatibility(candidate, selectedElements)` — sum of `COMPAT_SCORES` hits against all currently selected elements. Elements with score ≥1.0 get a green dot, >0 get a gold dot, 0 get no indicator. Elements appear in descending score order.
+- **Running score bar** (Art / Com / Compat badges) appears once ≥2 elements are selected, computed by `scorePartialBuild(selectedElements)`. Pollux requires a complete combo and is omitted from partial display.
+- **Themes/Events** is multi-select (3–5): selected themes pin to the top of the list with a remove button; selecting a 5th disables further picks.
+- **Second genre** (optional): appears as a small toggle below the accordion after genre is chosen. Genre2 options are sorted by their `GENRE_PAIR_MODIFIERS` art+com sum against the primary genre (not by COMPAT_SCORES). Each option shows the modifier value.
+- **"Auto-complete Script"** button (visible once ≥1 element selected, hidden after finalising): calls `generateSuggestions` with the player's current genre filter and merges the top result with whatever the player has already selected. If all slots are filled manually, shows **"Complete Script"** instead (just scores what's there).
+- Final result renders using the same `ScriptCard` component as Generate Ideas, with a "Your Script" heading and a "Start Over" button.
+
+**New exported functions in `src/lib/script-suggestions.ts`:**
+
+| Function | Signature | Purpose |
+|---|---|---|
+| `scoreElementCompatibility` | `(candidate: ScriptElement, selected: ScriptElement[]) => number` | Sum of COMPAT_SCORES hits between candidate and all selected elements. Used to re-rank lists in Build mode. |
+| `scorePartialBuild` | `(elements: ScriptElement[]) => { art, com, synergy }` | Partial art/com/synergy from any subset of elements. Used for the running score bar. |
 
 ---
 
