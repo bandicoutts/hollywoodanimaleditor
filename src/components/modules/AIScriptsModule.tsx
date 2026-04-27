@@ -157,7 +157,6 @@ export default function AIScriptsModule() {
     <ModuleShell
       title="Script Workshop"
       subtitle="Generate script ideas based on your unlocked elements"
-      maxWidth={900}
     >
       {!isLoaded ? (
         <div style={{ marginTop: "32px" }}>
