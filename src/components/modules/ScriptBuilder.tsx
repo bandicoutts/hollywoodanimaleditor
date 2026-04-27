@@ -215,26 +215,34 @@ export default function ScriptBuilder({
 
   const ranked = useMemo(() => {
     const polluxFactor = genreId ? (POLLUX_GENRE_FACTORS[genreId] ?? 0) : 0;
-    const rank = (items: ScriptElement[]) =>
-      [...items]
-        .map(item => {
-          const compat = scoreElementCompatibility(item, selectedElements);
-          let biasValue: number;
-          switch (bias) {
-            case "art":        biasValue = item.art; break;
-            case "commercial": biasValue = item.com; break;
-            case "balanced":   biasValue = (item.art + item.com) * 0.5; break;
-            case "pollux":
-              biasValue = polluxFactor > 0
-                ? polluxFactor * (item.art * 2 + item.com)
-                : item.art; // fall back to art weighting before genre is chosen
-              break;
+
+    const biasFor = (item: ScriptElement, isGenre: boolean): number => {
+      switch (bias) {
+        case "art":        return item.art;
+        case "commercial": return item.com;
+        case "balanced":   return (item.art + item.com) * 0.5;
+        case "pollux":
+          if (isGenre) {
+            // Before a genre is chosen, rank genres by their Pollux eligibility factor
+            return POLLUX_GENRE_FACTORS[item.id] ?? 0;
           }
-          return { item, score: compat + biasValue };
-        })
+          // After genre chosen, weight element by genre_factor × (art×2 + com)
+          return polluxFactor > 0
+            ? polluxFactor * (item.art * 2 + item.com)
+            : item.art;
+      }
+    };
+
+    const rank = (items: ScriptElement[], isGenre = false) =>
+      [...items]
+        .map(item => ({
+          item,
+          score: scoreElementCompatibility(item, selectedElements) + biasFor(item, isGenre),
+        }))
         .sort((a, b) => b.score - a.score);
+
     return {
-      genre:        rank(pool.genres),
+      genre:        rank(pool.genres, true),
       setting:      rank(pool.settings),
       protagonist:  rank(pool.protagonists),
       supporting:   rank(pool.supportingChars),
