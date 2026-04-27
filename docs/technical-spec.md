@@ -478,16 +478,43 @@ Sources used to build `PERK_LABELS`:
 - `functionalities` flags grouped into UI / Management / Events & Competition, with human-readable labels from `FUNC_META`
 - Bulk: Unlock All Milestones, Enable All Features
 
-### 10. AI Script Optimizer _(deferred)_
+### 10. Script Workshop
 
-The UI shell (genre pills, disabled generate button) is scaffolded to reserve the module slot. Full implementation is deferred pending feasibility assessment.
+Generates scored script combination ideas based on the player's unlocked elements. Fully client-side — no API key, no external calls.
 
-Planned behaviour when implemented:
-- User selects target genre/tone
-- Pass player's current `tagPool` to Claude API (`claude-sonnet-4-5` or later)
-- Claude suggests: protagonist, antagonist, supporting character, theme, events, finale, setting
-- "Inject into save" adds combination to `movieScriptIdeas`
-- API key entered by user in a settings panel — never hardcoded
+**Unlock filtering** (`src/lib/script-suggestions.ts`):
+
+- Current in-game date is read from `stateJson.timePassed` (format `"3287.00:00:00"` = elapsed days from 1929-01-01). Falls back to the latest date in `tagPool` entries if the field is absent.
+- Elements are filtered by date condition: `>=DD-MM-YYYY`, `>=YYYY`, `Before YYYY`, `After YYYY`, or bare year. Recipe elements (unlock type `Recipe (RECIPE*)`) are unlocked when their ID appears in `stateJson.tagRecipesPool`.
+- `tagRecipesPool` — `string[]` of element IDs the player has discovered via in-game recipe combinations (e.g. `"PROTAGONIST_SHERIFFS_CONJOINED_TWINS"`).
+
+**Element data** (`src/data/scriptElements.ts`):
+
+All 8 element categories encoded as typed arrays with art/com modifiers and raw unlock condition strings:
+
+| Category | Count |
+|---|---|
+| Genres | 12 |
+| Settings | 29 |
+| Protagonists | 43 |
+| Supporting Characters | 23 |
+| Antagonists | 35 |
+| Themes | 43 |
+| Events | 40 |
+| Finales | 29 |
+
+Also exports:
+- `GENRE_PAIR_MODIFIERS` — art/com bonuses when combining two genres (symmetric lookup keyed `"LabelA|LabelB"`)
+- `SYNERGY_PAIRS` — `Set<string>` of all score-5 element-pair synergies from the game's compatibility table, keyed as alphabetically sorted `"LabelA|LabelB"`
+
+**Suggestion algorithm**: 300 random candidate combinations are scored and the top 6 (deduplicated by genre+setting+protagonist) are returned. Score = sum of all element art/com modifiers + genre pair modifier + synergy count × 0.05 weighting factor. Sort order controlled by bias setting.
+
+**UI controls**:
+- Genre filter pills (only unlocked genres shown)
+- Bias toggle: Art / Balanced / Commercial
+- Theme/Event count stepper (1–5 per film)
+- Pool stats bar (element counts by category)
+- 6 result cards: genre(s), setting, cast (protagonist / supporting / antagonist), themes/events, finale, Art/Com/Syn scores
 
 ---
 

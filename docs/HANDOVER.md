@@ -90,7 +90,7 @@ Each module edits a specific slice of `stateJson`. All modules are in
 | `TechnologiesModule.tsx` | Technology unlocks | `stateJson.technologies` |
 | `MilestonesModule.tsx` | Milestone achievements | `stateJson.milestones` |
 | `CharactersModule.tsx` | Character data | `stateJson.characters` |
-| `AIScriptsModule.tsx` | AI/script data | `stateJson.aiScripts` |
+| `AIScriptsModule.tsx` | Script Workshop — client-side script idea generator | read-only (no save edits) |
 | `CompetitorStudiosModule.tsx` | Competitor studio state | `stateJson.competitorStudios` |
 | `ResearchSpeedupModule.tsx` | Research speed modifiers | `stateJson.researchSpeedup` |
 
@@ -203,6 +203,7 @@ All major data work is complete:
   and manufacturer ordering are hardcoded in `TechnologiesModule.tsx` — source data is
   `VideoTech.json` and `AudioTech.json` from the game configs.
 - **Milestones & Game Flags module**: Milestones are now grouped under Studio Policies and Technology Quests super-section headers, with per-policy/quest sub-group headers (Trash King, Behemoth, Boutique, Factory, All-Rounder; quest groups for all 18 known tech quests). Each milestone row shows a human-readable label and a description subtitle sourced from `MILESTONE_META` in `MilestonesModule.tsx`. Game feature flags are grouped into UI / Management / Events & Competition with human-readable labels from `FUNC_META`. All toggles (Locked/Finished on milestones; toggle pill on features) are unchanged.
+- **Script Workshop module** (`AIScriptsModule.tsx`): Fully rewritten. Reads `stateJson.timePassed` (elapsed days from 1929-01-01) and `stateJson.tagRecipesPool` to determine which script elements are unlocked. Generates up to 6 scored script combination suggestions entirely client-side. Controls: genre filter pills, Art/Balanced/Commercial bias toggle, theme/event count stepper (1–5). Logic lives in `src/lib/script-suggestions.ts`; all element data (art/com modifiers, unlock conditions, ~700 synergy pairs, genre pair modifiers) is in `src/data/scriptElements.ts`.
 - **Technical spec** (`docs/technical-spec.md`): Up to date with all the above.
 
 No outstanding tasks at this handover point.
@@ -216,8 +217,9 @@ For most tasks, read these first:
 1. `src/data/perks.ts` — if working on the Research module
 2. `src/data/tags.ts` — if working on the Writing Tags module
 3. `src/data/competitors.ts` — if working on the Competitor Studios module
-4. `docs/technical-spec.md` — for save file format and field reference
-5. The specific module file you're editing
+4. `src/data/scriptElements.ts` + `src/lib/script-suggestions.ts` — if working on the Script Workshop module
+5. `docs/technical-spec.md` — for save file format and field reference
+6. The specific module file you're editing
 
 For game data questions (what IDs exist, what they do):
 - Extract `/Users/davidcoutts/Downloads/Configs.rar` to `/tmp/ha-configs/` with:
