@@ -26,10 +26,10 @@ export const GENRES: ScriptElement[] = [
   { id: "DRAMA",            label: "Drama",            art:  0.20, com:  0.10, unlock: ">=1929" },
   { id: "HISTORICAL",       label: "Historical",       art:  0.30, com: -0.10, unlock: ">=1929" },
   { id: "HORROR",           label: "Horror",           art: -0.10, com:  0.10, unlock: ">=13-09-1935" },
-  { id: "MUSICAL",          label: "Musical",          art:  0.10, com:  0.10, unlock: "1950" },
+  { id: "MUSICAL",          label: "Musical",          art:  0.10, com:  0.10, unlock: ">=1950" },
   { id: "ROMANCE",          label: "Romance",          art:  0.20, com:  0.10, unlock: ">=1929" },
   { id: "SCIENCE_FICTION",  label: "Science fiction",  art:  0.10, com:  0.10, unlock: ">=12-01-1935" },
-  { id: "SLAPSTICK_COMEDY", label: "Slapstick Comedy", art: -0.17, com:  0.12, unlock: "1950" },
+  { id: "SLAPSTICK_COMEDY", label: "Slapstick Comedy", art: -0.17, com:  0.12, unlock: ">=1950" },
   { id: "THRILLER",         label: "Thriller",         art:  0.00, com:  0.10, unlock: ">=1929" },
 ];
 
