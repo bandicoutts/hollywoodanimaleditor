@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useRef, useId } from "react";
 import { useSaveFile } from "@/context/SaveFileContext";
 import type { Character } from "@/lib/save-file";
 import { formatDecimalString } from "@/lib/save-file";
+import { parseGameDate } from "@/lib/script-suggestions";
 import {
   getPrimaryProfession,
   getProfessionColor,
@@ -375,9 +376,11 @@ function CharRow({
 
 function DetailPanel({
   char,
+  gameDate,
   onUpdate,
 }: {
   char: Character;
+  gameDate: Date | null;
   onUpdate: (updater: (c: Character) => void) => void;
 }) {
   const nameRef = useRef<HTMLInputElement>(null);
@@ -550,6 +553,12 @@ function DetailPanel({
             >
               ID #{char.id}
             </span>
+            {gameDate && (
+              <>
+                <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)" }}>·</span>
+                <AgeEditor char={char} gameDate={gameDate} onUpdate={onUpdate} />
+              </>
+            )}
             <span
               style={{
                 fontFamily: "var(--font-ui)",
@@ -1120,6 +1129,103 @@ function XpEditor({ xp, onChange }: { xp: number; onChange: (v: number) => void 
   );
 }
 
+// ── Age helpers ───────────────────────────────────────────────────────────────
+
+function parseBirthDate(str: unknown): Date | null {
+  if (typeof str !== "string") return null;
+  const parts = str.split("-");
+  if (parts.length !== 3) return null;
+  const [d, m, y] = parts.map(Number);
+  if (isNaN(d) || isNaN(m) || isNaN(y)) return null;
+  return new Date(y, m - 1, d);
+}
+
+function computeAge(gameDate: Date, birthDate: Date): number {
+  let age = gameDate.getFullYear() - birthDate.getFullYear();
+  const md = gameDate.getMonth() - birthDate.getMonth();
+  if (md < 0 || (md === 0 && gameDate.getDate() < birthDate.getDate())) age--;
+  return Math.max(0, age);
+}
+
+function birthDateFromAge(age: number, existing: Date | null, gameDate: Date): string {
+  const day = existing?.getDate() ?? 1;
+  const month = existing ? existing.getMonth() + 1 : 1;
+  const year = gameDate.getFullYear() - age;
+  return `${String(day).padStart(2, "0")}-${String(month).padStart(2, "0")}-${year}`;
+}
+
+function AgeEditor({
+  char,
+  gameDate,
+  onUpdate,
+}: {
+  char: Character;
+  gameDate: Date;
+  onUpdate: (u: (c: Character) => void) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState("");
+
+  const birthDate = parseBirthDate(char.birthDate);
+  const age = birthDate ? computeAge(gameDate, birthDate) : null;
+
+  const commit = () => {
+    const newAge = parseInt(val.replace(/\D/g, ""), 10);
+    if (!isNaN(newAge) && newAge >= 0 && newAge < 200) {
+      onUpdate((c) => {
+        c.birthDate = birthDateFromAge(newAge, parseBirthDate(c.birthDate), gameDate);
+      });
+    }
+    setEditing(false);
+  };
+
+  if (age === null) return null;
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") setEditing(false);
+        }}
+        style={{
+          fontFamily: "var(--font-serif)",
+          fontSize: "13px",
+          fontWeight: 600,
+          color: "var(--color-text-primary)",
+          background: "transparent",
+          border: "none",
+          borderBottom: "1px solid var(--color-gold)",
+          outline: "none",
+          width: "44px",
+          textAlign: "right",
+          padding: "0 0 1px",
+        }}
+      />
+    );
+  }
+
+  return (
+    <span
+      onClick={() => { setVal(String(age)); setEditing(true); }}
+      title="Click to edit age"
+      style={{
+        fontFamily: "var(--font-ui)",
+        fontSize: "10px",
+        color: "var(--color-text-muted)",
+        borderBottom: "1px dashed var(--color-border)",
+        cursor: "text",
+      }}
+    >
+      Age {age}
+    </span>
+  );
+}
+
 // ── Main module ───────────────────────────────────────────────────────────────
 
 export default function CharactersModule() {
@@ -1130,6 +1236,10 @@ export default function CharactersModule() {
   const [search, setSearch] = useState("");
 
   const characters = saveData?.stateJson?.characters ?? [];
+  const gameDate = useMemo(
+    () => (saveData?.stateJson ? parseGameDate(saveData.stateJson) : null),
+    [saveData]
+  );
 
   const filtered = useMemo(() => {
     let list = showAll ? characters : characters.filter((c) => c.studioId !== null);
@@ -1366,6 +1476,7 @@ export default function CharactersModule() {
           <DetailPanel
             key={selectedChar.id}
             char={selectedChar}
+            gameDate={gameDate}
             onUpdate={(updater) => handleUpdate(selectedChar.id, updater)}
           />
         ) : (

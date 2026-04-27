@@ -26,6 +26,7 @@ export interface Character {
   BonusCardMoney?: number;
   BonusCardInfluencePoints?: number;
   bonusCards?: number[];
+  birthDate?: string;
   [key: string]: unknown;
 }
 
