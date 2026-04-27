@@ -245,7 +245,6 @@ export default function ResearchModule() {
           ? `${openedPerks.length} perks unlocked · ${openedKnown} of ${totalKnown} known`
           : "Unlock and manage studio perks"
       }
-      maxWidth={800}
       actions={
         isLoaded ? (
           <button

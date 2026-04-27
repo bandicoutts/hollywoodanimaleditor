@@ -314,7 +314,6 @@ export default function WritingTagsModule() {
           ? `${totalActive} active · ${totalKnown} known tags across ${TAG_GROUPS.length} categories`
           : "Unlock and manage your studio's tag pool"
       }
-      maxWidth={720}
       actions={
         isLoaded ? (
           <button

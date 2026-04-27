@@ -308,7 +308,6 @@ export default function CompetitorStudiosModule() {
     <ModuleShell
       title="Competitor Studios"
       subtitle="Edit rival studio budgets, aggression, raid status, and elimination"
-      maxWidth={800}
     >
       {!isLoaded ? (
         <EmptyState message="Upload a save file to edit competitor studios" />

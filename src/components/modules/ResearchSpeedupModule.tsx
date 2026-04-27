@@ -173,7 +173,6 @@ export default function ResearchSpeedupModule() {
     <ModuleShell
       title="Research Speed & Construction"
       subtitle="Speed up research, complete active processes, and finish construction"
-      maxWidth={720}
     >
       {!isLoaded ? (
         <p style={{ fontFamily: "var(--font-ui)", fontSize: "12px", color: "var(--color-text-muted)" }}>

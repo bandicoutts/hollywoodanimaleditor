@@ -467,7 +467,6 @@ export default function TechnologiesModule() {
     <ModuleShell
       title="Technologies"
       subtitle="Toggle camera and sound technology ownership"
-      maxWidth={860}
     >
       {!isLoaded ? (
         <EmptyState message="Upload a save file to edit technologies" />

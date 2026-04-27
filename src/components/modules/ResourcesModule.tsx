@@ -343,7 +343,6 @@ export default function ResourcesModule() {
       <ModuleShell
         title="Resources"
         subtitle="Edit studio budget, cash, reputation, and influence"
-        maxWidth={720}
       >
         <EmptyState message="Upload a save file to edit resources" />
       </ModuleShell>
@@ -357,7 +356,6 @@ export default function ResourcesModule() {
     <ModuleShell
       title="Resources"
       subtitle="Edit studio budget, cash, reputation, and influence"
-      maxWidth={720}
     >
       {RESOURCES.map((r) => (
         <ResourceField
