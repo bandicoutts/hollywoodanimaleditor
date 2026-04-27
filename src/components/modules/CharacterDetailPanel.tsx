@@ -91,52 +91,6 @@ function birthDateFromAge(age: number, existing: Date | null, gameDate: Date): s
   return `${String(day).padStart(2, "0")}-${String(month).padStart(2, "0")}-${year}`;
 }
 
-// ── Portrait placeholder ──────────────────────────────────────────────────────
-
-function PortraitPlaceholder({ color }: { color: string }) {
-  return (
-    <div
-      style={{
-        width: 80,
-        height: 100,
-        flexShrink: 0,
-        background: `linear-gradient(to bottom, ${color}18, #1d1a15)`,
-        border: `1px solid ${color}40`,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "6px",
-      }}
-    >
-      <svg
-        width="28"
-        height="28"
-        viewBox="0 0 28 28"
-        fill="none"
-        stroke={color}
-        strokeWidth="1"
-        opacity={0.3}
-      >
-        <circle cx="14" cy="10" r="5" />
-        <path d="M4 26c0-5.5 4.5-10 10-10s10 4.5 10 10" />
-      </svg>
-      <span
-        style={{
-          fontFamily: "var(--font-ui)",
-          fontSize: "8px",
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: color,
-          opacity: 0.4,
-        }}
-      >
-        Portrait
-      </span>
-    </div>
-  );
-}
-
 // ── Age editor ────────────────────────────────────────────────────────────────
 
 function AgeEditor({
@@ -668,8 +622,7 @@ export default function DetailPanel({
   return (
     <div style={{ padding: "28px 32px", minHeight: "100%" }}>
       {/* Header */}
-      <div style={{ display: "flex", gap: "16px", marginBottom: "20px" }}>
-        <PortraitPlaceholder color={profColor} />
+      <div style={{ marginBottom: "20px" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           {editingName ? (
             <input

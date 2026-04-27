@@ -78,7 +78,7 @@ Top-level fields in `stateJson`:
 | `mood` | string | Decimal string 0.000–1.000 — displayed as **Happiness** ×100 (0–100) |
 | `attitude` | string | Decimal string 0.000–1.000 — displayed as **Loyalty** ×100 (0–100) |
 | `selfEsteem` | string | Internal calculation value; ranges outside 0–1, not surfaced in game UI — pass through only, do not edit |
-| `xp` | number | Experience points |
+| `xp` | number | Experience points (integer). Earned from movie releases, production roles, research activities, and perks (e.g. `MOVIE_RELEASE_XP_1–3`, `PREPROD_PROD_DIR_CIN_XP_1–2`, `TAGS_XP_BONUS_1–3`). Accumulating enough XP raises a character's profession skill and eventually their skill cap (`limit`). **Safe to edit** — setting it higher accelerates progression; setting it to 0 resets accumulated XP but does not reduce current skill or cap. |
 | `firstNameId` | string | Index into embedded name table (`src/data/characterNames.ts`, 1140 entries) — do not edit |
 | `lastNameId` | string | Index into embedded name table — do not edit |
 | `customName` | string \| null | Custom display name written directly to save — preferred over localStorage |
@@ -86,6 +86,8 @@ Top-level fields in `stateJson`:
 | `birthDate` | string \| undefined | Character date of birth, format `"DD-MM-YYYY"` e.g. `"17-08-1897"`. Used to compute in-game age. Write back in the same format. |
 
 Filter employed characters by `studioId !== null`.
+
+**Salary / pay:** There is no per-character salary or wage field in the save file. Character compensation is managed entirely by the game engine. The `SALARY_CUT` perk (in the Maintenance research group) is a studio-wide upgrade that reduces all staff costs during studio closure — it is not per-character and is edited via the Research module.
 
 **Known profession types:**
 `Actor`, `Director`, `Producer`, `Scriptwriter`, `Cinematographer`, `Composer`, `FilmEditor`, `Agent`, `CptLawyer`, `CptHR`, `CptPR`, `CptFinancier`, `LieutProd`, `LieutPrep`, `LieutTech`, `LieutScript`, `LieutRelease`, `LieutPost`, `LieutSecurity`, `LieutEscort`, `LieutMuseum`, `LieutInfrastructure`, `LieutProducers`
@@ -153,6 +155,23 @@ If a character has never earned appeal in-game the key will be absent from `whit
 | exactly 1.000 | Icon | Legend |
 
 The top tier (Icon / Legend) requires exactly 1.000 — a value of 0.999 shows the tier below.
+
+**Consequences of editing:**
+
+| Field | Safe? | Notes |
+|---|---|---|
+| Profession skill | Yes | Sets skill immediately. Values clamped 0.000–1.000. |
+| `limit` / `Limit` | Yes | Skill cap. Both fields must be updated together. |
+| `mood` (Happiness) | Yes | Affects character behaviour and event triggers in-game. Maxing is safe. |
+| `attitude` (Loyalty) | Yes | Affects how likely a character is to honour contract renewals. Maxing is safe. |
+| `xp` | Yes | See XP notes above. No known harmful maximum. |
+| `labels` | Caution | Some labels affect game mechanics. `IMMORTAL` / `SUPER_IMMORTAL` prevent character death. `STERILE` prevents having children. `MAIN_CHARACTER` is story-critical — do not remove on the player's own character. `UNWANTED_ACTOR` blocks casting. |
+| `BonusCardMoney` / `BonusCardInfluencePoints` | Yes | Lieutenant-only. Each card = 10% bonus. Values above ~10 are untested. |
+| `whiteTagsNEW` appeal | Yes | Sets appeal tier. Only valid for Actors and Directors. |
+| `birthDate` | Yes | Purely cosmetic age display — no gameplay effect. |
+| `customName` | Yes | Overrides the generated name in all UI. |
+| `studioId` | No | Do not edit — changing this can corrupt employment state. |
+| `selfEsteem` | No | Internal value; ranges outside 0–1. Pass through only. |
 
 Character display names are resolved by indexing `firstNameId` and `lastNameId` directly into the embedded `CHARACTER_NAMES` array (e.g. ID `258` → `"Mae"`, ID `654` → `"Lowe"` → displayed as `"Mae Lowe"`). `customName` takes priority when set and is written directly to the save. Do not edit `firstNameId` or `lastNameId`.
 

@@ -18,53 +18,10 @@ function StudioMark({ size = 24 }: { size?: number }) {
   );
 }
 
-function StatChip({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <div className="flex flex-col items-end gap-0.5">
-      <span
-        style={{
-          fontFamily: "var(--font-ui)",
-          fontSize: "9px",
-          letterSpacing: "0.08em",
-          color: "var(--color-text-muted)",
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </span>
-      <span
-        style={{
-          fontFamily: "var(--font-serif)",
-          fontSize: "13px",
-          fontWeight: 600,
-          color: "var(--color-gold)",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function formatNumber(n: number): string {
-  if (Math.abs(n) >= 1_000_000)
-    return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(n) >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
-  return `$${n}`;
-}
 
 export default function TopBar() {
   const { saveData, isLoaded, download, versionWarning, unsavedCount, changeLog } = useSaveFile();
   const stateJson = saveData?.stateJson;
-  const version = saveData?.currentMeta?.lastSaveVersion;
-  const studioName = stateJson?.studioName;
   const [downloaded, setDownloaded] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
@@ -102,7 +59,7 @@ export default function TopBar() {
         gap: "16px",
       }}
     >
-      {/* Left: logo + studio name */}
+      {/* Left: app title */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
         <StudioMark size={22} />
         <span
@@ -113,30 +70,10 @@ export default function TopBar() {
             fontWeight: 600,
             color: "var(--color-text-primary)",
             whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            maxWidth: "200px",
           }}
         >
-          {studioName ?? "Studio Archives"}
+          Hollywood Animal Editor
         </span>
-        {version && (
-          <span
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: "9px",
-              letterSpacing: "0.08em",
-              color: "var(--color-text-muted)",
-              textTransform: "uppercase",
-              border: "1px solid var(--color-border)",
-              padding: "1px 6px",
-              whiteSpace: "nowrap",
-              flexShrink: 0,
-            }}
-          >
-            v{version}
-          </span>
-        )}
         {versionWarning && (
           <span
             style={{
@@ -169,15 +106,6 @@ export default function TopBar() {
             minWidth: 0,
           }}
         >
-          <StatChip label="Budget" value={formatNumber(stateJson.budget)} />
-          <StatChip label="Cash" value={formatNumber(stateJson.cash)} />
-          <StatChip
-            label="Reputation"
-            value={parseFloat(stateJson.reputation).toFixed(0)}
-          />
-          <div
-            style={{ width: "1px", height: "20px", background: "var(--color-border)" }}
-          />
           <div ref={logRef} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", position: "relative" }}>
             {unsavedCount > 0 && !downloaded && (
               <button

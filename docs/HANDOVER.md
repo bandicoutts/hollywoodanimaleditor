@@ -210,7 +210,7 @@ The `src/components/modules/` directory follows a flat sibling-file pattern — 
 | File | Role |
 |---|---|
 | `CharactersModule.tsx` | List panel, filter bar, bulk actions, `CharRow`, `BulkBtn` |
-| `CharacterDetailPanel.tsx` | Full detail panel and all its sub-components (`PortraitPlaceholder`, `AgeEditor`, `XpEditor`, `BonusEditor`, `UpgradeBonusSection`, `AppealColumn`, `AppealSection`, `LabelsEditor`). Exports `moodColor` and `displayName` for use by `CharactersModule`. |
+| `CharacterDetailPanel.tsx` | Full detail panel and all its sub-components (`AgeEditor`, `XpEditor`, `BonusEditor`, `UpgradeBonusSection`, `AppealColumn`, `AppealSection`, `LabelsEditor`). Exports `moodColor` and `displayName` for use by `CharactersModule`. |
 | `CharacterStatBar.tsx` | Reusable `StatBar` — labelled slider with click-to-edit value and cap marker |
 | `CharacterProfBadge.tsx` | Reusable `ProfBadge` — coloured profession badge |
 | `AIScriptsModule.tsx` | Script Workshop shell — mode tabs, generate controls, pool stats, result grid |
@@ -250,6 +250,7 @@ All major data work is complete. A full UX review pass was then completed (same 
   in the module header.
 - **Characters module** (`CharactersModule.tsx`): Character `birthDate` displayed as current in-game
   age in the detail panel header. Click-to-edit age back-calculates `birthDate` preserving day/month.
+  Portrait placeholder removed — character images are not available in this editor.
 
 ### Script Workshop (`AIScriptsModule.tsx`)
 
