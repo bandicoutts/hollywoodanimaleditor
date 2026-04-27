@@ -556,7 +556,8 @@ pollux  = genre_factor × (art × 2 + com)
 - **Running score bar** (Art / Com / Compat badges) appears once ≥2 elements are selected, computed by `scorePartialBuild(selectedElements)`. Pollux requires a complete combo and is omitted from partial display.
 - **Themes/Events** is multi-select (3–5): selected themes pin to the top of the list with a remove button; selecting a 5th disables further picks.
 - **Second genre** (optional): appears as a small toggle below the accordion after genre is chosen. Genre2 options are sorted by their `GENRE_PAIR_MODIFIERS` art+com sum against the primary genre (not by COMPAT_SCORES). Each option shows the modifier value.
-- **"Auto-complete Script"** button (visible once ≥1 element selected, hidden after finalising): calls `generateSuggestions` with the player's current genre filter and merges the top result with whatever the player has already selected. If all slots are filled manually, shows **"Complete Script"** instead (just scores what's there).
+- **"Optimise for" bias selector** (Art / Balanced / Commercial / Pollux pills, default Balanced): same options as Generate Ideas. The selected bias is passed to `generateSuggestions` when auto-completing and resets to Balanced on "Start Over".
+- **"Auto-complete Script"** button (visible once ≥1 element selected, hidden after finalising): calls `generateSuggestions` with the player's genre filter and chosen bias, then merges the top result with whatever the player has already selected. If all slots are filled manually, shows **"Complete Script"** instead (just scores what's there).
 - Final result renders using the same `ScriptCard` component as Generate Ideas, with a "Your Script" heading and a "Start Over" button.
 
 **New exported functions in `src/lib/script-suggestions.ts`:**
