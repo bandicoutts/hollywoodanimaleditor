@@ -5,6 +5,8 @@ import ModuleShell from "./ModuleShell";
 import { useSaveFile } from "@/context/SaveFileContext";
 import { TAG_GROUPS, TAG_LABELS, ALL_KNOWN_TAGS, type TagGroup } from "@/data/tags";
 import type { TagPoolEntry } from "@/lib/save-file";
+import { parseGameDate, getLockHint } from "@/lib/script-suggestions";
+import { ELEMENT_BY_ID } from "@/data/scriptElements";
 
 // Maps tag ID prefixes to the label of the known group they belong to
 const PREFIX_TO_GROUP: [string, string][] = [
@@ -43,22 +45,19 @@ function formatTagLabel(id: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function currentGameDate(): string {
-  // Fallback date when we can't determine the in-game date
-  return "1929-01-01T00:00:00";
-}
-
 // ── Tag pill ──────────────────────────────────────────────────────────────────
 
 function TagPill({
   id,
   active,
   color,
+  lockHint,
   onToggle,
 }: {
   id: string;
   active: boolean;
   color: string;
+  lockHint?: string | null;
   onToggle: () => void;
 }) {
   return (
@@ -77,21 +76,35 @@ function TagPill({
         transition: "all 0.15s ease",
         whiteSpace: "nowrap",
         textAlign: "left",
+        opacity: lockHint ? 0.45 : 1,
       }}
       onMouseEnter={(e) => {
         if (!active) {
           e.currentTarget.style.color = "var(--color-text-secondary)";
           e.currentTarget.style.borderColor = "var(--color-border)";
         }
+        if (lockHint) e.currentTarget.style.opacity = "0.75";
       }}
       onMouseLeave={(e) => {
         if (!active) {
           e.currentTarget.style.color = "var(--color-text-muted)";
           e.currentTarget.style.borderColor = "var(--color-border-subtle)";
         }
+        if (lockHint) e.currentTarget.style.opacity = "0.45";
       }}
     >
       {formatTagLabel(id)}
+      {lockHint && (
+        <span style={{
+          fontSize: "9px",
+          letterSpacing: "0.05em",
+          opacity: 0.8,
+          marginLeft: "5px",
+          fontStyle: "italic",
+        }}>
+          {lockHint}
+        </span>
+      )}
     </button>
   );
 }
@@ -103,13 +116,16 @@ function TagGroupSection({
   activeSet,
   onToggle,
   onUnlockAll,
+  lockHintFor,
 }: {
   group: TagGroup & { tags: string[] };
   activeSet: Set<string>;
   onToggle: (id: string) => void;
   onUnlockAll: (ids: string[]) => void;
+  lockHintFor: (id: string) => string | null;
 }) {
   const activeCount = group.tags.filter((id) => activeSet.has(id)).length;
+  const lockedCount = group.tags.filter((id) => !!lockHintFor(id)).length;
 
   return (
     <div style={{ marginBottom: "28px" }}>
@@ -169,7 +185,11 @@ function TagGroupSection({
             whiteSpace: "nowrap",
           }}
         >
-          {activeCount === group.tags.length ? "All unlocked" : "Unlock all"}
+          {activeCount === group.tags.length
+            ? "All unlocked"
+            : lockedCount > 0
+            ? `Unlock all (${lockedCount} locked)`
+            : "Unlock all"}
         </button>
       </div>
 
@@ -181,6 +201,7 @@ function TagGroupSection({
             id={id}
             active={activeSet.has(id)}
             color={group.color}
+            lockHint={lockHintFor(id)}
             onToggle={() => onToggle(id)}
           />
         ))}
@@ -198,6 +219,22 @@ export default function WritingTagsModule() {
   const activeSet = useMemo(
     () => new Set(tagPool.map((t) => t.Item1)),
     [tagPool]
+  );
+
+  const gameDate = useMemo(
+    () => (saveData ? parseGameDate(saveData.stateJson) : new Date(1929, 0, 1)),
+    [saveData]
+  );
+  const recipesPool = useMemo(
+    () => (saveData?.stateJson?.tagRecipesPool as string[]) ?? [],
+    [saveData]
+  );
+  const lockHintFor = useCallback(
+    (id: string): string | null => {
+      const el = ELEMENT_BY_ID[id];
+      return el ? getLockHint(el, gameDate, recipesPool) : null;
+    },
+    [gameDate, recipesPool]
   );
 
   // Accumulate all unknown tags ever seen — so deactivating one doesn't make it disappear
@@ -231,15 +268,13 @@ export default function WritingTagsModule() {
       updateStateJson((s) => {
         const idx = s.tagPool.findIndex((t) => t.Item1 === id);
         if (idx !== -1) {
-          // Remove
           s.tagPool.splice(idx, 1);
         } else {
-          // Add
-          s.tagPool.push({ Item1: id, Item2: currentGameDate() });
+          s.tagPool.push({ Item1: id, Item2: gameDate.toISOString().replace("Z", "") });
         }
       });
     },
-    [updateStateJson]
+    [updateStateJson, gameDate]
   );
 
   const unlockAll = useCallback(
@@ -248,12 +283,12 @@ export default function WritingTagsModule() {
         const existing = new Set(s.tagPool.map((t) => t.Item1));
         for (const id of ids) {
           if (!existing.has(id)) {
-            s.tagPool.push({ Item1: id, Item2: currentGameDate() });
+            s.tagPool.push({ Item1: id, Item2: gameDate.toISOString().replace("Z", "") });
           }
         }
       });
     },
-    [updateStateJson]
+    [updateStateJson, gameDate]
   );
 
   const unlockAllKnown = useCallback(() => {
@@ -261,11 +296,11 @@ export default function WritingTagsModule() {
       const existing = new Set(s.tagPool.map((t) => t.Item1));
       for (const id of ALL_KNOWN_TAGS) {
         if (!existing.has(id)) {
-          s.tagPool.push({ Item1: id, Item2: currentGameDate() });
+          s.tagPool.push({ Item1: id, Item2: gameDate.toISOString().replace("Z", "") });
         }
       }
     });
-  }, [updateStateJson]);
+  }, [updateStateJson, gameDate]);
 
   const totalActive = activeSet.size;
   const totalKnown = ALL_KNOWN_TAGS.size;
@@ -328,6 +363,7 @@ export default function WritingTagsModule() {
                 activeSet={activeSet}
                 onToggle={toggleTag}
                 onUnlockAll={unlockAll}
+                lockHintFor={lockHintFor}
               />
             );
           })}
@@ -343,6 +379,7 @@ export default function WritingTagsModule() {
               activeSet={activeSet}
               onToggle={toggleTag}
               onUnlockAll={unlockAll}
+              lockHintFor={lockHintFor}
             />
           )}
         </>

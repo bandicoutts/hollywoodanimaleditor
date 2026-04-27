@@ -278,3 +278,25 @@ export function generateSuggestions(
 
   return results;
 }
+
+// ── Lock hint ─────────────────────────────────────────────────────────────────
+
+export function getLockHint(
+  element: ScriptElement,
+  gameDate: Date,
+  recipesPool: string[]
+): string | null {
+  if (isUnlocked(element, gameDate, recipesPool)) return null;
+  const u = element.unlock;
+  if (u === "never") return "n/a";
+  if (u.startsWith("Recipe")) return "recipe";
+  if (u.startsWith("Before ")) return `until ${u.slice(7)}`;
+  if (u.startsWith("After ")) return `from ${+u.slice(6) + 1}`;
+  const raw = u.startsWith(">=") ? u.slice(2).trim() : u.trim();
+  const parts = raw.split("-");
+  if (parts.length === 3 && parts[2].length === 4) {
+    const d = new Date(+parts[2], +parts[1] - 1, +parts[0]);
+    return `from ${d.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`;
+  }
+  return `from ${raw.slice(0, 4)}`;
+}

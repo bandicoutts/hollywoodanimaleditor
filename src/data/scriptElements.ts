@@ -1494,3 +1494,8 @@ export const SYNERGY_PAIRS = new Set(
     return `${sorted[0]}|${sorted[1]}`;
   })
 );
+
+export const ELEMENT_BY_ID: Record<string, ScriptElement> = Object.fromEntries(
+  [...GENRES, ...SETTINGS, ...PROTAGONISTS, ...SUPPORTING_CHARS,
+   ...ANTAGONISTS, ...THEMES, ...EVENTS, ...FINALES].map((e) => [e.id, e])
+);
