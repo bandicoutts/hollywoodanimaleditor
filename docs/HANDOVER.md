@@ -269,12 +269,15 @@ that combination and switches to the Build tab.
   - Pollux (non-genre, genre selected): `genreFactor × (item.art × 2 + item.com)`
   - Pollux (non-genre, no genre yet): `item.art × 2`
   - These weights match the generator's `biasScore()` function exactly.
+- Compatibility scores exclude the currently-selected item for each single-select category, giving honest "swap to this" scores when re-opening a filled section.
 - Running score bar (Art / Com / Compat) appears once ≥2 elements selected.
 - **Pollux score appears in running bar** once a genre is selected:
   `polluxPartial = POLLUX_GENRE_FACTORS[genre.id] × (Σart × 2 + Σcom)`.
 - Hint shown when Pollux selected before genre: "Select a genre first — Pollux eligibility depends on genre".
+- **Supporting character and antagonist are optional** — labelled "(optional)" in the accordion. Each consumes one slot from the **content tag budget** shared with themes/events. Budget = 5 base + 1 per `TAGS_SLOTS_N` perk in `openedPerks` (up to 10). Themes/Events max = `contentTagBudget − charSlotsUsed`; label updates live. `isComplete` requires `contentTagsUsed ≥ 3`, not specific chars.
+- **Second genre** is shown as a footer below the genre list inside the Genre accordion — visible immediately when the genre section is open, no extra click needed.
 - Auto-complete fills empty slots; Complete Script appears when all slots are manually filled.
-- `scorePartialBuild` and `scoreElementCompatibility` exported from `script-suggestions.ts`.
+- `scorePartialBuild`, `scoreElementCompatibility`, and `getContentTagBudget` exported from `script-suggestions.ts`.
 
 **Pollux tooltips:** The Pollux pill in both tabs has `title="Optimise for the Pollux Award — the game's prestige prize for artistic films"`. The "Pol" score badge in `ScoreBadge` accepts an optional `title` prop and uses it.
 

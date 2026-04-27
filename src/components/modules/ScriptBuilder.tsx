@@ -107,12 +107,14 @@ function CategorySection({
   isComplete: done,
   onToggle,
   children,
+  footer,
 }: {
   label: string;
   isOpen: boolean;
   isComplete: boolean;
   onToggle: () => void;
   children: React.ReactNode;
+  footer?: React.ReactNode;
 }) {
   return (
     <div style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
@@ -156,18 +158,20 @@ function CategorySection({
         </span>
       </button>
       {isOpen && (
-        <div style={{ maxHeight: "220px", overflowY: "auto", paddingBottom: "4px" }}>
-          {children}
-        </div>
+        <>
+          <div style={{ maxHeight: "220px", overflowY: "auto", paddingBottom: "4px" }}>
+            {children}
+          </div>
+          {footer}
+        </>
       )}
     </div>
   );
 }
 
-// ── Theme count constants ─────────────────────────────────────────────────────
+// ── Content tag constants ─────────────────────────────────────────────────────
 
-const MIN_THEMES = 3;
-const MAX_THEMES = 5;
+const MIN_CONTENT_TAGS = 3;
 
 // ── Script builder ────────────────────────────────────────────────────────────
 
@@ -187,8 +191,8 @@ export default function ScriptBuilder({
     genre2:      initialCombo.genre2 ?? null,
     setting:     initialCombo.setting,
     protagonist: initialCombo.protagonist,
-    supporting:  initialCombo.supporting,
-    antagonist:  initialCombo.antagonist,
+    supporting:  initialCombo.supporting ?? null,
+    antagonist:  initialCombo.antagonist ?? null,
     finale:      initialCombo.finale,
   } : {
     genre: null, genre2: null, setting: null,
@@ -196,7 +200,6 @@ export default function ScriptBuilder({
   });
   const [themes, setThemes] = useState<ScriptElement[]>(() => initialCombo?.themesEvents ?? []);
   const [activeSection, setActiveSection] = useState<SectionKey | null>(initialCombo ? null : "genre");
-  const [showGenre2, setShowGenre2] = useState(() => !!(initialCombo?.genre2));
   const [finalCombo, setFinalCombo] = useState<ScriptCombo | null>(null);
 
   const selectedElements = useMemo(() =>
@@ -235,22 +238,28 @@ export default function ScriptBuilder({
       }
     };
 
-    const rank = (items: ScriptElement[], isGenre = false) =>
-      [...items]
+    // Exclude the currently-selected item for each single-select category so scores
+    // reflect "swap to this" compatibility rather than including the old selection.
+    const rank = (items: ScriptElement[], isGenre = false, excludeId?: string) => {
+      const ctx = excludeId
+        ? selectedElements.filter(e => e.id !== excludeId)
+        : selectedElements;
+      return [...items]
         .map(item => ({
           item,
-          score: scoreElementCompatibility(item, selectedElements) + biasFor(item, isGenre),
+          score: scoreElementCompatibility(item, ctx) + biasFor(item, isGenre),
         }))
         .sort((a, b) => b.score - a.score);
+    };
 
     return {
-      genre:        rank(pool.genres, true),
-      setting:      rank(pool.settings),
-      protagonist:  rank(pool.protagonists),
-      supporting:   rank(pool.supportingChars),
-      antagonist:   rank(pool.antagonists),
-      themesEvents: rank(pool.themesEvents),
-      finale:       rank(pool.finales),
+      genre:        rank(pool.genres, true,  sel.genre?.id),
+      setting:      rank(pool.settings, false, sel.setting?.id),
+      protagonist:  rank(pool.protagonists, false, sel.protagonist?.id),
+      supporting:   rank(pool.supportingChars, false, sel.supporting?.id),
+      antagonist:   rank(pool.antagonists, false, sel.antagonist?.id),
+      themesEvents: rank(pool.themesEvents),   // multi-select: no exclusion
+      finale:       rank(pool.finales, false,  sel.finale?.id),
     };
     // selectedElements used inside but selectedKey is the stable equality signal
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -284,9 +293,16 @@ export default function ScriptBuilder({
   // Precompute theme IDs as a Set to avoid O(pool × themes) in the filter
   const themeIds = useMemo(() => new Set(themes.map(t => t.id)), [themes]);
 
+  // Content tag budget: shared pool for supporting, antagonist, and themes/events.
+  // Budget grows with TAGS_SLOTS_N research perks (base 5, up to 10).
+  const charCount = (sel.supporting ? 1 : 0) + (sel.antagonist ? 1 : 0);
+  const contentTagBudget = pool.contentTagBudget;
+  const contentTagsUsed = themes.length + charCount;
+  const maxThemes = contentTagBudget - charCount;
+
   const isComplete = !!(
     sel.genre && sel.setting && sel.protagonist &&
-    sel.supporting && sel.antagonist && sel.finale && themes.length >= MIN_THEMES
+    sel.finale && contentTagsUsed >= MIN_CONTENT_TAGS
   );
   const hasSelection = selectedElements.length > 0;
 
@@ -298,7 +314,7 @@ export default function ScriptBuilder({
       const next = BUILDER_SECTION_ORDER[i];
       const isEmpty =
         next === "themesEvents"
-          ? themes.length < MIN_THEMES
+          ? themes.length < MIN_CONTENT_TAGS
           : newSel[next as keyof SelState] === null;
       if (isEmpty) { setActiveSection(next); return; }
     }
@@ -308,7 +324,8 @@ export default function ScriptBuilder({
   function toggleTheme(item: ScriptElement) {
     setThemes(prev => {
       if (prev.find(t => t.id === item.id)) return prev.filter(t => t.id !== item.id);
-      if (prev.length >= MAX_THEMES) return prev;
+      const usedNow = prev.length + charCount;
+      if (usedNow >= contentTagBudget) return prev;
       return [...prev, item];
     });
   }
@@ -318,7 +335,8 @@ export default function ScriptBuilder({
       const combo = {
         genre: sel.genre!, genre2: sel.genre2 ?? undefined,
         setting: sel.setting!, protagonist: sel.protagonist!,
-        supporting: sel.supporting!, antagonist: sel.antagonist!,
+        supporting: sel.supporting ?? undefined,
+        antagonist: sel.antagonist ?? undefined,
         finale: sel.finale!, themesEvents: themes,
       };
       setFinalCombo({ ...combo, scores: scoreCombination(combo) });
@@ -327,7 +345,7 @@ export default function ScriptBuilder({
     const suggestions = generateSuggestions(pool, {
       genreFilter: sel.genre?.id ?? null,
       bias,
-      themeEventCount: Math.max(MIN_THEMES, themes.length),
+      themeEventCount: Math.max(MIN_CONTENT_TAGS, themes.length),
     });
     if (!suggestions.length) return;
     const base = suggestions[0];
@@ -339,7 +357,7 @@ export default function ScriptBuilder({
       supporting:  sel.supporting  ?? base.supporting,
       antagonist:  sel.antagonist  ?? base.antagonist,
       finale:      sel.finale      ?? base.finale,
-      themesEvents: themes.length >= MIN_THEMES ? themes : base.themesEvents,
+      themesEvents: themes.length >= MIN_CONTENT_TAGS ? themes : base.themesEvents,
     };
     setFinalCombo({ ...merged, scores: scoreCombination(merged) });
   }
@@ -348,7 +366,6 @@ export default function ScriptBuilder({
     setSel({ genre: null, genre2: null, setting: null, protagonist: null, supporting: null, antagonist: null, finale: null });
     setThemes([]);
     setActiveSection("genre");
-    setShowGenre2(false);
     setFinalCombo(null);
     onBiasChange("balanced");
   }
@@ -357,9 +374,9 @@ export default function ScriptBuilder({
     genre:        sel.genre       ? `Genre — ${sel.genre.label}`            : "Genre",
     setting:      sel.setting     ? `Setting — ${sel.setting.label}`         : "Setting",
     protagonist:  sel.protagonist ? `Protagonist — ${sel.protagonist.label}` : "Protagonist",
-    supporting:   sel.supporting  ? `Supporting — ${sel.supporting.label}`   : "Supporting Character",
-    antagonist:   sel.antagonist  ? `Antagonist — ${sel.antagonist.label}`   : "Antagonist",
-    themesEvents: themes.length > 0 ? `Themes / Events — ${themes.length} / ${MAX_THEMES}` : "Themes / Events",
+    supporting:   sel.supporting  ? `Supporting — ${sel.supporting.label}`   : "Supporting Character (optional)",
+    antagonist:   sel.antagonist  ? `Antagonist — ${sel.antagonist.label}`   : "Antagonist (optional)",
+    themesEvents: themes.length > 0 ? `Themes / Events — ${themes.length} / ${maxThemes}` : "Themes / Events",
     finale:       sel.finale      ? `Finale — ${sel.finale.label}`           : "Finale",
   };
 
@@ -445,8 +462,73 @@ export default function ScriptBuilder({
       >
         {BUILDER_SECTION_ORDER.map((key) => {
           const isThemes = key === "themesEvents";
-          const isDone = isThemes ? themes.length >= MIN_THEMES : sel[key as keyof SelState] !== null;
+          const isDone = isThemes ? contentTagsUsed >= MIN_CONTENT_TAGS : sel[key as keyof SelState] !== null;
           const rankedList = ranked[key as keyof typeof ranked];
+
+          const genre2Footer = key === "genre" && sel.genre ? (
+            <div style={{ borderTop: "1px solid var(--color-border-subtle)", padding: "8px 12px 10px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <span
+                  style={{
+                    fontFamily: "var(--font-ui)",
+                    fontSize: "9px",
+                    letterSpacing: "0.07em",
+                    textTransform: "uppercase",
+                    color: "var(--color-text-muted)",
+                  }}
+                >
+                  Second genre
+                  {sel.genre2 && <span style={{ color: "var(--color-gold)", marginLeft: "6px" }}>— {sel.genre2.label}</span>}
+                </span>
+                {sel.genre2 && (
+                  <button
+                    onClick={() => setSel(prev => ({ ...prev, genre2: null }))}
+                    style={{
+                      fontFamily: "var(--font-ui)",
+                      fontSize: "9px",
+                      color: "var(--color-text-muted)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+                {rankedGenre2.map(({ item, artMod, comMod }) => {
+                  const total = artMod + comMod;
+                  const isSelected = sel.genre2?.id === item.id;
+                  const modColor = total > 0.01 ? "#7ec8a0" : total < -0.01 ? "#d47a7a" : "var(--color-text-muted)";
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setSel(prev => ({ ...prev, genre2: isSelected ? null : item }))}
+                      style={{
+                        fontFamily: "var(--font-ui)",
+                        fontSize: "10px",
+                        padding: "3px 8px",
+                        border: `1px solid ${isSelected ? "var(--color-gold)" : "var(--color-border)"}`,
+                        background: isSelected ? "rgba(184,156,84,0.09)" : "transparent",
+                        color: isSelected ? "var(--color-gold)" : "var(--color-text-secondary)",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {item.label}
+                      {Math.abs(total) > 0.01 && (
+                        <span style={{ marginLeft: "5px", fontSize: "9px", color: modColor }}>
+                          {total > 0 ? "+" : ""}{total.toFixed(2)}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : undefined;
 
           return (
             <CategorySection
@@ -455,6 +537,7 @@ export default function ScriptBuilder({
               isOpen={activeSection === key}
               isComplete={isDone}
               onToggle={() => setActiveSection(prev => prev === key ? null : key)}
+              footer={genre2Footer}
             >
               {isThemes ? (
                 <>
@@ -497,7 +580,7 @@ export default function ScriptBuilder({
                         item={item}
                         score={score}
                         selected={false}
-                        disabled={themes.length >= MAX_THEMES}
+                        disabled={contentTagsUsed >= contentTagBudget}
                         onSelect={() => toggleTheme(item)}
                       />
                     ))}
@@ -517,104 +600,6 @@ export default function ScriptBuilder({
           );
         })}
       </div>
-
-      {/* Genre2 picker */}
-      {sel.genre && (
-        <div style={{ marginBottom: "16px" }}>
-          {!showGenre2 ? (
-            <button
-              onClick={() => setShowGenre2(true)}
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: "10px",
-                color: "var(--color-text-muted)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-                letterSpacing: "0.04em",
-              }}
-            >
-              + Add second genre
-            </button>
-          ) : (
-            <div
-              style={{
-                border: "1px solid var(--color-border-subtle)",
-                background: "var(--color-bg-panel)",
-                padding: "10px 12px",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "8px",
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: "var(--font-ui)",
-                    fontSize: "10px",
-                    letterSpacing: "0.07em",
-                    textTransform: "uppercase",
-                    color: "var(--color-text-muted)",
-                  }}
-                >
-                  Second Genre
-                  {sel.genre2 && (
-                    <span style={{ color: "var(--color-gold)", marginLeft: "6px" }}>— {sel.genre2.label}</span>
-                  )}
-                </span>
-                <button
-                  onClick={() => { setShowGenre2(false); setSel(prev => ({ ...prev, genre2: null })); }}
-                  style={{
-                    fontFamily: "var(--font-ui)",
-                    fontSize: "10px",
-                    color: "var(--color-text-muted)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  Remove
-                </button>
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                {rankedGenre2.map(({ item, artMod, comMod }) => {
-                  const total = artMod + comMod;
-                  const isSelected = sel.genre2?.id === item.id;
-                  const modColor = total > 0.01 ? "#7ec8a0" : total < -0.01 ? "#d47a7a" : "var(--color-text-muted)";
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setSel(prev => ({ ...prev, genre2: isSelected ? null : item }))}
-                      style={{
-                        fontFamily: "var(--font-ui)",
-                        fontSize: "10px",
-                        padding: "4px 10px",
-                        border: `1px solid ${isSelected ? "var(--color-gold)" : "var(--color-border)"}`,
-                        background: isSelected ? "rgba(184,156,84,0.09)" : "transparent",
-                        color: isSelected ? "var(--color-gold)" : "var(--color-text-secondary)",
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {item.label}
-                      {Math.abs(total) > 0.01 && (
-                        <span style={{ marginLeft: "6px", fontSize: "9px", color: modColor }}>
-                          {total > 0 ? "+" : ""}{total.toFixed(2)}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Complete / Auto-complete */}
       {hasSelection && !finalCombo && (

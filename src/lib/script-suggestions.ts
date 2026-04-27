@@ -30,8 +30,8 @@ export interface ScriptCombo {
   genre2?: ScriptElement;
   setting: ScriptElement;
   protagonist: ScriptElement;
-  supporting: ScriptElement;
-  antagonist: ScriptElement;
+  supporting?: ScriptElement;
+  antagonist?: ScriptElement;
   themesEvents: ScriptElement[];
   finale: ScriptElement;
   scores: ScoreResult;
@@ -45,6 +45,7 @@ export interface UnlockedPool {
   antagonists: ScriptElement[];
   themesEvents: ScriptElement[];
   finales: ScriptElement[];
+  contentTagBudget: number;
 }
 
 // ── Game date parsing ─────────────────────────────────────────────────────────
@@ -136,6 +137,16 @@ export function isUnlocked(
 
 // ── Pool building ─────────────────────────────────────────────────────────────
 
+// TAGS_SLOTS_6 through TAGS_SLOTS_10 extend the per-script content tag budget beyond the base 5.
+// Each perk unlocks one additional slot. We take the highest one present.
+function getContentTagBudget(openedPerks: string[]): number {
+  const perksSet = new Set(openedPerks);
+  for (let n = 10; n >= 6; n--) {
+    if (perksSet.has(`TAGS_SLOTS_${n}`)) return n;
+  }
+  return 5;
+}
+
 export function getUnlockedPool(stateJson: StateJson): UnlockedPool {
   // Use tagPool (actually researched tags) as the source of truth.
   // Date conditions only determine when an element becomes researchable — the
@@ -154,6 +165,7 @@ export function getUnlockedPool(stateJson: StateJson): UnlockedPool {
     antagonists: ANTAGONISTS.filter(check),
     themesEvents: [...THEMES, ...EVENTS].filter(check),
     finales: FINALES.filter(check),
+    contentTagBudget: getContentTagBudget(stateJson.openedPerks ?? []),
   };
 }
 
@@ -182,8 +194,8 @@ export function scoreCombination(combo: Omit<ScriptCombo, "scores">): ScoreResul
     combo.genre,
     combo.setting,
     combo.protagonist,
-    combo.supporting,
-    combo.antagonist,
+    ...(combo.supporting ? [combo.supporting] : []),
+    ...(combo.antagonist ? [combo.antagonist] : []),
     ...combo.themesEvents,
     combo.finale,
   ];
@@ -252,8 +264,6 @@ export function generateSuggestions(
     genrePool.length === 0 ||
     pool.settings.length === 0 ||
     pool.protagonists.length === 0 ||
-    pool.supportingChars.length === 0 ||
-    pool.antagonists.length === 0 ||
     pool.themesEvents.length === 0 ||
     pool.finales.length === 0
   ) {
@@ -275,13 +285,17 @@ export function generateSuggestions(
       if (mod && mod.art + mod.com > 0) genre2 = g2;
     }
 
+    // Supporting and antagonist are optional content tags — include when available
+    const supporting = pool.supportingChars.length > 0 ? pick(pool.supportingChars) : undefined;
+    const antagonist = pool.antagonists.length > 0 ? pick(pool.antagonists) : undefined;
+
     const base: Omit<ScriptCombo, "scores"> = {
       genre,
       genre2,
       setting: pick(pool.settings),
       protagonist: pick(pool.protagonists),
-      supporting: pick(pool.supportingChars),
-      antagonist: pick(pool.antagonists),
+      supporting,
+      antagonist,
       themesEvents: pickN(pool.themesEvents, themeEventCount),
       finale: pick(pool.finales),
     };

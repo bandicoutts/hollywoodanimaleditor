@@ -539,25 +539,35 @@ Named constants in `script-suggestions.ts`: `CANDIDATE_COUNT = 300`, `DUAL_GENRE
 **Suggestion algorithm**: 300 random candidate combinations are scored and the top 6 (deduplicated by genre+setting+protagonist) are returned. Sort order controlled by bias setting.
 
 **Script composition constraints** (from `GameVariables.json`):
-- All 3 character types (protagonist, supporting character, antagonist) are **mandatory** — each has `slotRange.from = 1`
-- Themes/Events range: **3–5** per film (`content_tags_in_script_range: 3_5`)
+
+The game uses a shared **content tag budget** across supporting characters, antagonists, and themes/events:
+- `content_tags_in_script_range = 3_5` — minimum 3 content tags per script (base range)
+- `max_content_tags_amount = 5` — base maximum (no perks)
+- `TAGS_SLOTS_6` through `TAGS_SLOTS_10` in `stateJson.openedPerks` each extend the budget by 1 (up to 10). `getContentTagBudget(openedPerks)` in `script-suggestions.ts` resolves the active budget.
+- **Supporting character** (0 or 1): optional, consumes 1 content tag slot
+- **Antagonist** (0 or 1): optional, consumes 1 content tag slot
+- **Themes/Events**: fill remaining slots — max = `contentTagBudget − charSlotsUsed`, min = 3 total content tags
+- **Protagonist**: mandatory, separate slot (not part of content tag budget)
+- **Genre, Setting, Finale**: mandatory, each a separate fixed slot
+
+`ScriptCombo.supporting` and `ScriptCombo.antagonist` are `ScriptElement | undefined`. `scoreCombination` handles absent chars by conditional spreading. `UnlockedPool` includes `contentTagBudget: number`.
 
 **UI — two modes** (toggled by tab at the top of the module):
 
 **Generate Ideas mode:**
 - Genre filter pills (only unlocked genres shown)
 - Bias toggle: Art / Balanced / Commercial / Pollux
-- Themes/Events per film stepper (3–5, min enforced by game rules)
+- Themes/Events per film stepper (min 3, max = `pool.contentTagBudget` — reflects TAGS_SLOTS perks)
 - Pool stats bar (element counts by category)
-- 6 result cards: genre(s), setting, cast (protagonist / supporting / antagonist), themes/events, finale, Art / Com / Compat / Pol score badges
+- 6 result cards: genre(s), setting, cast (protagonist + any optional chars), themes/events, finale, Art / Com / Compat / Pol score badges
 
 **Build Your Script mode:**
-- 7 collapsible accordion sections (Genre → Setting → Protagonist → Supporting → Antagonist → Themes/Events → Finale), one open at a time
+- 7 collapsible accordion sections (Genre → Setting → Protagonist → Supporting Character (optional) → Antagonist (optional) → Themes/Events → Finale), one open at a time
 - Selecting any element closes its section, auto-opens the next incomplete section, and **instantly re-ranks every other category list** by compatibility with the current selection set
-- Compatibility ranking: each candidate element is scored via `scoreElementCompatibility(candidate, selectedElements)` — sum of `COMPAT_SCORES` hits against all currently selected elements. Elements with score ≥1.0 get a green dot, >0 get a gold dot, 0 get no indicator. Elements appear in descending score order.
+- Compatibility ranking: each candidate scored via `scoreElementCompatibility(candidate, ctx)` where `ctx` = `selectedElements` with the **current category's selection excluded**. This gives honest "swap to this" scores when re-opening a filled section. Themes/Events is multi-select so no exclusion applies there.
 - **Running score bar** (Art / Com / Compat badges) appears once ≥2 elements are selected, computed by `scorePartialBuild(selectedElements)`. Pollux requires a complete combo and is omitted from partial display.
-- **Themes/Events** is multi-select (3–5): selected themes pin to the top of the list with a remove button; selecting a 5th disables further picks.
-- **Second genre** (optional): appears as a small toggle below the accordion after genre is chosen. Genre2 options are sorted by their `GENRE_PAIR_MODIFIERS` art+com sum against the primary genre (not by COMPAT_SCORES). Each option shows the modifier value.
+- **Themes/Events** is multi-select (budget-aware): selected themes pin to the top with a remove button; picking a supporting char or antagonist reduces the live theme max. Label shows `N / maxThemes`. `isComplete` requires `contentTagsUsed ≥ 3` (not specific chars).
+- **Second genre** (optional): rendered as a **footer below the scrollable genre list** inside the Genre accordion — always visible when the section is open and a primary genre is chosen, no extra click required. Sorted by `GENRE_PAIR_MODIFIERS` art+com sum. Each option shows its modifier value.
 - **"Optimise for" bias selector** (Art / Balanced / Commercial / Pollux pills, default Balanced): same options as Generate Ideas. The selected bias is passed to `generateSuggestions` when auto-completing and resets to Balanced on "Start Over".
 - **"Auto-complete Script"** button (visible once ≥1 element selected, hidden after finalising): calls `generateSuggestions` with the player's genre filter and chosen bias, then merges the top result with whatever the player has already selected. If all slots are filled manually, shows **"Complete Script"** instead (just scores what's there).
 - Final result renders using the same `ScriptCard` component as Generate Ideas, with a "Your Script" heading and a "Start Over" button.

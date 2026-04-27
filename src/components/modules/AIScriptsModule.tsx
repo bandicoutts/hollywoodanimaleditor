@@ -27,7 +27,6 @@ const BIAS_OPTIONS: { value: Bias; label: string }[] = [
 ];
 
 const MIN_THEME_COUNT = 3;
-const MAX_THEME_COUNT = 5;
 
 // ── Main module ───────────────────────────────────────────────────────────────
 
@@ -133,56 +132,63 @@ export default function AIScriptsModule() {
                   <div>
                     <p style={{ ...LABEL_STYLE, marginBottom: "8px" }}>Themes / Events per film</p>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <button
-                        onClick={() => setThemeCount((n) => Math.max(MIN_THEME_COUNT, n - 1))}
-                        disabled={themeCount <= MIN_THEME_COUNT}
-                        style={{
-                          fontFamily: "var(--font-ui)",
-                          fontSize: "14px",
-                          width: "28px",
-                          height: "28px",
-                          border: "1px solid var(--color-border)",
-                          background: "transparent",
-                          color: themeCount <= MIN_THEME_COUNT ? "var(--color-text-muted)" : "var(--color-text-secondary)",
-                          cursor: themeCount <= MIN_THEME_COUNT ? "not-allowed" : "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        −
-                      </button>
-                      <span
-                        style={{
-                          fontFamily: "var(--font-ui)",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          color: "var(--color-text-primary)",
-                          minWidth: "16px",
-                          textAlign: "center",
-                        }}
-                      >
-                        {themeCount}
-                      </span>
-                      <button
-                        onClick={() => setThemeCount((n) => Math.min(MAX_THEME_COUNT, n + 1))}
-                        disabled={themeCount >= MAX_THEME_COUNT}
-                        style={{
-                          fontFamily: "var(--font-ui)",
-                          fontSize: "14px",
-                          width: "28px",
-                          height: "28px",
-                          border: "1px solid var(--color-border)",
-                          background: "transparent",
-                          color: themeCount >= MAX_THEME_COUNT ? "var(--color-text-muted)" : "var(--color-text-secondary)",
-                          cursor: themeCount >= MAX_THEME_COUNT ? "not-allowed" : "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        +
-                      </button>
+                      {(() => {
+                        const maxThemeCount = pool?.contentTagBudget ?? 5;
+                        return (
+                          <>
+                            <button
+                              onClick={() => setThemeCount((n) => Math.max(MIN_THEME_COUNT, n - 1))}
+                              disabled={themeCount <= MIN_THEME_COUNT}
+                              style={{
+                                fontFamily: "var(--font-ui)",
+                                fontSize: "14px",
+                                width: "28px",
+                                height: "28px",
+                                border: "1px solid var(--color-border)",
+                                background: "transparent",
+                                color: themeCount <= MIN_THEME_COUNT ? "var(--color-text-muted)" : "var(--color-text-secondary)",
+                                cursor: themeCount <= MIN_THEME_COUNT ? "not-allowed" : "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              −
+                            </button>
+                            <span
+                              style={{
+                                fontFamily: "var(--font-ui)",
+                                fontSize: "13px",
+                                fontWeight: 600,
+                                color: "var(--color-text-primary)",
+                                minWidth: "16px",
+                                textAlign: "center",
+                              }}
+                            >
+                              {themeCount}
+                            </span>
+                            <button
+                              onClick={() => setThemeCount((n) => Math.min(maxThemeCount, n + 1))}
+                              disabled={themeCount >= maxThemeCount}
+                              style={{
+                                fontFamily: "var(--font-ui)",
+                                fontSize: "14px",
+                                width: "28px",
+                                height: "28px",
+                                border: "1px solid var(--color-border)",
+                                background: "transparent",
+                                color: themeCount >= maxThemeCount ? "var(--color-text-muted)" : "var(--color-text-secondary)",
+                                cursor: themeCount >= maxThemeCount ? "not-allowed" : "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              +
+                            </button>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
