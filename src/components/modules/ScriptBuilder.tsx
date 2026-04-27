@@ -555,6 +555,23 @@ export default function ScriptBuilder({
               </p>
             ) : (
               <>
+                <div style={{ padding: "6px 12px 6px", borderBottom: "1px solid var(--color-border-subtle)" }}>
+                  <button
+                    onClick={skipGenre2}
+                    style={{
+                      fontFamily: "var(--font-ui)",
+                      fontSize: "10px",
+                      letterSpacing: "0.04em",
+                      color: "var(--color-text-muted)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    Skip →
+                  </button>
+                </div>
                 {rankedGenre2.map(({ item, artMod, comMod }) => {
                   const total = artMod + comMod;
                   const isSelected = sel.genre2?.id === item.id;
@@ -598,23 +615,6 @@ export default function ScriptBuilder({
                     </button>
                   );
                 })}
-                <div style={{ borderTop: "1px solid var(--color-border-subtle)", padding: "6px 12px 8px", marginTop: "2px" }}>
-                  <button
-                    onClick={skipGenre2}
-                    style={{
-                      fontFamily: "var(--font-ui)",
-                      fontSize: "10px",
-                      letterSpacing: "0.04em",
-                      color: "var(--color-text-muted)",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                  >
-                    Skip →
-                  </button>
-                </div>
               </>
             );
           } else if (isThemes) {
