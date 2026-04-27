@@ -309,6 +309,14 @@ export default function ScriptBuilder({
   function selectSingle(key: Exclude<SectionKey, "themesEvents">, item: ScriptElement) {
     const newSel = { ...sel, [key]: item };
     setSel(newSel);
+    // Adding an optional char consumes a content tag slot — trim excess themes to stay in budget
+    if (key === "supporting" || key === "antagonist") {
+      const newCharCount = (newSel.supporting ? 1 : 0) + (newSel.antagonist ? 1 : 0);
+      const maxAllowedThemes = contentTagBudget - newCharCount;
+      if (themes.length > maxAllowedThemes) {
+        setThemes(prev => prev.slice(0, maxAllowedThemes));
+      }
+    }
     const idx = BUILDER_SECTION_ORDER.indexOf(key);
     for (let i = idx + 1; i < BUILDER_SECTION_ORDER.length; i++) {
       const next = BUILDER_SECTION_ORDER[i];
@@ -586,15 +594,22 @@ export default function ScriptBuilder({
                     ))}
                 </>
               ) : (
-                rankedList.map(({ item, score }) => (
-                  <ElementRow
-                    key={item.id}
-                    item={item}
-                    score={score}
-                    selected={sel[key as keyof SelState]?.id === item.id}
-                    onSelect={() => selectSingle(key as Exclude<SectionKey, "themesEvents">, item)}
-                  />
-                ))
+                rankedList.map(({ item, score }) => {
+                  const isOptionalChar = key === "supporting" || key === "antagonist";
+                  // Disable if this would be a *new* optional char addition (not a swap) and budget is full
+                  const wouldAddNewChar = isOptionalChar && sel[key as keyof SelState] === null;
+                  const disabled = wouldAddNewChar && contentTagsUsed >= contentTagBudget;
+                  return (
+                    <ElementRow
+                      key={item.id}
+                      item={item}
+                      score={score}
+                      selected={sel[key as keyof SelState]?.id === item.id}
+                      disabled={disabled}
+                      onSelect={() => selectSingle(key as Exclude<SectionKey, "themesEvents">, item)}
+                    />
+                  );
+                })
               )}
             </CategorySection>
           );
