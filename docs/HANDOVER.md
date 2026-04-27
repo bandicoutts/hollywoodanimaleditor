@@ -47,6 +47,9 @@ the browser.
   - `AudioTech.json` — audio system definitions (QPE stats, formats, dates, manufacturers)
   - `Milestones.json` — all milestone definitions and dependency chains
   - `Tutorial.json` — tutorial feature-flag unlock sequence
+  - `TagCompatibilityData.json` — pairwise compatibility scores (1–5) for all script element tag pairs; used to build `COMPAT_SCORES` in `scriptElements.ts`
+  - `GameVariables.json` — global game constants including `pollux_genre_factors`, `pollux_art_status_bonus`, `pollux_com_status_bonus`, `content_tags_in_script_range`, and character slot ranges
+  - `GenrePairs.json` — art/com bonuses for two-genre combinations; source for `GENRE_PAIR_MODIFIERS`
 
 ---
 
@@ -182,7 +185,7 @@ containing `git commit`. This is local-only (gitignored).
 
 ---
 
-## Current state (as of 2026-04-27)
+## Current state (as of 2026-04-27, updated same day)
 
 All major data work is complete:
 
@@ -203,7 +206,7 @@ All major data work is complete:
   and manufacturer ordering are hardcoded in `TechnologiesModule.tsx` — source data is
   `VideoTech.json` and `AudioTech.json` from the game configs.
 - **Milestones & Game Flags module**: Milestones are now grouped under Studio Policies and Technology Quests super-section headers, with per-policy/quest sub-group headers (Trash King, Behemoth, Boutique, Factory, All-Rounder; quest groups for all 18 known tech quests). Each milestone row shows a human-readable label and a description subtitle sourced from `MILESTONE_META` in `MilestonesModule.tsx`. Game feature flags are grouped into UI / Management / Events & Competition with human-readable labels from `FUNC_META`. All toggles (Locked/Finished on milestones; toggle pill on features) are unchanged.
-- **Script Workshop module** (`AIScriptsModule.tsx`): Fully rewritten. Reads `stateJson.timePassed` (elapsed days from 1929-01-01) and `stateJson.tagRecipesPool` to determine which script elements are unlocked. Generates up to 6 scored script combination suggestions entirely client-side. Controls: genre filter pills, Art/Balanced/Commercial bias toggle, theme/event count stepper (1–5). Logic lives in `src/lib/script-suggestions.ts`; all element data (art/com modifiers, unlock conditions, ~700 synergy pairs, genre pair modifiers) is in `src/data/scriptElements.ts`.
+- **Script Workshop module** (`AIScriptsModule.tsx`): Fully rewritten. Reads `stateJson.timePassed` (elapsed days from 1929-01-01) and `stateJson.tagRecipesPool` to determine which script elements are unlocked. Generates up to 6 scored script combination suggestions entirely client-side. Controls: genre filter pills, Art / Balanced / Commercial / Pollux bias toggle, themes/events stepper (3–5, min enforced by `content_tags_in_script_range`). All 3 character types are mandatory (each has `slotRange.from=1` in game config). Logic lives in `src/lib/script-suggestions.ts`; element data (art/com modifiers, unlock conditions, genre pair modifiers, `POLLUX_GENRE_FACTORS`) is in `src/data/scriptElements.ts`. Compatibility scoring uses `COMPAT_SCORES: Map<string, number>` with 5,662 entries sourced from `TagCompatibilityData.json` (score-5 → 1.0, score-4 → 0.5), keyed by sorted tag IDs. Pollux formula: `genre_factor × (art × 2 + com)`, weights sourced from `GameVariables.json`.
 - **Technical spec** (`docs/technical-spec.md`): Up to date with all the above.
 
 No outstanding tasks at this handover point.

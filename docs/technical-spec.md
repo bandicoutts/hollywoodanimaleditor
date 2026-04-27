@@ -504,17 +504,39 @@ All 8 element categories encoded as typed arrays with art/com modifiers and raw 
 | Finales | 29 |
 
 Also exports:
-- `GENRE_PAIR_MODIFIERS` — art/com bonuses when combining two genres (symmetric lookup keyed `"LabelA|LabelB"`)
-- `SYNERGY_PAIRS` — `Set<string>` of all score-5 element-pair synergies from the game's compatibility table, keyed as alphabetically sorted `"LabelA|LabelB"`
+- `GENRE_PAIR_MODIFIERS` — art/com bonuses when combining two genres (symmetric lookup keyed `"LabelA|LabelB"`). Values sourced directly from `GenrePairs.json`.
+- `COMPAT_SCORES` — `Map<string, number>` of element-pair compatibility scores, keyed as sorted `"ID_A|ID_B"` strings. Score-5 pairs (perfect) → 1.0; score-4 pairs (strong) → 0.5. 5,662 total entries sourced from `TagCompatibilityData.json`. Uses tag IDs (not display labels).
+- `POLLUX_GENRE_FACTORS` — `Record<string, number>` of genre weights for Pollux award scoring, sourced from `GameVariables.json`. Drama 1.0 → Horror 0.3.
 
-**Suggestion algorithm**: 300 random candidate combinations are scored and the top 6 (deduplicated by genre+setting+protagonist) are returned. Score = sum of all element art/com modifiers + genre pair modifier + synergy count × 0.05 weighting factor. Sort order controlled by bias setting.
+**Scoring formulas** (`src/lib/script-suggestions.ts`):
+
+```
+art     = sum of all element art values + genre pair art modifier
+com     = sum of all element com values + genre pair com modifier
+synergy = weighted sum of COMPAT_SCORES for all element pairs
+            (score-5 pairs add 1.0; score-4 pairs add 0.5)
+pollux  = genre_factor × (art × 2 + com)
+            art weighted 2× because pollux_art_status_bonus max 4 vs pollux_com_status_bonus max 2
+```
+
+**Bias sort key**:
+- Art: `art × 2 + synergy × 0.1`
+- Commercial: `com × 2 + synergy × 0.1`
+- Balanced: `art + com + synergy × 0.1`
+- Pollux: `pollux + synergy × 0.1`
+
+**Suggestion algorithm**: 300 random candidate combinations are scored and the top 6 (deduplicated by genre+setting+protagonist) are returned. Sort order controlled by bias setting.
+
+**Script composition constraints** (from `GameVariables.json`):
+- All 3 character types (protagonist, supporting character, antagonist) are **mandatory** — each has `slotRange.from = 1`
+- Themes/Events range: **3–5** per film (`content_tags_in_script_range: 3_5`)
 
 **UI controls**:
 - Genre filter pills (only unlocked genres shown)
-- Bias toggle: Art / Balanced / Commercial
-- Theme/Event count stepper (1–5 per film)
+- Bias toggle: Art / Balanced / Commercial / Pollux
+- Themes/Events per film stepper (3–5, min enforced by game rules)
 - Pool stats bar (element counts by category)
-- 6 result cards: genre(s), setting, cast (protagonist / supporting / antagonist), themes/events, finale, Art/Com/Syn scores
+- 6 result cards: genre(s), setting, cast (protagonist / supporting / antagonist), themes/events, finale, Art / Com / Compat / Pol score badges
 
 ---
 
