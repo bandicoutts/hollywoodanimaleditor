@@ -120,7 +120,7 @@ function ScriptCard({ combo, index }: { combo: ScriptCombo; index: number }) {
           <ScoreBadge label="Art" value={scores.art} color="#7ec8a0" />
           <ScoreBadge label="Com" value={scores.com} color="#7ab4d4" />
           {scores.synergy > 0 && (
-            <ScoreBadge label="Syn" value={scores.synergy} color="var(--color-gold)" />
+            <ScoreBadge label="Compat" value={scores.synergy} color="var(--color-gold)" />
           )}
           {scores.pollux > 0 && (
             <ScoreBadge label="Pol" value={scores.pollux} color="#b8a0d4" />
@@ -132,8 +132,8 @@ function ScriptCard({ combo, index }: { combo: ScriptCombo; index: number }) {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
         <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--color-text-muted)", marginRight: "2px" }}>Cast</span>
         <Chip label={protagonist.label} />
-        {supporting && <Chip label={supporting.label} muted />}
-        {antagonist && <Chip label={antagonist.label} muted />}
+        <Chip label={supporting.label} muted />
+        <Chip label={antagonist.label} muted />
       </div>
 
       {/* Themes & events */}
@@ -200,7 +200,6 @@ export default function AIScriptsModule() {
   const [genreFilter, setGenreFilter] = useState<string | null>(null);
   const [bias, setBias] = useState<Bias>("balanced");
   const [themeCount, setThemeCount] = useState(3);
-  const [castSize, setCastSize] = useState<1 | 2 | 3>(3);
   const [results, setResults] = useState<ScriptCombo[]>([]);
   const [generated, setGenerated] = useState(false);
 
@@ -211,7 +210,7 @@ export default function AIScriptsModule() {
 
   function generate() {
     if (!pool) return;
-    const suggestions = generateSuggestions(pool, { genreFilter, bias, themeEventCount: themeCount, castSize });
+    const suggestions = generateSuggestions(pool, { genreFilter, bias, themeEventCount: themeCount });
     setResults(suggestions);
     setGenerated(true);
   }
@@ -283,18 +282,11 @@ export default function AIScriptsModule() {
               </div>
 
               <div>
-                <p style={labelStyle}>
-                  Story elements per film
-                  {castSize < 3 && (
-                    <span style={{ color: "var(--color-gold)", marginLeft: "6px" }}>
-                      +{3 - castSize} from cast
-                    </span>
-                  )}
-                </p>
+                <p style={labelStyle}>Themes / Events per film</p>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <button
-                    onClick={() => setThemeCount((n) => Math.max(1, n - 1))}
-                    disabled={themeCount <= 1}
+                    onClick={() => setThemeCount((n) => Math.max(3, n - 1))}
+                    disabled={themeCount <= 3}
                     style={{
                       fontFamily: "var(--font-ui)",
                       fontSize: "14px",
@@ -302,8 +294,8 @@ export default function AIScriptsModule() {
                       height: "28px",
                       border: "1px solid var(--color-border)",
                       background: "transparent",
-                      color: themeCount <= 1 ? "var(--color-text-muted)" : "var(--color-text-secondary)",
-                      cursor: themeCount <= 1 ? "not-allowed" : "pointer",
+                      color: themeCount <= 3 ? "var(--color-text-muted)" : "var(--color-text-secondary)",
+                      cursor: themeCount <= 3 ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -321,7 +313,7 @@ export default function AIScriptsModule() {
                       textAlign: "center",
                     }}
                   >
-                    {themeCount + (3 - castSize)}
+                    {themeCount}
                   </span>
                   <button
                     onClick={() => setThemeCount((n) => Math.min(5, n + 1))}
@@ -335,67 +327,6 @@ export default function AIScriptsModule() {
                       background: "transparent",
                       color: themeCount >= 5 ? "var(--color-text-muted)" : "var(--color-text-secondary)",
                       cursor: themeCount >= 5 ? "not-allowed" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <p style={labelStyle}>
-                  Cast size
-                  {castSize === 1 && <span style={{ color: "var(--color-text-muted)", marginLeft: "6px" }}>protagonist only</span>}
-                  {castSize === 2 && <span style={{ color: "var(--color-text-muted)", marginLeft: "6px" }}>+ antagonist</span>}
-                  {castSize === 3 && <span style={{ color: "var(--color-text-muted)", marginLeft: "6px" }}>full</span>}
-                </p>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <button
-                    onClick={() => setCastSize((n) => Math.max(1, n - 1) as 1 | 2 | 3)}
-                    disabled={castSize <= 1}
-                    style={{
-                      fontFamily: "var(--font-ui)",
-                      fontSize: "14px",
-                      width: "28px",
-                      height: "28px",
-                      border: "1px solid var(--color-border)",
-                      background: "transparent",
-                      color: castSize <= 1 ? "var(--color-text-muted)" : "var(--color-text-secondary)",
-                      cursor: castSize <= 1 ? "not-allowed" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    −
-                  </button>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-ui)",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      color: "var(--color-text-primary)",
-                      minWidth: "16px",
-                      textAlign: "center",
-                    }}
-                  >
-                    {castSize}
-                  </span>
-                  <button
-                    onClick={() => setCastSize((n) => Math.min(3, n + 1) as 1 | 2 | 3)}
-                    disabled={castSize >= 3}
-                    style={{
-                      fontFamily: "var(--font-ui)",
-                      fontSize: "14px",
-                      width: "28px",
-                      height: "28px",
-                      border: "1px solid var(--color-border)",
-                      background: "transparent",
-                      color: castSize >= 3 ? "var(--color-text-muted)" : "var(--color-text-secondary)",
-                      cursor: castSize >= 3 ? "not-allowed" : "pointer",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",

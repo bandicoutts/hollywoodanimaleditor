@@ -9,7 +9,7 @@ import {
   EVENTS,
   FINALES,
   GENRE_PAIR_MODIFIERS,
-  SYNERGY_PAIRS,
+  COMPAT_SCORES,
   POLLUX_GENRE_FACTORS,
   type ScriptElement,
   type ScoreResult,
@@ -23,7 +23,6 @@ export interface SuggestionOpts {
   genreFilter: string | null;
   bias: Bias;
   themeEventCount: number;
-  castSize: 1 | 2 | 3;
 }
 
 export interface ScriptCombo {
@@ -31,8 +30,8 @@ export interface ScriptCombo {
   genre2?: ScriptElement;
   setting: ScriptElement;
   protagonist: ScriptElement;
-  supporting?: ScriptElement;
-  antagonist?: ScriptElement;
+  supporting: ScriptElement;
+  antagonist: ScriptElement;
   themesEvents: ScriptElement[];
   finale: ScriptElement;
   scores: ScoreResult;
@@ -161,8 +160,8 @@ export function scoreCombination(combo: Omit<ScriptCombo, "scores">): ScoreResul
     combo.genre,
     combo.setting,
     combo.protagonist,
-    ...(combo.supporting ? [combo.supporting] : []),
-    ...(combo.antagonist ? [combo.antagonist] : []),
+    combo.supporting,
+    combo.antagonist,
     ...combo.themesEvents,
     combo.finale,
   ];
@@ -180,11 +179,13 @@ export function scoreCombination(combo: Omit<ScriptCombo, "scores">): ScoreResul
     }
   }
 
+  // Compatibility score: weighted sum using real TagCompatibilityData
+  // Score-5 pairs (perfect) → 1.0, score-4 pairs (strong) → 0.5
   let synergy = 0;
   for (let i = 0; i < elements.length; i++) {
     for (let j = i + 1; j < elements.length; j++) {
-      const sorted = [elements[i].label, elements[j].label].sort();
-      if (SYNERGY_PAIRS.has(`${sorted[0]}|${sorted[1]}`)) synergy++;
+      const sorted = [elements[i].id, elements[j].id].sort();
+      synergy += COMPAT_SCORES.get(`${sorted[0]}|${sorted[1]}`) ?? 0;
     }
   }
 
@@ -199,7 +200,7 @@ export function scoreCombination(combo: Omit<ScriptCombo, "scores">): ScoreResul
 }
 
 function biasScore(scores: ScoreResult, bias: Bias): number {
-  const syn = scores.synergy * 0.05;
+  const syn = scores.synergy * 0.1;
   switch (bias) {
     case "art":        return scores.art * 2 + syn;
     case "commercial": return scores.com * 2 + syn;
@@ -223,10 +224,7 @@ export function generateSuggestions(
   pool: UnlockedPool,
   opts: SuggestionOpts
 ): ScriptCombo[] {
-  const { genreFilter, bias, themeEventCount, castSize } = opts;
-
-  // Freed character slots become extra story elements
-  const effectiveThemeCount = themeEventCount + (3 - castSize);
+  const { genreFilter, bias, themeEventCount } = opts;
 
   const genrePool = genreFilter
     ? pool.genres.filter((g) => g.id === genreFilter)
@@ -236,8 +234,8 @@ export function generateSuggestions(
     genrePool.length === 0 ||
     pool.settings.length === 0 ||
     pool.protagonists.length === 0 ||
-    (castSize >= 2 && pool.antagonists.length === 0) ||
-    (castSize >= 3 && pool.supportingChars.length === 0) ||
+    pool.supportingChars.length === 0 ||
+    pool.antagonists.length === 0 ||
     pool.themesEvents.length === 0 ||
     pool.finales.length === 0
   ) {
@@ -264,9 +262,9 @@ export function generateSuggestions(
       genre2,
       setting: pick(pool.settings),
       protagonist: pick(pool.protagonists),
-      supporting: castSize >= 3 ? pick(pool.supportingChars) : undefined,
-      antagonist: castSize >= 2 ? pick(pool.antagonists) : undefined,
-      themesEvents: pickN(pool.themesEvents, effectiveThemeCount),
+      supporting: pick(pool.supportingChars),
+      antagonist: pick(pool.antagonists),
+      themesEvents: pickN(pool.themesEvents, themeEventCount),
       finale: pick(pool.finales),
     };
 
