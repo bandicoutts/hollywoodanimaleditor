@@ -106,7 +106,7 @@ export default function TopBar() {
             minWidth: 0,
           }}
         >
-          <div ref={logRef} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", position: "relative" }}>
+          <div ref={logRef} style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px", position: "relative" }}>
             {unsavedCount > 0 && !downloaded && (
               <button
                 onClick={() => setLogOpen((o) => !o)}
@@ -198,6 +198,7 @@ export default function TopBar() {
             )}
             <button
               onClick={handleDownload}
+              title="Replace a save slot in-game"
               style={{
                 fontFamily: "var(--font-ui)",
                 fontSize: "11px",
@@ -227,18 +228,6 @@ export default function TopBar() {
             >
               {downloaded ? "Downloaded ✓" : "Download Modified Save"}
             </button>
-            <span
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: "8px",
-                letterSpacing: "0.06em",
-                color: "var(--color-text-muted)",
-                textTransform: "uppercase",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Replace a save slot in-game
-            </span>
           </div>
         </div>
       )}

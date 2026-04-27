@@ -8,6 +8,7 @@ export default function StatBar({
   cap,
   color,
   onChange,
+  onMax,
   scale = 1,
   precision = 3,
 }: {
@@ -16,6 +17,7 @@ export default function StatBar({
   cap: number;
   color: string;
   onChange: (v: number) => void;
+  onMax?: () => void;
   scale?: number;
   precision?: number;
 }) {
@@ -44,17 +46,47 @@ export default function StatBar({
           marginBottom: "5px",
         }}
       >
-        <span
-          style={{
-            fontFamily: "var(--font-ui)",
-            fontSize: "10px",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "var(--color-text-muted)",
-          }}
-        >
-          {label}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span
+            style={{
+              fontFamily: "var(--font-ui)",
+              fontSize: "10px",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--color-text-muted)",
+            }}
+          >
+            {label}
+          </span>
+          {onMax && (
+            <button
+              onClick={onMax}
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "8px",
+                letterSpacing: "0.07em",
+                textTransform: "uppercase",
+                color: "var(--color-text-muted)",
+                background: "transparent",
+                border: "1px solid var(--color-border)",
+                padding: "1px 4px",
+                cursor: "pointer",
+                lineHeight: 1.4,
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--color-gold)";
+                e.currentTarget.style.borderColor = "var(--color-gold-mid)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--color-text-muted)";
+                e.currentTarget.style.borderColor = "var(--color-border)";
+              }}
+            >
+              Max
+            </button>
+          )}
+        </div>
         {editing ? (
           <input
             autoFocus

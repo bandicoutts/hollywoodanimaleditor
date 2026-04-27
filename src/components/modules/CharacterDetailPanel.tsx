@@ -379,36 +379,48 @@ function AppealColumn({
         scale={1}
         precision={3}
       />
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "-6px", marginBottom: "14px", alignItems: "center" }}>
-        <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)", marginRight: "2px", flexShrink: 0 }}>
-          Set tier:
-        </span>
-        {tiers.map((tier) => {
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", marginTop: "-6px", marginBottom: "14px" }}>
+        {tiers.map((tier, i) => {
           const isActive = currentTier === tier.label;
+          const isFirst = i === 0;
+          const isLast = i === tiers.length - 1;
           return (
             <button
               key={tier.label}
               onClick={() => onSetAppeal(type, tier.value)}
+              title={tier.label}
               style={{
                 fontFamily: "var(--font-ui)",
                 fontSize: "9px",
                 letterSpacing: "0.06em",
                 textTransform: "uppercase",
                 color: isActive ? color : "var(--color-text-muted)",
-                background: isActive ? color + "18" : "transparent",
-                border: `1px solid ${isActive ? color + "66" : "var(--color-border)"}`,
-                padding: "3px 6px",
+                background: isActive ? color + "22" : "transparent",
+                border: `1px solid ${isActive ? color + "88" : "var(--color-border)"}`,
+                marginLeft: isFirst ? 0 : "-1px",
+                borderRadius: isFirst ? "2px 0 0 2px" : isLast ? "0 2px 2px 0" : 0,
+                padding: "4px 2px",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
+                position: "relative",
+                zIndex: isActive ? 1 : 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = color;
-                e.currentTarget.style.borderColor = color + "66";
+                if (!isActive) {
+                  e.currentTarget.style.color = color;
+                  e.currentTarget.style.borderColor = color + "66";
+                  e.currentTarget.style.zIndex = "1";
+                }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = isActive ? color : "var(--color-text-muted)";
-                e.currentTarget.style.borderColor = isActive ? color + "66" : "var(--color-border)";
+                if (!isActive) {
+                  e.currentTarget.style.color = "var(--color-text-muted)";
+                  e.currentTarget.style.borderColor = "var(--color-border)";
+                  e.currentTarget.style.zIndex = "0";
+                }
               }}
             >
               {tier.label}
@@ -622,44 +634,46 @@ function LabelsEditor({
             const isUnknown = unknownLabels.includes(label);
             const isCaution = !!info?.caution;
             const tooltipText = info?.caution ? `${info.desc}\n⚠ ${info.caution}` : info?.desc;
-            return <div
-              key={label}
-              title={tooltipText}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-                fontFamily: "var(--font-ui)",
-                fontSize: "10px",
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                color: isUnknown ? "var(--color-text-muted)" : isCaution ? "var(--color-gold)" : "var(--color-text-secondary)",
-                border: `1px solid ${isCaution ? "var(--color-gold-mid)" : "var(--color-border)"}`,
-                padding: "2px 6px 2px 8px",
-              }}
-            >
-              {isCaution && <span style={{ fontSize: "9px" }}>⚠</span>}
-              {label}
-              <button
-                onClick={() => onRemove(label)}
-                title={`Remove ${label}`}
+            return (
+              <div
+                key={label}
+                title={tooltipText}
                 style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  cursor: "pointer",
-                  color: "var(--color-text-muted)",
-                  fontSize: "12px",
-                  lineHeight: 1,
                   display: "flex",
                   alignItems: "center",
+                  gap: "5px",
+                  fontFamily: "var(--font-ui)",
+                  fontSize: "10px",
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  color: isUnknown ? "var(--color-text-muted)" : isCaution ? "var(--color-gold)" : "var(--color-text-secondary)",
+                  border: `1px solid ${isCaution ? "var(--color-gold-mid)" : "var(--color-border)"}`,
+                  padding: "2px 6px 2px 8px",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-danger)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-muted)"; }}
               >
-                ×
-              </button>
-            </div>;
+                {isCaution && <span style={{ fontSize: "9px" }}>⚠</span>}
+                {label}
+                <button
+                  onClick={() => onRemove(label)}
+                  title={`Remove ${label}`}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    color: "var(--color-text-muted)",
+                    fontSize: "12px",
+                    lineHeight: 1,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-danger)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-muted)"; }}
+                >
+                  ×
+                </button>
+              </div>
+            );
           })}
         </div>
       )}
@@ -771,7 +785,7 @@ export default function DetailPanel({
   return (
     <div style={{ padding: "28px 32px", minHeight: "100%" }}>
       {/* Header */}
-      <div style={{ marginBottom: "20px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px", marginBottom: "20px" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           {editingName ? (
             <input
@@ -840,13 +854,6 @@ export default function DetailPanel({
             </span>
           </div>
         </div>
-      </div>
-
-      <hr className="gold-divider" style={{ marginBottom: "20px" }} />
-
-      {/* Skills */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <p style={FIELD_LABEL_STYLE}>Ratings</p>
         <button
           onClick={maxAllStats}
           style={{
@@ -861,6 +868,7 @@ export default function DetailPanel({
             cursor: "pointer",
             transition: "all 0.15s ease",
             whiteSpace: "nowrap",
+            flexShrink: 0,
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = "var(--color-gold)";
@@ -871,29 +879,39 @@ export default function DetailPanel({
             e.currentTarget.style.borderColor = "var(--color-border)";
           }}
         >
-          Max This Character
+          Max All
         </button>
       </div>
 
+      <hr className="gold-divider" style={{ marginBottom: "20px" }} />
+
+      {/* Skills */}
+      <p style={{ ...FIELD_LABEL_STYLE, marginBottom: "16px" }}>Ratings</p>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
-        {profEntries.map(([key, val]) => (
-          <StatBar
-            key={key}
-            label={getProfessionLabel(key)}
-            value={parseFloat(val) || 0}
-            cap={cap}
-            color={getProfessionColor(key)}
-            onChange={(v) => setSkill(key, v)}
-            scale={10}
-            precision={1}
-          />
-        ))}
+        {profEntries.map(([key, val]) => {
+          const skillVal = parseFloat(val) || 0;
+          return (
+            <StatBar
+              key={key}
+              label={getProfessionLabel(key)}
+              value={skillVal}
+              cap={cap}
+              color={getProfessionColor(key)}
+              onChange={(v) => setSkill(key, v)}
+              onMax={skillVal < 1 ? () => setSkill(key, 1) : undefined}
+              scale={10}
+              precision={1}
+            />
+          );
+        })}
         <StatBar
           label="Skill Cap"
           value={cap}
           cap={1}
           color={profColor + "88"}
           onChange={setLimit}
+          onMax={cap < 1 ? () => setLimit(1) : undefined}
           scale={10}
           precision={1}
         />
@@ -910,6 +928,7 @@ export default function DetailPanel({
           cap={1}
           color={moodColor(char.mood)}
           onChange={setMood}
+          onMax={(parseFloat(char.mood) || 0) < 1 ? () => setMood(1) : undefined}
           scale={100}
           precision={0}
         />
@@ -919,6 +938,7 @@ export default function DetailPanel({
           cap={1}
           color="#9a9280"
           onChange={setAttitude}
+          onMax={(parseFloat(char.attitude) || 0) < 1 ? () => setAttitude(1) : undefined}
           scale={100}
           precision={0}
         />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSaveFile } from "@/context/SaveFileContext";
 import type { Character } from "@/lib/save-file";
 import { parseGameDate } from "@/lib/script-suggestions";
@@ -31,39 +31,56 @@ function topSkill(char: Character): { prof: string; value: number } | null {
 function CharRow({
   char,
   isActive,
-  onClick,
+  isSelected,
+  selectionMode,
+  onOpen,
+  onToggleSelect,
 }: {
   char: Character;
   isActive: boolean;
-  onClick: () => void;
+  isSelected: boolean;
+  selectionMode: boolean;
+  onOpen: () => void;
+  onToggleSelect: (shift: boolean) => void;
 }) {
+  const [hovered, setHovered] = useState(false);
   const profKey = getPrimaryProfession(char.professions);
   const profColor = profKey ? getProfessionColor(profKey) : "#9a9280";
   const skill = topSkill(char);
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (selectionMode) onToggleSelect(e.shiftKey);
+    else onOpen();
+  };
+
+  const borderColor = isSelected ? "var(--color-gold-mid)" : isActive ? profColor : "transparent";
+
+  let bg: string;
+  if (hovered && selectionMode) bg = isSelected ? "#c9a44a22" : "#c9a44a0a";
+  else if (hovered && !selectionMode && !isActive && !isSelected) bg = "#1d1a1580";
+  else if (isSelected) bg = "#c9a44a18";
+  else if (isActive) bg = "#c9a44a0d";
+  else bg = "transparent";
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         display: "flex",
         alignItems: "center",
         gap: "8px",
         width: "100%",
         padding: "8px 12px",
-        background: isActive ? "#c9a44a0d" : "transparent",
-        borderLeft: isActive ? `2px solid ${profColor}` : "2px solid transparent",
+        background: bg,
+        borderLeft: `2px solid ${borderColor}`,
         borderRight: "none",
         borderTop: "none",
         borderBottom: "none",
         cursor: "pointer",
         textAlign: "left",
         transition: "background 0.15s ease",
-      }}
-      onMouseEnter={(e) => {
-        if (!isActive) e.currentTarget.style.background = "#1d1a1580";
-      }}
-      onMouseLeave={(e) => {
-        if (!isActive) e.currentTarget.style.background = "transparent";
       }}
     >
       {/* Mood dot */}
@@ -103,19 +120,39 @@ function CharRow({
           </p>
         )}
       </div>
-      {/* Top stat */}
-      {skill && (
-        <span
+      {/* Top stat or selection tick */}
+      {selectionMode ? (
+        <div
           style={{
-            fontFamily: "var(--font-serif)",
-            fontSize: "12px",
-            fontWeight: 600,
-            color: profColor,
+            width: 14,
+            height: 14,
             flexShrink: 0,
+            border: `1px solid ${isSelected ? "var(--color-gold)" : "var(--color-border)"}`,
+            background: isSelected ? "var(--color-gold)" : "transparent",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.15s ease",
           }}
         >
-          {(skill.value * 10).toFixed(1)}
-        </span>
+          {isSelected && (
+            <span style={{ color: "#1a1612", fontSize: "9px", lineHeight: 1, fontWeight: 700 }}>✓</span>
+          )}
+        </div>
+      ) : (
+        skill && (
+          <span
+            style={{
+              fontFamily: "var(--font-serif)",
+              fontSize: "12px",
+              fontWeight: 600,
+              color: profColor,
+              flexShrink: 0,
+            }}
+          >
+            {(skill.value * 10).toFixed(1)}
+          </span>
+        )
       )}
     </button>
   );
@@ -136,6 +173,40 @@ function BulkBtn({ label, onClick }: { label: string; onClick: () => void }) {
   );
 }
 
+// ── Miniature select-all checkbox ─────────────────────────────────────────────
+
+function SelectAllCheckbox({
+  checked,
+  indeterminate,
+  onChange,
+}: {
+  checked: boolean;
+  indeterminate: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <div
+      onClick={onChange}
+      title={checked ? "Deselect all visible" : "Select all visible"}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 14,
+        height: 14,
+        border: `1px solid ${checked || indeterminate ? "var(--color-gold)" : "var(--color-border)"}`,
+        background: checked ? "var(--color-gold)" : "transparent",
+        cursor: "pointer",
+        flexShrink: 0,
+        transition: "all 0.15s ease",
+      }}
+    >
+      {checked && <span style={{ color: "#1a1612", fontSize: "9px", fontWeight: 700, lineHeight: 1 }}>✓</span>}
+      {!checked && indeterminate && <span style={{ color: "var(--color-gold)", fontSize: "10px", lineHeight: 1 }}>−</span>}
+    </div>
+  );
+}
+
 // ── Main module ───────────────────────────────────────────────────────────────
 
 export default function CharactersModule() {
@@ -146,6 +217,11 @@ export default function CharactersModule() {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<"default" | "name" | "skill-desc" | "mood-asc">("default");
   const [pendingBulk, setPendingBulk] = useState<"maxAll" | "removeCaps" | null>(null);
+
+  // Multi-select state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [lastSelectedIdx, setLastSelectedIdx] = useState<number | null>(null);
 
   const characters = saveData?.stateJson?.characters ?? [];
   const gameDate = useMemo(
@@ -178,6 +254,12 @@ export default function CharactersModule() {
     }
     return list;
   }, [characters, showAll, profFilter, search, sortKey]);
+
+  // Clear selection when filters change
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setLastSelectedIdx(null);
+  }, [showAll, profFilter, search, sortKey]);
 
   const availableProfs = useMemo(() => {
     const base = showAll ? characters : characters.filter((c) => c.studioId !== null);
@@ -212,6 +294,61 @@ export default function CharactersModule() {
     [updateStateJson]
   );
 
+  // ── Selection mode ────────────────────────────────────────────────────────
+
+  const enterSelectionMode = () => {
+    setSelectedIds(new Set());
+    setLastSelectedIdx(null);
+    setSelectionMode(true);
+  };
+
+  const exitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+    setLastSelectedIdx(null);
+  };
+
+  const handleToggleSelect = useCallback(
+    (charId: number, charIdx: number, shift: boolean) => {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (shift && lastSelectedIdx !== null) {
+          const start = Math.min(lastSelectedIdx, charIdx);
+          const end = Math.max(lastSelectedIdx, charIdx);
+          for (let i = start; i <= end; i++) next.add(filtered[i].id);
+        } else {
+          if (next.has(charId)) next.delete(charId);
+          else next.add(charId);
+        }
+        return next;
+      });
+      if (!shift) setLastSelectedIdx(charIdx);
+    },
+    [filtered, lastSelectedIdx]
+  );
+
+  const handleSelectAll = useCallback(() => {
+    const allSelected = filtered.every((c) => selectedIds.has(c.id));
+    if (allSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const c of filtered) next.delete(c.id);
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const c of filtered) next.add(c.id);
+        return next;
+      });
+    }
+  }, [filtered, selectedIds]);
+
+  const allVisibleSelected = filtered.length > 0 && filtered.every((c) => selectedIds.has(c.id));
+  const someVisibleSelected = !allVisibleSelected && filtered.some((c) => selectedIds.has(c.id));
+
+  // ── Global bulk actions ───────────────────────────────────────────────────
+
   const confirmBulkMaxAll = useCallback(() => {
     const scope = showAll ? "all characters" : "employed characters";
     updateStateJson((s) => {
@@ -241,6 +378,69 @@ export default function CharactersModule() {
     }, `Characters — remove caps (${scope})`);
     setPendingBulk(null);
   }, [updateStateJson, showAll]);
+
+  // ── Selection-scoped bulk actions ─────────────────────────────────────────
+
+  const applyToSelected = useCallback(
+    (updater: (c: Character) => void, label: string) => {
+      updateStateJson((s) => {
+        for (const c of s.characters) {
+          if (selectedIds.has(c.id)) updater(c);
+        }
+      }, label);
+    },
+    [updateStateJson, selectedIds]
+  );
+
+  const n = selectedIds.size;
+
+  const applySelMaxAll = useCallback(() =>
+    applyToSelected((c) => {
+      for (const k of Object.keys(c.professions)) c.professions[k] = "1.000";
+      c.limit = "1.000";
+      c.Limit = "1.000";
+      c.mood = "1.000";
+      c.attitude = "1.000";
+      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
+      if (wt?.ART) wt.ART.value = "1.000";
+      if (wt?.COM) wt.COM.value = "1.000";
+    }, `Characters — max all (${n} selected)`),
+  [applyToSelected, n]);
+
+  const applySelMaxSkills = useCallback(() =>
+    applyToSelected((c) => {
+      for (const k of Object.keys(c.professions)) c.professions[k] = "1.000";
+    }, `Characters — max skills (${n} selected)`),
+  [applyToSelected, n]);
+
+  const applySelMaxCap = useCallback(() =>
+    applyToSelected(
+      (c) => { c.limit = "1.000"; c.Limit = "1.000"; },
+      `Characters — max cap (${n} selected)`
+    ),
+  [applyToSelected, n]);
+
+  const applySelMaxHappiness = useCallback(() =>
+    applyToSelected(
+      (c) => { c.mood = "1.000"; },
+      `Characters — max happiness (${n} selected)`
+    ),
+  [applyToSelected, n]);
+
+  const applySelMaxLoyalty = useCallback(() =>
+    applyToSelected(
+      (c) => { c.attitude = "1.000"; },
+      `Characters — max loyalty (${n} selected)`
+    ),
+  [applyToSelected, n]);
+
+  const applySelMaxAppeal = useCallback(() =>
+    applyToSelected((c) => {
+      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
+      if (wt?.ART) wt.ART.value = "1.000";
+      if (wt?.COM) wt.COM.value = "1.000";
+    }, `Characters — max appeal (${n} selected)`),
+  [applyToSelected, n]);
 
   if (!isLoaded) {
     return (
@@ -381,7 +581,7 @@ export default function CharactersModule() {
           </p>
         </div>
 
-        {/* Bulk actions — visually separated from filter bar */}
+        {/* Bulk actions — context-sensitive */}
         <div
           style={{
             padding: "6px 12px",
@@ -393,29 +593,97 @@ export default function CharactersModule() {
             background: "var(--color-bg-raised)",
           }}
         >
-          <span
+          {selectionMode ? (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.06em", textTransform: "uppercase", color: selectedIds.size > 0 ? "var(--color-gold)" : "var(--color-text-muted)" }}>
+                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select characters"}
+                </span>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  {selectedIds.size > 0 && (
+                    <button
+                      onClick={() => { setSelectedIds(new Set()); setLastSelectedIdx(null); }}
+                      style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--color-text-muted)", background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-text-primary)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-muted)"; }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <button
+                    onClick={exitSelectionMode}
+                    style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--color-gold)", background: "transparent", border: "1px solid var(--color-gold-mid)", padding: "1px 6px", cursor: "pointer" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-gold-mid)"; e.currentTarget.style.color = "#1a1612"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--color-gold)"; }}
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                <BulkBtn label="Max All" onClick={applySelMaxAll} />
+                <BulkBtn label="Max Skills" onClick={applySelMaxSkills} />
+                <BulkBtn label="Max Cap" onClick={applySelMaxCap} />
+                <BulkBtn label="Max Happiness" onClick={applySelMaxHappiness} />
+                <BulkBtn label="Max Loyalty" onClick={applySelMaxLoyalty} />
+                <BulkBtn label="Max Appeal" onClick={applySelMaxAppeal} />
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-text-muted)" }}>
+                  Bulk actions
+                </span>
+                <button
+                  onClick={enterSelectionMode}
+                  style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--color-text-muted)", background: "transparent", border: "1px solid var(--color-border)", padding: "1px 6px", cursor: "pointer", transition: "all 0.15s ease" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-gold)"; e.currentTarget.style.borderColor = "var(--color-gold-mid)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-muted)"; e.currentTarget.style.borderColor = "var(--color-border)"; }}
+                >
+                  Select
+                </button>
+              </div>
+              <BulkBtn label="Max All Stats" onClick={() => setPendingBulk("maxAll")} />
+              <BulkBtn label="Uncap All Skills" onClick={() => setPendingBulk("removeCaps")} />
+            </>
+          )}
+        </div>
+
+        {/* Select-all row — only in selection mode */}
+        {selectionMode && (
+          <div
             style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: "9px",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              color: "var(--color-text-muted)",
+              padding: "5px 12px",
+              borderBottom: "1px solid var(--color-border-subtle)",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              flexShrink: 0,
             }}
           >
-            Bulk actions
-          </span>
-          <BulkBtn label="Max All Characters" onClick={() => setPendingBulk("maxAll")} />
-          <BulkBtn label="Remove Caps" onClick={() => setPendingBulk("removeCaps")} />
-        </div>
+            <SelectAllCheckbox
+              checked={allVisibleSelected}
+              indeterminate={someVisibleSelected}
+              onChange={handleSelectAll}
+            />
+            <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)", userSelect: "none" }}>
+              Select all visible
+            </span>
+          </div>
+        )}
 
         {/* List */}
         <div style={{ flex: 1, overflowY: "auto" }}>
-          {filtered.map((char) => (
+          {filtered.map((char, idx) => (
             <CharRow
               key={char.id}
               char={char}
               isActive={char.id === selectedId}
-              onClick={() => setSelectedId(char.id)}
+              isSelected={selectedIds.has(char.id)}
+              selectionMode={selectionMode}
+              onOpen={() => setSelectedId(char.id)}
+              onToggleSelect={(shift) => handleToggleSelect(char.id, idx, shift)}
             />
           ))}
           {filtered.length === 0 && (
