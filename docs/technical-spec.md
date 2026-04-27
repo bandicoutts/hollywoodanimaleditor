@@ -425,6 +425,8 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
 - Display names resolved via `TAG_LABELS` in `src/data/tags.ts` first; falls back to prefix-stripping + title-case (strips `PROTAGONIST_`, `ANTAGONIST_`, `THEME_`, `EVENTS_`/`EVENT_`, `FINALE_`, `SUPPORTINGCHARACTER_` prefixes before formatting)
 - Unknown tags (not in the reference list) are grouped by prefix: `EVENTS_`/`EVENT_` → Events, `THEME_` → Theme, `PROTAGONIST_` → Protagonist, etc. Only tags with no matching prefix go to "Other (unknown)"
 - Deactivating an unknown tag keeps it visible (inactive) so it can be re-toggled — it is not removed from the UI
+- **Lock hints**: inactive tags that haven't been researched yet show a small hint (`from 1950`, `from Sep 1935`, `recipe`, etc.) derived from `getLockHint()` in `script-suggestions.ts`. Active tags (already in `tagPool`) never show a hint regardless of their unlock condition.
+- **Recipe elements with `availalbeFromStartTag: true`**: three elements — Toxic Revenger (`PROTAGONIST_TOXIC_VIGILANTE`), Killer Toaster (`ANTAGONIST_TOASTER_KILLER`), and Wizard War (`THEME_WAR_WITH_SORCERERS`) — have `availalbeFromStartTag: true` in `TagData.json`, meaning they can appear in `tagPool` as normal researched tags (the recipe is just an alternate discovery path). Their unlock condition in `scriptElements.ts` is `">=1929"`, not `Recipe`. Do not change these to Recipe conditions.
 
 ### 5. Research (Perks)
 - Checklist grouped by functional category
@@ -484,9 +486,12 @@ Generates scored script combination ideas based on the player's unlocked element
 
 **Unlock filtering** (`src/lib/script-suggestions.ts`):
 
-- Current in-game date is read from `stateJson.timePassed` (format `"3287.00:00:00"` = elapsed days from 1929-01-01). Falls back to the latest date in `tagPool` entries if the field is absent.
-- Elements are filtered by date condition: `>=DD-MM-YYYY`, `>=YYYY`, `Before YYYY`, `After YYYY`, or bare year. Recipe elements (unlock type `Recipe (RECIPE*)`) are unlocked when their ID appears in `stateJson.tagRecipesPool`.
-- `tagRecipesPool` — `string[]` of element IDs the player has discovered via in-game recipe combinations (e.g. `"PROTAGONIST_SHERIFFS_CONJOINED_TWINS"`).
+`getUnlockedPool` uses **`tagPool` membership** as the sole source of truth — an element is included only if its ID is already in `stateJson.tagPool` (or `stateJson.tagRecipesPool` for recipe-only elements). Date conditions in `scriptElements.ts` determine when an element *becomes researchable* in-game; a player must still explicitly research it before it appears in their pool. Using date conditions alone would surface elements the player hasn't unlocked yet.
+
+- `tagPool` — `TagPoolEntry[]` where `Item1` is the tag ID. If an ID is present here, the element is available in the Workshop.
+- `tagRecipesPool` — `string[]` of element IDs discovered via in-game recipe combinations. Checked as a fallback for recipe-only elements not yet in `tagPool`.
+
+Note: `parseGameDate` and `isUnlocked` are still exported from `script-suggestions.ts` and used by the **Writing Tags** module to compute lock hints — they are not used by the Workshop for pool filtering.
 
 **Element data** (`src/data/scriptElements.ts`):
 

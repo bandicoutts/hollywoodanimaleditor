@@ -193,7 +193,9 @@ All major data work is complete:
   grouped into 20 sections matching the in-game research tree, 49 hidden behaviour=4 perks
   excluded from UI but preserved in saves.
 - **Writing Tags module**: All 253 script element tags across 8 categories, with human-readable
-  labels for non-obvious IDs. Previously missing tags have been added.
+  labels for non-obvious IDs. Inactive tags show date/recipe lock hints; active tags never show
+  a hint. Three elements (Toxic Revenger, Killer Toaster, Wizard War) have `availalbeFromStartTag:
+  true` in `TagData.json` and use `">=1929"` unlock conditions despite having an associated recipe.
 - **Competitor Studios module**: Each studio card shows the full studio name, two-letter ID badge,
   and a read-only reference row (tier, attack capability, quality range, releases/yr, defenceless
   flag). Metadata lives in `src/data/competitors.ts`.
@@ -206,7 +208,7 @@ All major data work is complete:
   and manufacturer ordering are hardcoded in `TechnologiesModule.tsx` — source data is
   `VideoTech.json` and `AudioTech.json` from the game configs.
 - **Milestones & Game Flags module**: Milestones are now grouped under Studio Policies and Technology Quests super-section headers, with per-policy/quest sub-group headers (Trash King, Behemoth, Boutique, Factory, All-Rounder; quest groups for all 18 known tech quests). Each milestone row shows a human-readable label and a description subtitle sourced from `MILESTONE_META` in `MilestonesModule.tsx`. Game feature flags are grouped into UI / Management / Events & Competition with human-readable labels from `FUNC_META`. All toggles (Locked/Finished on milestones; toggle pill on features) are unchanged.
-- **Script Workshop module** (`AIScriptsModule.tsx`): Fully rewritten. Reads `stateJson.timePassed` (elapsed days from 1929-01-01) and `stateJson.tagRecipesPool` to determine which script elements are unlocked. Generates up to 6 scored script combination suggestions entirely client-side. Controls: genre filter pills, Art / Balanced / Commercial / Pollux bias toggle, themes/events stepper (3–5, min enforced by `content_tags_in_script_range`). All 3 character types are mandatory (each has `slotRange.from=1` in game config). Logic lives in `src/lib/script-suggestions.ts`; element data (art/com modifiers, unlock conditions, genre pair modifiers, `POLLUX_GENRE_FACTORS`) is in `src/data/scriptElements.ts`. Compatibility scoring uses `COMPAT_SCORES: Map<string, number>` with 5,662 entries sourced from `TagCompatibilityData.json` (score-5 → 1.0, score-4 → 0.5), keyed by sorted tag IDs. Pollux formula: `genre_factor × (art × 2 + com)`, weights sourced from `GameVariables.json`.
+- **Script Workshop module** (`AIScriptsModule.tsx`): Generates up to 6 scored script combination suggestions entirely client-side. Pool filtering uses **`tagPool` membership** — only elements already in the player's `tagPool` (or `tagRecipesPool`) appear as options; date conditions in `scriptElements.ts` are for Writing Tags lock hints only, not for Workshop filtering. Controls: genre filter pills, Art / Balanced / Commercial / Pollux bias toggle, themes/events stepper (3–5). All 3 character types mandatory. Logic in `src/lib/script-suggestions.ts`; element data (art/com, unlock conditions, `COMPAT_SCORES` 5,662 entries, `POLLUX_GENRE_FACTORS`) in `src/data/scriptElements.ts`. Pollux formula: `genre_factor × (art × 2 + com)` from `GameVariables.json`.
 - **Technical spec** (`docs/technical-spec.md`): Up to date with all the above.
 
 No outstanding tasks at this handover point.
