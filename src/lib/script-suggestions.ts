@@ -16,12 +16,13 @@ import {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type Bias = "art" | "balanced" | "commercial";
+export type Bias = "art" | "balanced" | "commercial" | "pollux";
 
 export interface SuggestionOpts {
   genreFilter: string | null;
   bias: Bias;
   themeEventCount: number;
+  castSize: 1 | 2 | 3;
 }
 
 export interface ScriptCombo {
@@ -29,8 +30,8 @@ export interface ScriptCombo {
   genre2?: ScriptElement;
   setting: ScriptElement;
   protagonist: ScriptElement;
-  supporting: ScriptElement;
-  antagonist: ScriptElement;
+  supporting?: ScriptElement;
+  antagonist?: ScriptElement;
   themesEvents: ScriptElement[];
   finale: ScriptElement;
   scores: ScoreResult;
@@ -159,8 +160,8 @@ export function scoreCombination(combo: Omit<ScriptCombo, "scores">): ScoreResul
     combo.genre,
     combo.setting,
     combo.protagonist,
-    combo.supporting,
-    combo.antagonist,
+    ...(combo.supporting ? [combo.supporting] : []),
+    ...(combo.antagonist ? [combo.antagonist] : []),
     ...combo.themesEvents,
     combo.finale,
   ];
@@ -195,6 +196,7 @@ function biasScore(scores: ScoreResult, bias: Bias): number {
     case "art":        return scores.art * 2 + syn;
     case "commercial": return scores.com * 2 + syn;
     case "balanced":   return scores.art + scores.com + syn;
+    case "pollux":     return scores.art * 3 + scores.synergy * 0.2;
   }
 }
 
@@ -213,7 +215,10 @@ export function generateSuggestions(
   pool: UnlockedPool,
   opts: SuggestionOpts
 ): ScriptCombo[] {
-  const { genreFilter, bias, themeEventCount } = opts;
+  const { genreFilter, bias, themeEventCount, castSize } = opts;
+
+  // Freed character slots become extra story elements
+  const effectiveThemeCount = themeEventCount + (3 - castSize);
 
   const genrePool = genreFilter
     ? pool.genres.filter((g) => g.id === genreFilter)
@@ -223,8 +228,8 @@ export function generateSuggestions(
     genrePool.length === 0 ||
     pool.settings.length === 0 ||
     pool.protagonists.length === 0 ||
-    pool.supportingChars.length === 0 ||
-    pool.antagonists.length === 0 ||
+    (castSize >= 2 && pool.antagonists.length === 0) ||
+    (castSize >= 3 && pool.supportingChars.length === 0) ||
     pool.themesEvents.length === 0 ||
     pool.finales.length === 0
   ) {
@@ -251,9 +256,9 @@ export function generateSuggestions(
       genre2,
       setting: pick(pool.settings),
       protagonist: pick(pool.protagonists),
-      supporting: pick(pool.supportingChars),
-      antagonist: pick(pool.antagonists),
-      themesEvents: pickN(pool.themesEvents, themeEventCount),
+      supporting: castSize >= 3 ? pick(pool.supportingChars) : undefined,
+      antagonist: castSize >= 2 ? pick(pool.antagonists) : undefined,
+      themesEvents: pickN(pool.themesEvents, effectiveThemeCount),
       finale: pick(pool.finales),
     };
 
