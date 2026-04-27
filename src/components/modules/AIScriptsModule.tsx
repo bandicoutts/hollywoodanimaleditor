@@ -132,8 +132,8 @@ function ScriptCard({ combo, index }: { combo: ScriptCombo; index: number }) {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
         <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--color-text-muted)", marginRight: "2px" }}>Cast</span>
         <Chip label={protagonist.label} />
-        <Chip label={supporting.label} muted />
-        <Chip label={antagonist.label} muted />
+        <Chip label={supporting.label} />
+        <Chip label={antagonist.label} />
       </div>
 
       {/* Themes & events */}
