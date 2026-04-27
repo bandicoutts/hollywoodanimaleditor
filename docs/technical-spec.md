@@ -557,7 +557,7 @@ The game uses a shared **content tag budget** across supporting characters, anta
 **Generate Ideas mode:**
 - Genre filter pills (only unlocked genres shown)
 - Bias toggle: Art / Balanced / Commercial / Pollux
-- Themes/Events per film stepper (min 3, max = `pool.contentTagBudget` — reflects TAGS_SLOTS perks)
+- Themes/Events per film stepper (min 3, max = `pool.contentTagBudget` — reflects TAGS_SLOTS perks). The generator clamps the actual theme count to `contentTagBudget − charCount` so generated combos never exceed the budget regardless of the stepper value.
 - Pool stats bar (element counts by category)
 - 6 result cards: genre(s), setting, cast (protagonist + any optional chars), themes/events, finale, Art / Com / Compat / Pol score badges
 
@@ -567,6 +567,7 @@ The game uses a shared **content tag budget** across supporting characters, anta
 - Compatibility ranking: each candidate scored via `scoreElementCompatibility(candidate, ctx)` where `ctx` = `selectedElements` with the **current category's selection excluded**. This gives honest "swap to this" scores when re-opening a filled section. Themes/Events is multi-select so no exclusion applies there.
 - **Running score bar** (Art / Com / Compat badges) appears once ≥2 elements are selected, computed by `scorePartialBuild(selectedElements)`. Pollux requires a complete combo and is omitted from partial display.
 - **Themes/Events** is multi-select (budget-aware): selected themes pin to the top with a remove button; picking a supporting char or antagonist reduces the live theme max. Label shows `N / maxThemes`. `isComplete` requires `contentTagsUsed ≥ 3` (not specific chars).
+- **Optional char budget enforcement** (two layers): (1) Supporting/Antagonist `ElementRow` items are disabled when `sel[key] === null && contentTagsUsed >= contentTagBudget` — prevents adding a new char when the budget is full (swapping an already-selected char is still allowed since charCount doesn't change). (2) `selectSingle` trims `themes` to `contentTagBudget - newCharCount` as a safety net after any char selection, so the builder can never produce an over-budget combo regardless of selection order.
 - **Second genre** (optional): rendered as a **footer below the scrollable genre list** inside the Genre accordion — always visible when the section is open and a primary genre is chosen, no extra click required. Sorted by `GENRE_PAIR_MODIFIERS` art+com sum. Each option shows its modifier value.
 - **"Optimise for" bias selector** (Art / Balanced / Commercial / Pollux pills, default Balanced): same options as Generate Ideas. The selected bias is passed to `generateSuggestions` when auto-completing and resets to Balanced on "Start Over".
 - **"Auto-complete Script"** button (visible once ≥1 element selected, hidden after finalising): calls `generateSuggestions` with the player's genre filter and chosen bias, then merges the top result with whatever the player has already selected. If all slots are filled manually, shows **"Complete Script"** instead (just scores what's there).

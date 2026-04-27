@@ -275,6 +275,9 @@ that combination and switches to the Build tab.
   `polluxPartial = POLLUX_GENRE_FACTORS[genre.id] × (Σart × 2 + Σcom)`.
 - Hint shown when Pollux selected before genre: "Select a genre first — Pollux eligibility depends on genre".
 - **Supporting character and antagonist are optional** — labelled "(optional)" in the accordion. Each consumes one slot from the **content tag budget** shared with themes/events. Budget = 5 base + 1 per `TAGS_SLOTS_N` perk in `openedPerks` (up to 10). Themes/Events max = `contentTagBudget − charSlotsUsed`; label updates live. `isComplete` requires `contentTagsUsed ≥ 3`, not specific chars.
+- **Budget enforcement has two layers — both are required:**
+  - *Generator* (`generateSuggestions`): always picks both optional chars (when pool has them), so `effectiveThemeCount = Math.min(themeEventCount, pool.contentTagBudget − charCount)` before calling `pickN`. Without this, selecting themes-first then adding chars via "Build Your Script →" could load an over-budget combo into the builder.
+  - *Builder* (`ScriptBuilder`): optional char rows are disabled when adding that char would exceed budget (existing selection for that key = null AND `contentTagsUsed >= contentTagBudget`). `selectSingle` also trims `themes` to `maxAllowedThemes` as a defensive fallback after any char selection.
 - **Second genre** is shown as a footer below the genre list inside the Genre accordion — visible immediately when the genre section is open, no extra click needed.
 - Auto-complete fills empty slots; Complete Script appears when all slots are manually filled.
 - `scorePartialBuild`, `scoreElementCompatibility`, and `getContentTagBudget` exported from `script-suggestions.ts`.
