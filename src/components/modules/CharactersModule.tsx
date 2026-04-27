@@ -387,6 +387,7 @@ export default function CharactersModule() {
             padding: "6px 12px",
             borderBottom: "1px solid var(--color-border-subtle)",
             display: "flex",
+            flexWrap: "wrap",
             gap: "6px",
             flexShrink: 0,
             background: "var(--color-bg-raised)",
