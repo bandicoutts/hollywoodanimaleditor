@@ -482,7 +482,7 @@ Sources used to build `PERK_LABELS`:
 - Each milestone row shows a human-readable label and a description subtitle (goal or unlock bonus), both sourced from `MILESTONE_META` in the module; hover `title` attribute exposes full text when truncated
 - Every row retains Locked and Finished toggles; finishing sets `progress: "1.000"` and clears `locked`
 - `functionalities` flags grouped into UI / Management / Events & Competition, with human-readable labels from `FUNC_META`
-- Bulk: Unlock All Milestones, Enable All Features
+- Bulk: "Unlock All Milestones" button inline at top-right of the Milestones column; "Enable All Features" button inline at top-right of the Game Features column (not in the module header)
 
 ### 10. Script Workshop
 
@@ -559,10 +559,22 @@ The game uses a shared **content tag budget** stored in `contentIds` (confirmed 
 
 **Generate Ideas mode:**
 - Genre filter pills (only unlocked genres shown)
-- Bias toggle: Art / Balanced / Commercial / Pollux
-- Themes/Events per film stepper (min 3, max = `pool.contentTagBudget − 2` — reserves 2 fixed slots for protagonist + finale). The generator clamps the actual theme count to `contentTagBudget − charCount − FIXED_CONTENT_TAGS` so generated combos never exceed the budget regardless of the stepper value.
-- Pool stats bar (element counts by category)
-- 6 result cards: genre(s), setting, cast (protagonist + any optional chars), themes/events, finale, Art / Com / Compat / Pol score badges
+- Bias toggle: Art / Balanced / Commercial / Pollux. Pollux hint ("Filter by genre for best Pollux results") appears when Pollux is selected with no genre filter active.
+- Second genre mode: Any / Prefer paired / Single only (`DualGenreMode`)
+- Antagonist: Any / Always / Never (`AntagonistMode`)
+- Supporting cast: Any / 1+ / None (`SupportingMode`)
+- Themes/Events per film stepper (min 3, max = `pool.contentTagBudget − 2`), displayed as `N / max`
+- Pool stats toggle: element counts by category, collapsed by default
+- Up to 6 result cards: genre(s), setting, cast (protagonist + any optional chars), themes/events, finale, Art / Com / Compat / Pol score badges
+- **Post-generation sort bar**: after generating, bias pills re-sort existing results client-side via `biasScore()` without re-running the generator
+
+**Generator algorithm (`generateSuggestions` in `script-suggestions.ts`):**
+- Builds a pool of ~300 candidates (×3 when antagonist/supporting modes are constrained)
+- **Bias-weighted sampling** (`pickWeighted`): each candidate element's draw probability = `elementBiasWeight(bias, element)` with a minimum floor of `WEIGHT_EPSILON = 0.1` so every element retains some draw probability regardless of bias
+- Genre2 inclusion probability: 0 (single-only), 0.35 (any), 1.0 (prefer-paired). When included, genre2 is `pickWeighted` by pair modifier
+- `antagonistMode === "always"` rejects combos with no antagonist; `"never"` skips antagonist pick entirely
+- `supportingMode === "some"` retries candidates without supporting characters
+- Top 6 results scored and returned; caller sorts with `biasScore(combo.scores, sortBias)`
 
 **Build Your Script mode:**
 - **8 collapsible accordion sections** (Genre → Second Genre (optional) → Setting → Protagonist → Supporting Characters (optional) → Antagonist (optional) → Themes/Events → Finale), one open at a time. Section order defined in `BUILDER_SECTION_ORDER`. If `pool.genres.length <= 1`, the Second Genre section is omitted at runtime via `sectionOrder`.
@@ -575,17 +587,26 @@ The game uses a shared **content tag budget** stored in `contentIds` (confirmed 
   - `contentTagsUsed = themes.length + charCount + FIXED_CONTENT_TAGS`
   - `maxThemes = contentTagBudget − charCount − FIXED_CONTENT_TAGS`
   - **Two enforcement layers**: (1) Supporting/Antagonist rows are disabled when `contentTagsUsed >= contentTagBudget` — prevents adding when full. (2) `selectSingle` (for antagonist) and `toggleSupporting` both trim `themes` to `maxAllowedThemes` as a safety net so the builder can never produce an over-budget combo regardless of selection order.
-- **Second Genre** (optional): its own accordion section between Genre and Setting. Contains a **Skip →** button pinned at the top, then genres sorted by `GENRE_PAIR_MODIFIERS` art+com sum with modifier deltas shown. Selecting a genre2 calls `selectSingle("genre2", item)` and auto-advances; Skip calls `skipGenre2()` which finds the next empty section. Changing the primary genre clears genre2 (`if (key === "genre") newSel = { ...newSel, genre2: null }`). Section omitted when only 1 genre is unlocked.
+- **Second Genre** (optional): its own accordion section between Genre and Setting. Contains a **Skip →** button pinned at the top, then genres sorted by `GENRE_PAIR_MODIFIERS` art+com sum with modifier deltas shown. Selecting a genre2 calls `selectSingle("genre2", item)` and auto-advances; Skip calls `skipSection("genre2")` which finds the next empty section. Changing the primary genre clears genre2 (`if (key === "genre") newSel = { ...newSel, genre2: null }`). Section omitted when only 1 genre is unlocked.
+- **Supporting Characters** (optional) and **Antagonist** (optional) both have a **Skip →** button pinned at the top of their accordion body, implemented via the shared `skipSection(key: SectionKey)` helper — same pattern as Second Genre.
 - **"Optimise for" bias selector** (Art / Balanced / Commercial / Pollux pills, default Balanced): same options as Generate Ideas. The selected bias is passed to `generateSuggestions` when auto-completing and resets to Balanced on "Start Over".
 - **"Auto-complete Script"** button (visible once ≥1 element selected, hidden after finalising): calls `generateSuggestions` with the player's genre filter and chosen bias, then merges the top result with whatever the player has already selected. If all slots are filled manually, shows **"Complete Script"** instead (just scores what's there).
 - Final result renders using the same `ScriptCard` component as Generate Ideas, with a "Your Script" heading and a "Start Over" button.
 
-**New exported functions in `src/lib/script-suggestions.ts`:**
+**Exported functions in `src/lib/script-suggestions.ts`:**
 
 | Function | Signature | Purpose |
 |---|---|---|
 | `scoreElementCompatibility` | `(candidate: ScriptElement, selected: ScriptElement[]) => number` | Sum of COMPAT_SCORES hits between candidate and all selected elements. Used to re-rank lists in Build mode. |
 | `scorePartialBuild` | `(elements: ScriptElement[]) => { art, com, synergy }` | Partial art/com/synergy from any subset of elements. Used for the running score bar. |
+| `biasScore` | `(scores: ComboScores, bias: Bias) => number` | Converts a combo's raw scores to a single sortable number under a given bias. Used for client-side re-sort in Generate Ideas. |
+| `generateSuggestions` | `(pool, opts: SuggestionOpts) => ScriptCombo[]` | Main generator — accepts `antagonistMode`, `supportingMode`, `dualGenreMode`, `genreFilter`, `bias`, `themeEventCount`. |
+| `getContentTagBudget` | `(stateJson) => number` | Reads base budget (5) + perk bonuses from `openedPerks`. |
+
+**New types exported from `src/lib/script-suggestions.ts`:**
+- `AntagonistMode = "any" | "always" | "never"`
+- `SupportingMode = "any" | "some" | "none"`
+- `DualGenreMode = "any" | "prefer" | "single"`
 
 ---
 

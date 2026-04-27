@@ -221,7 +221,7 @@ The `src/components/modules/` directory follows a flat sibling-file pattern — 
 
 ---
 
-## Current state (as of 2026-04-27, UX pass completed 2026-04-27)
+## Current state (as of 2026-04-27, layout + Script Workshop pass completed 2026-04-27)
 
 All major data work is complete. A full UX review pass was then completed (same day) covering safety, bulk actions, characters, Script Workshop, and layout.
 
@@ -245,7 +245,9 @@ All major data work is complete. A full UX review pass was then completed (same 
   Custom technologies (no `configId`) appear in a read-only "Custom" section at the bottom of each column.
 - **Milestones & Game Flags module**: Milestones grouped under Studio Policies and Technology Quests
   super-section headers. Each milestone row shows a human-readable label and description subtitle.
-  Game feature flags grouped into UI / Management / Events & Competition.
+  Game feature flags grouped into UI / Management / Events & Competition. "Unlock All Milestones"
+  and "Enable All Features" are inline buttons at the top-right of their respective columns — not
+  in the module header.
 - **Characters module** (`CharactersModule.tsx`): Character `birthDate` displayed as current in-game
   age in the detail panel header. Click-to-edit age back-calculates `birthDate` preserving day/month.
 
@@ -255,9 +257,18 @@ Two modes — "Generate Ideas" and "Build Your Script" — share a single `bias`
 module level so switching tabs preserves the selected bias.
 
 **Generate Ideas:** Up to 6 scored suggestions generated client-side from the player's `tagPool`.
-Controls: genre filter pills, bias toggle (Art / Balanced / Commercial / Pollux), themes/events
-stepper (3–5). Each result card has a "Build Your Script →" button that pre-fills the builder with
-that combination and switches to the Build tab.
+Controls:
+- Genre filter pills
+- Bias toggle (Art / Balanced / Commercial / Pollux) + Pollux hint ("Filter by genre for best Pollux results") when Pollux selected with no genre
+- Themes/Events per film stepper (min 3, max = `pool.contentTagBudget − 2`), displayed as `N / max`
+- Second genre: Any / Prefer paired / Single only
+- Antagonist: Any / Always / Never
+- Supporting cast: Any / 1+ / None
+- Pool stats toggle (element counts by category, collapsed by default)
+
+Generator algorithm uses **bias-weighted sampling** (`pickWeighted` with `WEIGHT_EPSILON = 0.1` floor so every element has a non-zero draw probability). Genre2 probability is mode-driven: 0 (single-only), 0.35 (any), 1.0 (prefer-paired). After generation, a **post-generation sort bar** lets you re-sort the results by a different bias without regenerating.
+
+Each result card has a "Build Your Script →" button that pre-fills the builder with that combination and switches to the Build tab.
 
 **Build Your Script:** Accordion-based builder with these properties:
 - "Optimise for" bias selector shown at the **top** — choose your goal before picking elements.
@@ -280,6 +291,7 @@ that combination and switches to the Build tab.
   - *Generator* (`generateSuggestions`): randomly picks ~50% antagonist, then 0–N supporting chars (budget-constrained to always leave room for ≥1 theme). `effectiveThemeCount = Math.min(themeEventCount, pool.contentTagBudget − charCount − FIXED_CONTENT_TAGS)`.
   - *Builder* (`ScriptBuilder`): optional char rows are disabled when `contentTagsUsed >= contentTagBudget`. `selectSingle` (antagonist) and `toggleSupporting` both trim `themes` to `maxAllowedThemes` as a defensive fallback so the builder can never produce an over-budget combo.
 - **Second Genre** is its own accordion section between Genre and Setting. Skip → is pinned at the top; genres below are sorted by pair modifier. Selecting a genre2 auto-advances to Setting; Skip advances without selecting. Changing primary genre clears genre2. Section is omitted entirely when only 1 genre is unlocked. The running bar includes a `X/Y slots left` counter reflecting actual selections (protagonist and finale each decrement it when chosen).
+- **Supporting Characters and Antagonist** also have a **Skip →** button pinned at the top of their optional accordion bodies (same pattern as Second Genre). Implemented via the shared `skipSection(key: SectionKey)` helper in `ScriptBuilder.tsx`.
 - Auto-complete fills empty slots; Complete Script appears when all slots are manually filled.
 - `scorePartialBuild`, `scoreElementCompatibility`, and `getContentTagBudget` exported from `script-suggestions.ts`.
 
@@ -307,10 +319,11 @@ that combination and switches to the Build tab.
 
 - Sort dropdown: hire order / name A–Z / top skill ↓ / mood ↑ (triage)
 - Filter toggle labelled "All (incl. fired)" (was "All")
-- Bulk action bar visually separated from filters with `var(--color-bg-raised)` background
+- Bulk action area: "Bulk actions" label, then "Max All Characters" and "Remove Caps" buttons stacked vertically below — each button on its own row so width of the list panel is irrelevant
 - Character ID removed from detail panel header (was shown alongside name/age/happiness)
 - "Max All Stats" in detail panel renamed "Max This Character" to distinguish from list-level bulk action
 - Appeal section tier buttons prefixed with "Set tier:" label to clarify slider relationship
+- List panel width: `clamp(360px, 35%, 500px)` — responsive, scales from ~1220px viewport upward; 360px minimum gives comfortable clearance for the bulk bar content
 
 ### Layout
 
@@ -318,6 +331,8 @@ that combination and switches to the Build tab.
   Label spans have no `overflow: hidden` / `textOverflow: ellipsis` — the aside clips naturally.
 - `AppShell.tsx` `<main>` has `overflowX: hidden` and `minWidth: 0`.
 - Script card grid uses `minmax(min(380px, 100%), 1fr)` to prevent overflow on narrow viewports.
+- **All `ModuleShell` usages have no `maxWidth`** — modules fill the full available content area. Previous per-module caps (860px for Milestones, 900px for Script Workshop, etc.) were removed.
+- Characters two-panel layout: list panel `clamp(360px, 35%, 500px)`, detail panel `flex: 1`. `px` is appropriate for the clamp min/max because `GHOST_BTN` uses fixed `fontSize: "10px"` — the content doesn't scale with user font preferences.
 
 ### Code quality (completed 2026-04-27)
 
