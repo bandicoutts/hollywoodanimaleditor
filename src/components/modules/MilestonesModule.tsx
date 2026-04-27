@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import ModuleShell, { EmptyState } from "./ModuleShell";
 import { useSaveFile } from "@/context/SaveFileContext";
-import { ACTION_BTN, SECTION_HEADER, goldHover } from "@/lib/styles";
+import { GHOST_BTN, SECTION_HEADER, goldHover } from "@/lib/styles";
 import type { Milestone } from "@/lib/save-file";
 
 // ── Static metadata ────────────────────────────────────────────────────────────
@@ -553,29 +553,6 @@ export default function MilestonesModule() {
           ? `${finishedCount}/${milestoneEntries.length} milestones finished · ${enabledCount}/${functionalityEntries.length} features enabled`
           : "Manage milestones and game feature flags"
       }
-      maxWidth={860}
-      actions={
-        isLoaded ? (
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              onClick={enableAllFunctionalities}
-              style={ACTION_BTN}
-              onMouseEnter={(e) => goldHover(e, true)}
-              onMouseLeave={(e) => goldHover(e, false)}
-            >
-              Enable All Features
-            </button>
-            <button
-              onClick={unlockAllMilestones}
-              style={ACTION_BTN}
-              onMouseEnter={(e) => goldHover(e, true)}
-              onMouseLeave={(e) => goldHover(e, false)}
-            >
-              Unlock All Milestones
-            </button>
-          </div>
-        ) : undefined
-      }
     >
       {!isLoaded ? (
         <EmptyState message="Upload a save file to edit milestones and features" />
@@ -583,12 +560,22 @@ export default function MilestonesModule() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", alignItems: "start" }}>
           {/* Milestones column */}
           <div>
-            <p style={{ ...SECTION_HEADER, marginBottom: "10px" }}>
-              Milestones
-              <span style={{ color: "var(--color-text-muted)", fontWeight: 400, marginLeft: "6px" }}>
-                {finishedCount}/{milestoneEntries.length}
-              </span>
-            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+              <p style={{ ...SECTION_HEADER }}>
+                Milestones
+                <span style={{ color: "var(--color-text-muted)", fontWeight: 400, marginLeft: "6px" }}>
+                  {finishedCount}/{milestoneEntries.length}
+                </span>
+              </p>
+              <button
+                onClick={unlockAllMilestones}
+                style={GHOST_BTN}
+                onMouseEnter={(e) => goldHover(e, true)}
+                onMouseLeave={(e) => goldHover(e, false)}
+              >
+                Unlock All Milestones
+              </button>
+            </div>
             {milestoneGroups.length === 0 ? (
               <EmptyState message="No milestones found" />
             ) : (
@@ -618,12 +605,22 @@ export default function MilestonesModule() {
 
           {/* Functionalities column */}
           <div>
-            <p style={{ ...SECTION_HEADER, marginBottom: "10px" }}>
-              Game Features
-              <span style={{ color: "var(--color-text-muted)", fontWeight: 400, marginLeft: "6px" }}>
-                {enabledCount}/{functionalityEntries.length}
-              </span>
-            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+              <p style={{ ...SECTION_HEADER }}>
+                Game Features
+                <span style={{ color: "var(--color-text-muted)", fontWeight: 400, marginLeft: "6px" }}>
+                  {enabledCount}/{functionalityEntries.length}
+                </span>
+              </p>
+              <button
+                onClick={enableAllFunctionalities}
+                style={GHOST_BTN}
+                onMouseEnter={(e) => goldHover(e, true)}
+                onMouseLeave={(e) => goldHover(e, false)}
+              >
+                Enable All Features
+              </button>
+            </div>
             {funcGroups.length === 0 ? (
               <EmptyState message="No features found" />
             ) : (
