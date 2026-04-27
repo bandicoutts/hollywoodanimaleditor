@@ -387,7 +387,8 @@ export default function CharactersModule() {
             padding: "6px 12px",
             borderBottom: "1px solid var(--color-border-subtle)",
             display: "flex",
-            gap: "6px",
+            flexDirection: "column",
+            gap: "4px",
             flexShrink: 0,
             background: "var(--color-bg-raised)",
           }}
@@ -399,11 +400,9 @@ export default function CharactersModule() {
               letterSpacing: "0.06em",
               textTransform: "uppercase",
               color: "var(--color-text-muted)",
-              alignSelf: "center",
-              marginRight: "2px",
             }}
           >
-            Bulk
+            Bulk actions
           </span>
           <BulkBtn label="Max All Characters" onClick={() => setPendingBulk("maxAll")} />
           <BulkBtn label="Remove Caps" onClick={() => setPendingBulk("removeCaps")} />
