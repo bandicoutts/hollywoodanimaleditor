@@ -43,6 +43,8 @@ the browser.
   - `Buildings.json` — studio building definitions
   - `Presents.json` — gift/present definitions
   - `Party.json` — party/event definitions
+  - `VideoTech.json` — image camera definitions (QPE stats, formats, dates, manufacturers)
+  - `AudioTech.json` — audio system definitions (QPE stats, formats, dates, manufacturers)
 
 ---
 
@@ -83,7 +85,7 @@ Each module edits a specific slice of `stateJson`. All modules are in
 | `ResourcesModule.tsx` | Money, cash, reputation, fans, awards | `budget`, `cash`, `reputation`, etc. |
 | `ResearchModule.tsx` | Research tree unlocks | `stateJson.openedPerks` (string[]) |
 | `WritingTagsModule.tsx` | Story elements (genre, setting, protagonist…) | `stateJson.tagPool` (TagPoolEntry[]) |
-| `TechnologiesModule.tsx` | Technology unlocks | `stateJson.openedTechnologies` |
+| `TechnologiesModule.tsx` | Technology unlocks | `stateJson.technologies` |
 | `MilestonesModule.tsx` | Milestone achievements | `stateJson.milestones` |
 | `CharactersModule.tsx` | Character data | `stateJson.characters` |
 | `AIScriptsModule.tsx` | AI/script data | `stateJson.aiScripts` |
@@ -190,6 +192,14 @@ All major data work is complete:
 - **Competitor Studios module**: Each studio card shows the full studio name, two-letter ID badge,
   and a read-only reference row (tier, attack capability, quality range, releases/yr, defenceless
   flag). Metadata lives in `src/data/competitors.ts`.
+- **Technologies module**: Each technology card shows its proper display name (resolved from a
+  static `TECH_INFO` lookup keyed on `configId`), grouped by manufacturer (Dupler / Hespro /
+  Blue Term / Flumen for cameras; Sonatone / Frametone / FilmSound for audio). Cards show format,
+  release year, Quest badge, Color badge (color cameras only), Outdated badge, and Quality /
+  Practicality / Economy stats as dot rows with numeric values. Custom technologies (no `configId`)
+  appear in a read-only "Custom" section at the bottom of each column. The `TECH_INFO` lookup
+  and manufacturer ordering are hardcoded in `TechnologiesModule.tsx` — source data is
+  `VideoTech.json` and `AudioTech.json` from the game configs.
 - **Technical spec** (`docs/technical-spec.md`): Up to date with all the above.
 
 No outstanding tasks at this handover point.

@@ -429,9 +429,16 @@ Sources used to build `PERK_LABELS`:
 - "Complete All Construction" for buildings with `state: 1`
 
 ### 7. Technologies
-- List all entries grouped by type (Camera / Sound)
-- Toggle `owned`
-- Entries with empty `configId` shown as read-only
+- Two columns: Camera (type 0) and Sound (type 1), each with an "Own all" button and owned count
+- Within each column, technologies are grouped by manufacturer:
+  - Camera: Dupler · Hespro · Blue Term · Flumen
+  - Sound: Sonatone · Frametone · FilmSound
+- Each card shows: display name, format, release year (omitted if 0), and badges for Quest / Color / Outdated
+- Quality, Practicality, and Economy base stats shown as dot rows (9 dots) with numeric value
+- All display names and QPE stats come from a static `TECH_INFO` lookup in `TechnologiesModule.tsx`, keyed on `configId`. Source data: `VideoTech.json` and `AudioTech.json` from the game config archive.
+- 30 technologies total: 19 image cameras (4 manufacturers), 11 audio systems (3 manufacturers)
+- Toggle `owned` on any technology with a known `configId`
+- Entries with empty `configId` (player-created custom technologies) are displayed read-only in a "Custom" section at the bottom of each column — not toggleable
 
 ### 8. Competitor Studios
 - Each studio card shows full name + two-letter ID badge, sourced from `COMPETITOR_META` in `src/data/competitors.ts`
