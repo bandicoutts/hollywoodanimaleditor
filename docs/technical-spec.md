@@ -331,13 +331,36 @@ To complete instantly: set `constructionDuration` to `0` and `constructionQualit
 
 Set `finished: true`, `locked: false`, and `progress: "1.000"` to fully unlock.
 
+**Known milestone groups (from a 1938 save):**
+
+| Prefix | Group | Count |
+|--------|-------|-------|
+| `POLICY_ENABLE_MILE_7` | Policy system unlock | 1 |
+| `POLICY_TRASH_0–3` | Trash King policy milestones | 4 |
+| `POLICY_MAJOR_0–3` | Behemoth policy milestones | 4 |
+| `POLICY_BOUTIQUE_0–3` | Boutique policy milestones | 4 |
+| `POLICY_CONVEYOR_0–3` | Factory policy milestones | 4 |
+| `POLICY_AVERAGE_0` | All-Rounder (stay open) | 1 |
+| `HESPRO_QUEST_1–2` | HesPro 35 Extra camera quest | 2 |
+| `BLUE_TERM_IRIS_QUEST_1–2` | Blue Term Iris Deluxe quest | 2 |
+| `DUPLER_COMPACT_QUEST_1–2` | Dupler Compact S quest | 2 |
+| `FRAMETONE_QUEST_1–2` | Frametone Pure audio quest | 2 |
+
+Tech quest milestones use parallel conditions (_1 and _2 must both complete, order doesn't matter). Policy milestones are sequential (_0 unlocks _1, etc.).
+
+The `group` field in the save data is mostly empty (except `POLICY_ENABLE_MILE_7` which has `"POLICY_ENABLE"`). Grouping in the UI is derived from ID prefix matching in `MilestonesModule.tsx`.
+
+**`MILESTONE_META`** in `MilestonesModule.tsx` maps every known milestone ID to a human-readable `label` and optional `description`. Covers all 18 quest types documented in game configs (only quests present in the save are rendered). Falls back to a title-cased ID if a milestone ID is unknown.
+
 ---
 
 ### Functionalities
 
-`stateJson.functionalities` — object of boolean feature flags. Many are `false` in early game.
+`stateJson.functionalities` — object of 33 boolean feature flags. All `true` in a normal game. Progressive unlocking in tutorial mode. Two flags (`PoliceRaidDefense`, `PoliceDefence`) are `false` even in a 1938 save — believed to unlock via a story event.
 
-Known keys: `MapNavigation`, `QualitySelection`, `Lieutenants`, `Secrets`, `ProductionEvents`, `StaffRaises`, `StaffRequests`, `InfoButton`, `CharacterEvents`, `Scandals`, `Policy`, `AttackByCompetitors`, `BirdView`, `Building`, `Cash`, `Influence`, `FullTimeControls`, and others.
+Full key list: `MapNavigation`, `QualitySelection`, `Lieutenants`, `Captains`, `Secrets`, `Policy`, `PerksEnabled`, `Upgrades`, `ProductionEvents`, `CharacterEvents`, `Scandals`, `StaffRaises`, `StaffRequests`, `AttackByCompetitors`, `Fire`, `PoliceRaidDefense`, `PoliceDefence`, `Building`, `FreezeBuilding`, `Staff`, `HRSelection`, `Cash`, `Influence`, `BirdView`, `InfoButton`, `TimeFlow`, `FullTimeControls`, `ShowTopBarElements`, `ShowBottomBarProgress`, `ShowBottomBarButtons`, `ShowBottomConstructorButton`, `ShowBottomStartProjectButton`, `UnblockUI`.
+
+**`FUNC_META`** in `MilestonesModule.tsx` maps each key to a human-readable label and one of three categories: **UI**, **Management**, **Events & Competition**.
 
 ---
 
@@ -448,8 +471,11 @@ Sources used to build `PERK_LABELS`:
 - Unknown studio IDs (not in `COMPETITOR_META`) display as "Studio {id}" — no data loss
 
 ### 9. Milestones & Game Flags
-- All milestones with finished/locked toggles
-- `functionalities` flags with toggle switches
+- Milestones grouped under **Studio Policies** and **Technology Quests** super-section headers
+- Within each super-section, sub-groups per policy/quest (e.g. Trash King, Behemoth, HesPro 35 Extra) — only groups present in the save file are rendered
+- Each milestone row shows a human-readable label and a description subtitle (goal or unlock bonus), both sourced from `MILESTONE_META` in the module; hover `title` attribute exposes full text when truncated
+- Every row retains Locked and Finished toggles; finishing sets `progress: "1.000"` and clears `locked`
+- `functionalities` flags grouped into UI / Management / Events & Competition, with human-readable labels from `FUNC_META`
 - Bulk: Unlock All Milestones, Enable All Features
 
 ### 10. AI Script Optimizer _(deferred)_

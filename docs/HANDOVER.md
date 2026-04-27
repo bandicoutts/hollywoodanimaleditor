@@ -45,6 +45,8 @@ the browser.
   - `Party.json` — party/event definitions
   - `VideoTech.json` — image camera definitions (QPE stats, formats, dates, manufacturers)
   - `AudioTech.json` — audio system definitions (QPE stats, formats, dates, manufacturers)
+  - `Milestones.json` — all milestone definitions and dependency chains
+  - `Tutorial.json` — tutorial feature-flag unlock sequence
 
 ---
 
@@ -200,6 +202,7 @@ All major data work is complete:
   appear in a read-only "Custom" section at the bottom of each column. The `TECH_INFO` lookup
   and manufacturer ordering are hardcoded in `TechnologiesModule.tsx` — source data is
   `VideoTech.json` and `AudioTech.json` from the game configs.
+- **Milestones & Game Flags module**: Milestones are now grouped under Studio Policies and Technology Quests super-section headers, with per-policy/quest sub-group headers (Trash King, Behemoth, Boutique, Factory, All-Rounder; quest groups for all 18 known tech quests). Each milestone row shows a human-readable label and a description subtitle sourced from `MILESTONE_META` in `MilestonesModule.tsx`. Game feature flags are grouped into UI / Management / Events & Competition with human-readable labels from `FUNC_META`. All toggles (Locked/Finished on milestones; toggle pill on features) are unchanged.
 - **Technical spec** (`docs/technical-spec.md`): Up to date with all the above.
 
 No outstanding tasks at this handover point.
