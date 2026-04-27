@@ -366,8 +366,8 @@ export default function ScriptBuilder({
     }
   }
 
-  function skipGenre2() {
-    const idx = sectionOrder.indexOf("genre2");
+  function skipSection(key: SectionKey) {
+    const idx = sectionOrder.indexOf(key);
     for (let i = idx + 1; i < sectionOrder.length; i++) {
       const next = sectionOrder[i];
       const isEmpty =
@@ -557,7 +557,7 @@ export default function ScriptBuilder({
               <>
                 <div style={{ padding: "6px 12px 6px", borderBottom: "1px solid var(--color-border-subtle)" }}>
                   <button
-                    onClick={skipGenre2}
+                    onClick={() => skipSection("genre2")}
                     style={{
                       fontFamily: "var(--font-ui)",
                       fontSize: "10px",
@@ -654,6 +654,23 @@ export default function ScriptBuilder({
           } else if (isSupporting) {
             sectionBody = (
               <>
+                <div style={{ padding: "6px 12px 6px", borderBottom: "1px solid var(--color-border-subtle)" }}>
+                  <button
+                    onClick={() => skipSection("supporting")}
+                    style={{
+                      fontFamily: "var(--font-ui)",
+                      fontSize: "10px",
+                      letterSpacing: "0.04em",
+                      color: "var(--color-text-muted)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    Skip →
+                  </button>
+                </div>
                 {sel.supporting.map(s => (
                   <div
                     key={s.id}
@@ -686,8 +703,9 @@ export default function ScriptBuilder({
               </>
             );
           } else {
-            sectionBody = rankedList.map(({ item, score }) => {
-              const wouldAddNewChar = key === "antagonist" && sel.antagonist === null;
+            const isAntagonist = key === "antagonist";
+            const rows = rankedList.map(({ item, score }) => {
+              const wouldAddNewChar = isAntagonist && sel.antagonist === null;
               const disabled = wouldAddNewChar && contentTagsUsed >= contentTagBudget;
               return (
                 <ElementRow
@@ -700,6 +718,28 @@ export default function ScriptBuilder({
                 />
               );
             });
+            sectionBody = isAntagonist ? (
+              <>
+                <div style={{ padding: "6px 12px 6px", borderBottom: "1px solid var(--color-border-subtle)" }}>
+                  <button
+                    onClick={() => skipSection("antagonist")}
+                    style={{
+                      fontFamily: "var(--font-ui)",
+                      fontSize: "10px",
+                      letterSpacing: "0.04em",
+                      color: "var(--color-text-muted)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    Skip →
+                  </button>
+                </div>
+                {rows}
+              </>
+            ) : rows;
           }
 
           return (
