@@ -216,7 +216,7 @@ export default function ResearchSpeedupModule() {
                     lineHeight: 1.5,
                   }}
                 >
-                  Globally multiplies research speed. Stored as a float string.
+                  Globally multiplies research speed.
                 </p>
               </div>
               <span

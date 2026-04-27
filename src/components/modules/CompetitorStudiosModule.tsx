@@ -6,16 +6,7 @@ import { useSaveFile } from "@/context/SaveFileContext";
 import type { CompetitorStudio } from "@/lib/save-file";
 import { formatDecimalString } from "@/lib/save-file";
 import { COMPETITOR_META } from "@/data/competitors";
-import type { AttackTier } from "@/data/competitors";
 import ConfirmDialog from "./ConfirmDialog";
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function attackTierColor(tier: AttackTier): string {
-  if (tier === "Nuclear") return "var(--color-danger)";
-  if (tier === "Very Aggressive") return "var(--color-warning)";
-  return "var(--color-text-muted)";
-}
 
 // ── Studio row ────────────────────────────────────────────────────────────────
 
@@ -87,30 +78,21 @@ function CompetitorRow({
 
           {/* Reference context row */}
           {meta && (
-            <div style={{ display: "flex", alignItems: "center", gap: "0", marginTop: "5px", flexWrap: "wrap" }}>
-              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-gold-mid)" }}>
-                {meta.tier}
-              </span>
-              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-border)", margin: "0 6px" }}>·</span>
-              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", letterSpacing: "0.06em", textTransform: "uppercase", color: attackTierColor(meta.attackTier) }}>
-                {meta.attackTier === "None" ? "No Attack" : `${meta.attackTier} Attack`}
-              </span>
-              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-border)", margin: "0 6px" }}>·</span>
-              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)" }}>
-                {meta.qualityRange} quality
-              </span>
-              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-border)", margin: "0 6px" }}>·</span>
-              <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)" }}>
-                {meta.releases}
-              </span>
-              {meta.defenceless && (
-                <>
-                  <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-border)", margin: "0 6px" }}>·</span>
-                  <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--color-danger)" }}>
-                    Defenceless
-                  </span>
-                </>
-              )}
+            <div style={{ display: "flex", gap: "20px", marginTop: "8px", flexWrap: "wrap" }}>
+              {[
+                { label: "Focus", value: meta.tier, color: "var(--color-gold-mid)" },
+                { label: "Film quality", value: meta.qualityRange, color: "var(--color-text-secondary)" },
+                { label: "Releases/yr", value: meta.releases, color: "var(--color-text-secondary)" },
+              ].map(({ label, value, color }) => (
+                <div key={label}>
+                  <p style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--color-text-muted)", marginBottom: "2px" }}>
+                    {label}
+                  </p>
+                  <p style={{ fontFamily: "var(--font-ui)", fontSize: "11px", letterSpacing: "0.04em", color }}>
+                    {value}
+                  </p>
+                </div>
+              ))}
             </div>
           )}
 

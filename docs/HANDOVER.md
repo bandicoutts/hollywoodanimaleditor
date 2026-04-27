@@ -132,9 +132,9 @@ Exports used by `CompetitorStudiosModule.tsx`:
 
 - `COMPETITOR_META: Record<string, CompetitorMeta>` — display metadata for the 5 known studios.
   Keys: `GB` (Gerstein Brothers), `EM` (Evergreen Movies), `SU` (Supreme), `HE` (Hephaestus), `MA` (Marginese).
-  Each entry: `name`, `tier`, `attackTier` (`"Nuclear" | "Very Aggressive" | "None"`), `qualityRange`, `releases`, `defenceless`.
-- This is **UI-only** — derived from game config files, never written to the save.
-- Source: `CompetitorStudios.json` + `CompetitorStrategies.json` (same Configs.rar archive as Perks/Buildings).
+  Each entry: `name`, `tier` (focus label e.g. "Art House"), `qualityRange`, `releases`.
+- This is **UI-only** — derived from `CompetitorStudios.json`, never written to the save.
+- **No attack tier field**: there is no "Nuclear" / "Very Aggressive" classification in the game config. Those labels were previously fabricated and have been removed. The game config only has an `ATTACK` budget percentage per studio (5% GB, 3% EM/SU, 2% HE, 0% MA). Live raid behaviour is driven by the `aggression` save field, which starts at `0.000` and ramps during play.
 
 **Special tag IDs** that require quoted keys in TAG_LABELS (contain hyphens or Cyrillic):
 - `"FREE_STATES_IN_SLAVERY-ERA"`, `"SLAVE_STATES_IN_SLAVERY-ERA"` — hyphen in ID
@@ -227,8 +227,10 @@ The `src/components/modules/` directory follows a flat sibling-file pattern — 
 
 - Sort options: hire order / name A–Z / top skill ↓ / mood ↑ (triage)
 - Filter toggle label: "All (incl. fired)"
-- Bulk action buttons stacked vertically (one per row) so list panel width is irrelevant
-- Detail panel header: no character ID; "Max This Character" (not "Max All Stats") to distinguish from list-level bulk action
+- **Global bulk actions** (normal mode): "Max All Stats" (all skills + cap + mood + attitude + appeal) and "Uncap All Skills" (sets `limit`/`Limit` to `"1.000"`). Both show a confirmation dialog.
+- **Selection mode**: toggled by a "Select" button in the bulk actions header. In selection mode clicking a row selects/deselects it (no detail panel opens); shift-click range-selects. "Select all visible" checkbox appears above the list. Six granular bulk action buttons replace the global ones — Max All, Max Skills, Max Cap, Max Happiness, Max Loyalty, Max Appeal — applying only to selected characters, no confirmation required. "Done" exits selection mode. Selection clears automatically on any filter change.
+- Detail panel header: "Max This Character" button sits in the header alongside name/badge/age/happiness. Per-stat "Max" buttons appear on individual stat bars, hidden once the value reaches 1.000.
+- Appeal tier selector: 4-segment joined control (not flex-wrap buttons). Each segment = one tier. Active tier highlighted with gold fill; inactive segments are ghost.
 - List panel width: `clamp(360px, 35%, 500px)`
 
 ### Layout decisions

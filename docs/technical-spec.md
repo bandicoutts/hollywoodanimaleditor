@@ -399,7 +399,9 @@ Full key list: `MapNavigation`, `QualitySelection`, `Lieutenants`, `Captains`, `
 
 Require confirmation before setting `isDead: true` — it permanently removes the competitor and may affect event chains.
 
-**Display metadata** for the five known studios is maintained in `src/data/competitors.ts` as `COMPETITOR_META: Record<string, CompetitorMeta>`. This is UI-only data derived from `CompetitorStudios.json` / `CompetitorStrategies.json` game config files — it is not written to the save. Each entry carries: `name` (full studio name), `tier`, `attackTier` (`"Nuclear" | "Very Aggressive" | "None"`), `qualityRange`, `releases`, and `defenceless` (boolean). The five known IDs are `GB` (Gerstein Brothers), `EM` (Evergreen Movies), `SU` (Supreme), `HE` (Hephaestus), `MA` (Marginese). Unknown studio IDs fall back to "Studio {id}" gracefully.
+**Display metadata** for the five known studios is maintained in `src/data/competitors.ts` as `COMPETITOR_META: Record<string, CompetitorMeta>`. This is UI-only data derived from `CompetitorStudios.json` game config files — it is not written to the save. Each entry carries: `name` (full studio name), `tier` (focus label e.g. "Art House"), `qualityRange` (base quality % range), and `releases` (target releases/yr). The five known IDs are `GB` (Gerstein Brothers), `EM` (Evergreen Movies), `SU` (Supreme), `HE` (Hephaestus), `MA` (Marginese). Unknown studio IDs fall back to "Studio {id}" gracefully.
+
+Note: there is no "attack tier" concept in the game config. The `ATTACK` budget percentage (0–5%) and `defensePowerBase` are the relevant config fields, but these are static starting values — actual raid behaviour is driven by the live `aggression` save field.
 
 ---
 
@@ -431,11 +433,20 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
 - List all characters, filterable by employed/all, profession type, name/ID search
 - Each row: character name, profession badge, top skill value
 - Click to open detail panel:
-  - Header shows: name (click to set custom name), profession badge, ID, **Age** (click to edit), Happiness
+  - Header shows: name (click to set custom name), profession badge, ID, **Age** (click to edit), Happiness, and a **"Max This Character"** button (sets all skills, cap, mood, attitude, and appeal to 1.000)
   - Edit profession skill(s), `limit`/`Limit` (always update both), `mood` (Happiness), `attitude` (Loyalty), `xp`
+  - Each stat bar has an optional **"Max"** button next to its label, shown only when the value is below 1.000
   - `selfEsteem` passes through untouched — not surfaced in UI
-  - Appeal section (Actors and Directors only): ART and COM sliders (0.000–1.000), with tier preset buttons (Promising Talent / Commanding Presence / True Artist / Icon for ART; Rising Star / Star / Superstar / Legend for COM). Active tier highlighted. Setting a value for the first time creates the `whiteTagsNEW` entry.
-- Bulk actions: Max All Stats (including appeal for eligible characters), Remove All Caps
+  - Appeal section (Actors and Directors only): ART and COM sliders (0.000–1.000). The tier selector is a **4-segment joined control** — segments represent tiers and act as preset buttons (Promising Talent / Commanding Presence / True Artist / Icon for ART; Rising Star / Star / Superstar / Legend for COM). The active tier is highlighted. Setting a value for the first time creates the `whiteTagsNEW` entry.
+- **Global bulk actions** (always visible when not in selection mode): **Max All Stats** — maxes skills, cap, mood, attitude, and appeal for all visible characters; **Uncap All Skills** — sets `limit`/`Limit` to `"1.000"` for all visible characters. Both require confirmation.
+- **Selection mode**: a "Select" button in the bulk actions header enters selection mode. In this mode clicking a row selects/deselects it; shift-click selects a range. A "Select all visible" checkbox appears above the list. Six granular bulk actions apply to selected characters only (no confirmation needed — the user explicitly chose targets):
+  - **Max All** — all skills + cap + mood + attitude + appeal
+  - **Max Skills** — profession skill values only
+  - **Max Cap** — `limit`/`Limit` only
+  - **Max Happiness** — `mood` only
+  - **Max Loyalty** — `attitude` only
+  - **Max Appeal** — `whiteTagsNEW.ART` and `whiteTagsNEW.COM` (only for characters that already have those keys)
+  - Selection is preserved after applying an action so multiple actions can be applied to the same group. Selection is cleared automatically when filters change.
 - Write decimal values back as 3-decimal strings: `"1.000"`
 
 **Age editing:** `birthDate` is stored as `"DD-MM-YYYY"` on every character. Current in-game age is computed as `floor((gameDate − birthDate) / 365.25)` where `gameDate = parseGameDate(stateJson)`. Editing age writes a new `birthDate` with the same day and month but a new year: `year = gameDate.year − newAge`. Characters missing `birthDate` show no age field. The `parseGameDate` function is exported from `src/lib/script-suggestions.ts` and is also used by the Writing Tags module for lock hints.
@@ -484,8 +495,9 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
 
 ### 8. Competitor Studios
 - Each studio card shows full name + two-letter ID badge, sourced from `COMPETITOR_META` in `src/data/competitors.ts`
-- Read-only context row per card: tier (gold) · attack capability color-coded (Nuclear = danger, Very Aggressive = warning, None = muted) · quality range · releases/yr · "Defenceless" badge for MA
+- Read-only context strip per card shows three labeled columns: **Focus** (studio type, e.g. "Art House"), **Film Quality** (base quality range from config), **Releases/yr** (target release count from config)
 - Editable fields: `lastBudget` (click-to-edit), `aggression` (0–1 slider), `isUnderRaid` (toggle)
+- `aggression` is a live save value that controls current raid behaviour. All values are `0.000` at game start and ramp dynamically during play. There is no static "attack tier" classification in the game config — the only relevant config data is each studio's ATTACK budget allocation (5% for GB, 3% for EM/SU, 2% for HE, 0% for MA).
 - Eliminate sets `isDead: true`; confirmation dialog uses the real studio name. Restore reverts it.
 - Unknown studio IDs (not in `COMPETITOR_META`) display as "Studio {id}" — no data loss
 
