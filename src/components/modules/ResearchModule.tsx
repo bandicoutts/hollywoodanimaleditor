@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react";
 import ModuleShell from "./ModuleShell";
 import { useSaveFile } from "@/context/SaveFileContext";
+import { ACTION_BTN, goldHover } from "@/lib/styles";
 import { PERK_GROUPS, PERK_LABELS, ALL_KNOWN_PERKS, HIDDEN_PERK_IDS, type PerkGroup } from "@/data/perks";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -249,27 +250,9 @@ export default function ResearchModule() {
         isLoaded ? (
           <button
             onClick={unlockAll}
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: "11px",
-              letterSpacing: "0.07em",
-              textTransform: "uppercase",
-              color: "var(--color-text-muted)",
-              background: "transparent",
-              border: "1px solid var(--color-border)",
-              padding: "5px 14px",
-              cursor: "pointer",
-              transition: "all 0.15s ease",
-              whiteSpace: "nowrap",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--color-gold)";
-              e.currentTarget.style.borderColor = "var(--color-gold-mid)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--color-text-muted)";
-              e.currentTarget.style.borderColor = "var(--color-border)";
-            }}
+            style={ACTION_BTN}
+            onMouseEnter={(e) => goldHover(e, true)}
+            onMouseLeave={(e) => goldHover(e, false)}
           >
             Unlock All
           </button>

@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import ModuleShell, { EmptyState } from "./ModuleShell";
 import { useSaveFile } from "@/context/SaveFileContext";
+import { ACTION_BTN, SECTION_HEADER, goldHover } from "@/lib/styles";
 import type { Milestone } from "@/lib/save-file";
 
 // ── Static metadata ────────────────────────────────────────────────────────────
@@ -558,53 +559,17 @@ export default function MilestonesModule() {
           <div style={{ display: "flex", gap: "8px" }}>
             <button
               onClick={enableAllFunctionalities}
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: "11px",
-                letterSpacing: "0.07em",
-                textTransform: "uppercase",
-                color: "var(--color-text-muted)",
-                background: "transparent",
-                border: "1px solid var(--color-border)",
-                padding: "5px 14px",
-                cursor: "pointer",
-                transition: "all 0.15s ease",
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--color-gold)";
-                e.currentTarget.style.borderColor = "var(--color-gold-mid)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--color-text-muted)";
-                e.currentTarget.style.borderColor = "var(--color-border)";
-              }}
+              style={ACTION_BTN}
+              onMouseEnter={(e) => goldHover(e, true)}
+              onMouseLeave={(e) => goldHover(e, false)}
             >
               Enable All Features
             </button>
             <button
               onClick={unlockAllMilestones}
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: "11px",
-                letterSpacing: "0.07em",
-                textTransform: "uppercase",
-                color: "var(--color-text-muted)",
-                background: "transparent",
-                border: "1px solid var(--color-border)",
-                padding: "5px 14px",
-                cursor: "pointer",
-                transition: "all 0.15s ease",
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--color-gold)";
-                e.currentTarget.style.borderColor = "var(--color-gold-mid)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--color-text-muted)";
-                e.currentTarget.style.borderColor = "var(--color-border)";
-              }}
+              style={ACTION_BTN}
+              onMouseEnter={(e) => goldHover(e, true)}
+              onMouseLeave={(e) => goldHover(e, false)}
             >
               Unlock All Milestones
             </button>
@@ -618,17 +583,7 @@ export default function MilestonesModule() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", alignItems: "start" }}>
           {/* Milestones column */}
           <div>
-            <p
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: "11px",
-                fontWeight: 600,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: "var(--color-text-secondary)",
-                marginBottom: "10px",
-              }}
-            >
+            <p style={{ ...SECTION_HEADER, marginBottom: "10px" }}>
               Milestones
               <span style={{ color: "var(--color-text-muted)", fontWeight: 400, marginLeft: "6px" }}>
                 {finishedCount}/{milestoneEntries.length}
@@ -663,17 +618,7 @@ export default function MilestonesModule() {
 
           {/* Functionalities column */}
           <div>
-            <p
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: "11px",
-                fontWeight: 600,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: "var(--color-text-secondary)",
-                marginBottom: "10px",
-              }}
-            >
+            <p style={{ ...SECTION_HEADER, marginBottom: "10px" }}>
               Game Features
               <span style={{ color: "var(--color-text-muted)", fontWeight: 400, marginLeft: "6px" }}>
                 {enabledCount}/{functionalityEntries.length}

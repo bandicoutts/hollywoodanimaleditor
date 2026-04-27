@@ -157,7 +157,25 @@ export function getUnlockedPool(stateJson: StateJson): UnlockedPool {
   };
 }
 
+// ── Scoring constants ─────────────────────────────────────────────────────────
+
+const CANDIDATE_COUNT = 300;
+const DUAL_GENRE_PROBABILITY = 0.35;
+const SECONDARY_GENRE_WEIGHT = 0.5;
+const SYNERGY_MULTIPLIER = 0.1;
+
 // ── Scoring ───────────────────────────────────────────────────────────────────
+
+function computeSynergy(elements: ScriptElement[]): number {
+  let synergy = 0;
+  for (let i = 0; i < elements.length; i++) {
+    for (let j = i + 1; j < elements.length; j++) {
+      const sorted = [elements[i].id, elements[j].id].sort();
+      synergy += COMPAT_SCORES.get(`${sorted[0]}|${sorted[1]}`) ?? 0;
+    }
+  }
+  return synergy;
+}
 
 export function scoreCombination(combo: Omit<ScriptCombo, "scores">): ScoreResult {
   const elements: ScriptElement[] = [
@@ -185,18 +203,14 @@ export function scoreCombination(combo: Omit<ScriptCombo, "scores">): ScoreResul
 
   // Compatibility score: weighted sum using real TagCompatibilityData
   // Score-5 pairs (perfect) → 1.0, score-4 pairs (strong) → 0.5
-  let synergy = 0;
-  for (let i = 0; i < elements.length; i++) {
-    for (let j = i + 1; j < elements.length; j++) {
-      const sorted = [elements[i].id, elements[j].id].sort();
-      synergy += COMPAT_SCORES.get(`${sorted[0]}|${sorted[1]}`) ?? 0;
-    }
-  }
+  const synergy = computeSynergy(elements);
 
   // Pollux: genre_factor × (art×2 + com), per GameVariables pollux_genre_factors
   // art_status_bonus max 4, com_status_bonus max 2 → art weighted 2× com
   const primaryFactor = POLLUX_GENRE_FACTORS[combo.genre.id] ?? 0;
-  const secondaryFactor = combo.genre2 ? (POLLUX_GENRE_FACTORS[combo.genre2.id] ?? 0) * 0.5 : 0;
+  const secondaryFactor = combo.genre2
+    ? (POLLUX_GENRE_FACTORS[combo.genre2.id] ?? 0) * SECONDARY_GENRE_WEIGHT
+    : 0;
   const genreFactor = Math.min(1, primaryFactor + secondaryFactor);
   const pollux = genreFactor * (art * 2 + com);
 
@@ -204,12 +218,12 @@ export function scoreCombination(combo: Omit<ScriptCombo, "scores">): ScoreResul
 }
 
 function biasScore(scores: ScoreResult, bias: Bias): number {
-  const syn = scores.synergy * 0.1;
+  const syn = scores.synergy * SYNERGY_MULTIPLIER;
   switch (bias) {
     case "art":        return scores.art * 2 + syn;
     case "commercial": return scores.com * 2 + syn;
     case "balanced":   return scores.art + scores.com + syn;
-    case "pollux":     return scores.pollux + scores.synergy * 0.1;
+    case "pollux":     return scores.pollux + scores.synergy * SYNERGY_MULTIPLIER;
   }
 }
 
@@ -248,12 +262,12 @@ export function generateSuggestions(
 
   const candidates: ScriptCombo[] = [];
 
-  for (let i = 0; i < 300; i++) {
+  for (let i = 0; i < CANDIDATE_COUNT; i++) {
     const genre = pick(genrePool);
 
     // Optionally pick a 2nd genre when the pair modifier is positive
     let genre2: ScriptElement | undefined;
-    if (pool.genres.length > 1 && Math.random() < 0.35) {
+    if (pool.genres.length > 1 && Math.random() < DUAL_GENRE_PROBABILITY) {
       const others = pool.genres.filter((g) => g.id !== genre.id);
       const g2 = pick(others);
       const key = `${genre.label}|${g2.label}`;
@@ -311,15 +325,9 @@ export function scoreElementCompatibility(
 export function scorePartialBuild(
   elements: ScriptElement[]
 ): Pick<ScoreResult, "art" | "com" | "synergy"> {
-  let art = 0, com = 0, synergy = 0;
+  let art = 0, com = 0;
   for (const e of elements) { art += e.art; com += e.com; }
-  for (let i = 0; i < elements.length; i++) {
-    for (let j = i + 1; j < elements.length; j++) {
-      const key = [elements[i].id, elements[j].id].sort().join("|");
-      synergy += COMPAT_SCORES.get(key) ?? 0;
-    }
-  }
-  return { art, com, synergy };
+  return { art, com, synergy: computeSynergy(elements) };
 }
 
 // ── Lock hint ─────────────────────────────────────────────────────────────────

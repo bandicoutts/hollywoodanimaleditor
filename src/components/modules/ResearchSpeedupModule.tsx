@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import ModuleShell from "./ModuleShell";
 import { useSaveFile } from "@/context/SaveFileContext";
+import { GHOST_BTN, goldHover } from "@/lib/styles";
 import {
   formatDecimalString,
   hasActiveResearch,
@@ -280,27 +281,9 @@ export default function ResearchSpeedupModule() {
                 <button
                   key={v}
                   onClick={() => setSpeedup(v)}
-                  style={{
-                    fontFamily: "var(--font-ui)",
-                    fontSize: "10px",
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    color: "var(--color-text-muted)",
-                    background: "transparent",
-                    border: "1px solid var(--color-border)",
-                    padding: "3px 8px",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    whiteSpace: "nowrap",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "var(--color-gold)";
-                    e.currentTarget.style.borderColor = "var(--color-gold-mid)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = "var(--color-text-muted)";
-                    e.currentTarget.style.borderColor = "var(--color-border)";
-                  }}
+                  style={GHOST_BTN}
+                  onMouseEnter={(e) => goldHover(e, true)}
+                  onMouseLeave={(e) => goldHover(e, false)}
                 >
                   ×{v}
                 </button>

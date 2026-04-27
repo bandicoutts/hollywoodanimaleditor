@@ -176,12 +176,48 @@ Inside module files (`src/components/modules/*.tsx`):
 Common CSS vars: `--color-text-muted`, `--color-text-secondary`, `--color-border`,
 `--color-border-subtle`, `--color-gold`, `--color-gold-mid`, `--font-ui`.
 
+**Shared style constants** (`src/lib/styles.ts`): import these instead of repeating the literals.
+
+| Export | Description |
+|---|---|
+| `LABEL_STYLE` | Muted uppercase section label (10px, font-ui, 0.08em tracking) |
+| `SECTION_HEADER` | Bold uppercase column header (11px, font-ui, secondary colour) |
+| `GHOST_BTN` | Small ghost button for section-level actions (3px/8px padding) |
+| `ACTION_BTN` | Larger ghost button for ModuleShell header actions (5px/14px padding) |
+| `goldHover(e, active)` | Standard gold hover handler for ghost/action buttons |
+
+Usage:
+```tsx
+import { GHOST_BTN, goldHover } from "@/lib/styles";
+<button style={GHOST_BTN} onMouseEnter={(e) => goldHover(e, true)} onMouseLeave={(e) => goldHover(e, false)}>
+  Label
+</button>
+```
+
 ---
 
 ## Auto-push setup
 
 A hook in `.claude/settings.local.json` automatically runs `git push` after any bash command
 containing `git commit`. This is local-only (gitignored).
+
+---
+
+## Component architecture
+
+The `src/components/modules/` directory follows a flat sibling-file pattern — sub-components extracted from god files live next to their parent module, not in a shared hierarchy.
+
+| File | Role |
+|---|---|
+| `CharactersModule.tsx` | List panel, filter bar, bulk actions, `CharRow`, `BulkBtn` |
+| `CharacterDetailPanel.tsx` | Full detail panel and all its sub-components (`PortraitPlaceholder`, `AgeEditor`, `XpEditor`, `BonusEditor`, `UpgradeBonusSection`, `AppealColumn`, `AppealSection`, `LabelsEditor`). Exports `moodColor` and `displayName` for use by `CharactersModule`. |
+| `CharacterStatBar.tsx` | Reusable `StatBar` — labelled slider with click-to-edit value and cap marker |
+| `CharacterProfBadge.tsx` | Reusable `ProfBadge` — coloured profession badge |
+| `AIScriptsModule.tsx` | Script Workshop shell — mode tabs, generate controls, pool stats, result grid |
+| `ScriptBuilder.tsx` | Build Your Script mode — full accordion builder |
+| `ScriptCard.tsx` | Scored combination card (used by both modes) |
+| `ScoreBadge.tsx` | Art/Com/Compat/Pollux score badge chip |
+| `PillButton.tsx` | Active/inactive pill toggle button |
 
 ---
 
@@ -213,6 +249,14 @@ All major data work is complete:
   - **Build Your Script**: Guided accordion-based builder. Selecting any element instantly re-ranks all other category lists by `COMPAT_SCORES` compatibility score (green dot ≥1.0, gold dot >0, no dot = 0). Categories auto-advance on selection. Running Art/Com/Compat score bar appears once ≥2 elements are selected. Optional second genre picker sorted by `GENRE_PAIR_MODIFIERS` benefit. **"Optimise for" bias selector** (Art / Balanced / Commercial / Pollux) mirrors the Generate Ideas control and is passed to `generateSuggestions` when auto-completing. "Auto-complete Script" fills any empty slots using the existing generator and merges with player selections; "Complete Script" appears when everything is manually filled. Final result rendered as a `ScriptCard`. Two new exported helpers in `script-suggestions.ts`: `scoreElementCompatibility` (scores a candidate against a selected set) and `scorePartialBuild` (partial Art/Com/Synergy for the running score bar).
 - **Characters module** (`CharactersModule.tsx`): Character `birthDate` field (format `"DD-MM-YYYY"`) is now read and displayed as the character's current in-game age in the detail panel header (e.g. "Age 39"). Click-to-edit: entering a new age back-calculates a new `birthDate` keeping the original day and month, writing only the year. Age is derived from `parseGameDate(stateJson)` (game date from `stateJson.timePassed`). Characters without a `birthDate` field show nothing. `birthDate?: string` added to the `Character` interface in `save-file.ts`.
 - **Technical spec** (`docs/technical-spec.md`): Up to date with all the above.
+
+**Code quality pass completed 2026-04-27:**
+- `AIScriptsModule.tsx` reduced from 1,042 to ~240 lines; sub-components extracted to sibling files (see component architecture table above)
+- `CharactersModule.tsx` reduced from 1,537 to ~270 lines; sub-components extracted to `CharacterDetailPanel.tsx`, `CharacterStatBar.tsx`, `CharacterProfBadge.tsx`
+- `src/lib/script-suggestions.ts`: magic numbers named (`CANDIDATE_COUNT`, `DUAL_GENRE_PROBABILITY`, etc.); duplicate synergy loop extracted to `computeSynergy()` helper
+- `src/lib/styles.ts` created with shared button/label style constants
+- Repeated `ACTION_BTN`/`GHOST_BTN` patterns replaced with constants across `MilestonesModule`, `ResearchModule`, `WritingTagsModule`, `ResearchSpeedupModule`, `CharactersModule`
+- `ScriptBuilder.tsx` performance: `ranked` useMemo keyed on stable string (`selectedKey`) to avoid recomputing on array reference changes; theme filter converted from O(n×m) find to O(1) Set lookup
 
 No outstanding tasks at this handover point (updated 2026-04-27).
 

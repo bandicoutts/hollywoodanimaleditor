@@ -534,6 +534,8 @@ pollux  = genre_factor × (art × 2 + com)
 - Balanced: `art + com + synergy × 0.1`
 - Pollux: `pollux + synergy × 0.1`
 
+Named constants in `script-suggestions.ts`: `CANDIDATE_COUNT = 300`, `DUAL_GENRE_PROBABILITY = 0.35`, `SECONDARY_GENRE_WEIGHT = 0.5`, `SYNERGY_MULTIPLIER = 0.1`. The shared synergy pair-loop is extracted as `computeSynergy(elements)` — used by both `scoreCombination` and `scorePartialBuild`.
+
 **Suggestion algorithm**: 300 random candidate combinations are scored and the top 6 (deduplicated by genre+setting+protagonist) are returned. Sort order controlled by bias setting.
 
 **Script composition constraints** (from `GameVariables.json`):
