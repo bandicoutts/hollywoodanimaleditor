@@ -48,13 +48,13 @@ export default function TopBar() {
   return (
     <header
       style={{
-        height: "var(--topbar-height)",
+        minHeight: "var(--topbar-height)",
         background: "var(--color-bg-panel)",
         borderBottom: "1px solid var(--color-border-subtle)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 20px",
+        padding: "10px 20px",
         flexShrink: 0,
         gap: "16px",
       }}

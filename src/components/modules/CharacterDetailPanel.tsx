@@ -19,6 +19,41 @@ const KNOWN_LABELS = [
   "UNDISCIPLINED", "UNTOUCHABLE", "UNWANTED_ACTOR", "XENOPHOBE",
 ];
 
+type LabelInfo = { desc: string; caution?: string };
+const LABEL_INFO: Record<string, LabelInfo> = {
+  ALCOHOLIC:      { desc: "Heavy drinker. May trigger scandal events." },
+  ARROGANT:       { desc: "Causes friction with co-workers and staff." },
+  CALM:           { desc: "Positive temperament; resilient to negative events." },
+  CHASTE:         { desc: "Avoids romantic relationships; no heartbreaker events." },
+  CHEERY:         { desc: "Higher baseline happiness; less prone to mood drops." },
+  DEMANDING:      { desc: "Expects higher compensation and better conditions." },
+  DISCIPLINED:    { desc: "Reliable and efficient worker." },
+  HARDWORKING:    { desc: "Productive; may gain XP faster." },
+  HEARTBREAKER:   { desc: "Romantic reputation; can trigger scandal events." },
+  HOTHEADED:      { desc: "Prone to conflicts on set and with management." },
+  IMMORTAL:       { desc: "Cannot die of old age.", caution: "Removing this will make the character mortal again." },
+  INDIFFERENT:    { desc: "Low motivation; may underperform on projects." },
+  JUNKIE:         { desc: "Drug use; may trigger scandal events." },
+  LAZY:           { desc: "Lower productivity; slower skill progression." },
+  LEADER:         { desc: "Boosts morale and performance of those around them." },
+  LUDOMANIAC:     { desc: "Gambling addiction; may trigger financial events." },
+  MAIN_CHARACTER: { desc: "Marks the player's own studio head character.", caution: "Do not remove — this is story-critical and cannot be safely undone." },
+  MELANCHOLIC:    { desc: "Lower baseline happiness; prone to mood drops." },
+  MISOGYNIST:     { desc: "Causes friction with female co-workers." },
+  MODEST:         { desc: "Content with lower pay; unlikely to demand raises." },
+  OPEN_MINDED:    { desc: "Flexible and collaborative; works well with others." },
+  PERFECTIONIST:  { desc: "High-quality output but may slow production timelines." },
+  RACIST:         { desc: "Causes conflict with diverse casts; scandal risk." },
+  SIMPLE:         { desc: "Easygoing; low drama, straightforward to manage." },
+  STERILE:        { desc: "Cannot have children; no family-related events.", caution: "Removing this re-enables family events for this character." },
+  SUPER_IMMORTAL: { desc: "Cannot die under any circumstances.", caution: "Removing this makes the character vulnerable again." },
+  TEAM_PLAYER:    { desc: "Strong positive effect on co-worker relationships." },
+  UNDISCIPLINED:  { desc: "Unreliable; inconsistent effort and performance." },
+  UNTOUCHABLE:    { desc: "Cannot be targeted by competitor attacks or certain events." },
+  UNWANTED_ACTOR: { desc: "Blocked from being cast in any film.", caution: "Adding this will prevent this character from being cast. Only remove if you're sure." },
+  XENOPHOBE:      { desc: "Causes friction with international co-workers." },
+};
+
 const APPEAL_TIERS = {
   ART: [
     { label: "Promising Talent",    value: 0.25 },
@@ -424,6 +459,7 @@ function LabelsEditor({
   onRemove: (label: string) => void;
 }) {
   const selectId = useId();
+  const [guideOpen, setGuideOpen] = useState(false);
   const currentSet = new Set(labels);
   const available = KNOWN_LABELS.filter((l) => !currentSet.has(l));
   const unknownLabels = labels.filter((l) => !KNOWN_LABELS.includes(l));
@@ -439,7 +475,33 @@ function LabelsEditor({
           marginBottom: "12px",
         }}
       >
-        <p style={FIELD_LABEL_STYLE}>Traits</p>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <p style={FIELD_LABEL_STYLE}>Traits</p>
+          <button
+            onClick={() => setGuideOpen((o) => !o)}
+            title="Trait reference guide"
+            style={{
+              fontFamily: "var(--font-ui)",
+              fontSize: "9px",
+              lineHeight: 1,
+              color: guideOpen ? "var(--color-gold)" : "var(--color-text-muted)",
+              background: "transparent",
+              border: `1px solid ${guideOpen ? "var(--color-gold-mid)" : "var(--color-border)"}`,
+              borderRadius: "50%",
+              width: "14px",
+              height: "14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-gold)"; e.currentTarget.style.borderColor = "var(--color-gold-mid)"; }}
+            onMouseLeave={(e) => { if (!guideOpen) { e.currentTarget.style.color = "var(--color-text-muted)"; e.currentTarget.style.borderColor = "var(--color-border)"; } }}
+          >
+            ?
+          </button>
+        </div>
         <select
           id={selectId}
           value=""
@@ -456,11 +518,92 @@ function LabelsEditor({
           }}
         >
           <option value="">+ Add trait</option>
-          {available.map((l) => (
-            <option key={l} value={l}>{l}</option>
-          ))}
+          {available.map((l) => {
+            const caution = LABEL_INFO[l]?.caution;
+            return <option key={l} value={l}>{caution ? `⚠ ${l}` : l}</option>;
+          })}
         </select>
       </div>
+
+      {guideOpen && (
+        <div
+          style={{
+            marginBottom: "16px",
+            border: "1px solid var(--color-border-subtle)",
+            background: "var(--color-bg-raised)",
+          }}
+        >
+          <div
+            style={{
+              padding: "6px 10px",
+              borderBottom: "1px solid var(--color-border-subtle)",
+              fontFamily: "var(--font-ui)",
+              fontSize: "9px",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--color-text-muted)",
+            }}
+          >
+            Trait reference — ⚠ = handle with care
+          </div>
+          <div style={{ maxHeight: "240px", overflowY: "auto" }}>
+            {KNOWN_LABELS.map((l) => {
+              const info = LABEL_INFO[l];
+              return (
+                <div
+                  key={l}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "120px 1fr",
+                    gap: "8px",
+                    padding: "5px 10px",
+                    borderBottom: "1px solid var(--color-border-subtle)",
+                    alignItems: "start",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: "var(--font-ui)",
+                      fontSize: "9px",
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      color: info?.caution ? "var(--color-gold)" : "var(--color-text-secondary)",
+                      paddingTop: "1px",
+                    }}
+                  >
+                    {info?.caution ? "⚠ " : ""}{l.replace(/_/g, " ")}
+                  </span>
+                  <div>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-ui)",
+                        fontSize: "10px",
+                        color: "var(--color-text-muted)",
+                      }}
+                    >
+                      {info?.desc ?? "No description available."}
+                    </span>
+                    {info?.caution && (
+                      <span
+                        style={{
+                          display: "block",
+                          fontFamily: "var(--font-ui)",
+                          fontSize: "9px",
+                          color: "var(--color-gold)",
+                          marginTop: "2px",
+                        }}
+                      >
+                        {info.caution}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {labels.length === 0 ? (
         <p
           style={{
@@ -474,9 +617,14 @@ function LabelsEditor({
         </p>
       ) : (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          {labels.map((label) => (
-            <div
+          {labels.map((label) => {
+            const info = LABEL_INFO[label];
+            const isUnknown = unknownLabels.includes(label);
+            const isCaution = !!info?.caution;
+            const tooltipText = info?.caution ? `${info.desc}\n⚠ ${info.caution}` : info?.desc;
+            return <div
               key={label}
+              title={tooltipText}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -485,11 +633,12 @@ function LabelsEditor({
                 fontSize: "10px",
                 letterSpacing: "0.06em",
                 textTransform: "uppercase",
-                color: unknownLabels.includes(label) ? "var(--color-text-muted)" : "var(--color-text-secondary)",
-                border: "1px solid var(--color-border)",
+                color: isUnknown ? "var(--color-text-muted)" : isCaution ? "var(--color-gold)" : "var(--color-text-secondary)",
+                border: `1px solid ${isCaution ? "var(--color-gold-mid)" : "var(--color-border)"}`,
                 padding: "2px 6px 2px 8px",
               }}
             >
+              {isCaution && <span style={{ fontSize: "9px" }}>⚠</span>}
               {label}
               <button
                 onClick={() => onRemove(label)}
@@ -510,8 +659,8 @@ function LabelsEditor({
               >
                 ×
               </button>
-            </div>
-          ))}
+            </div>;
+          })}
         </div>
       )}
     </>

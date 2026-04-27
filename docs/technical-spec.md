@@ -463,12 +463,6 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
 
 **Hidden perks (`HIDDEN_PERK_IDS`):** 49 perk IDs have `behaviour=4` in the game's `Perks.json` — these are passive/auto-triggered effects that are not visible nodes in the research tree UI. They appear in `openedPerks` in save files (e.g. `BANK_LOAN_REFINANCING`, `TAX_BASE_REDUCTION_1`). They are included in `ALL_KNOWN_PERKS` so "Unlock All" covers them, but are excluded from `PERK_GROUPS` so they don't appear as interactive cards in the Research module. They are also filtered from the "Other (unknown)" fallback group. The full set is `HIDDEN_PERK_IDS` in `src/data/perks.ts`.
 
-Sources used to build `PERK_LABELS`:
-- Game localisation strings — extracted directly from the installed game; authoritative source for all ~230 labelled entries (added 2026-04-27)
-- `Buildings.json` — maps building IDs to `needPerkId` (used for all `BLDG_` perk names, now superseded by localisation strings)
-- `Presents.json` — maps present types to their unlock perk (used for `WG_` and `BG_` names, now superseded)
-- `Party.json` — confirms `PARTY_1/2/3` and `OFFICIAL_RECEPTION_1/2/3` IDs
-
 **Localization note:** The game's human-readable display strings live in Unity asset bundles, not in the JSON config files. The config files at `StreamingAssets/Data/Configs/` contain only internal IDs and numeric data. For any perk added by a future game update and not yet in `PERK_LABELS`, derive a provisional label from the ID pattern (e.g. `_QLT_` → "Quality", `_TIME_RED_` → "Time Reduction", `_XP_` → "XP Bonus") until the localisation string can be confirmed.
 
 ### 6. Research Speedup / Complete Instantly
@@ -627,13 +621,3 @@ The game uses a shared **content tag budget** stored in `contentIds` (confirmed 
 - `SupportingMode = "any" | "some" | "none"`
 - `DualGenreMode = "any" | "prefer" | "single"`
 
----
-
-## Architecture checklist
-
-- Lossless round-trip — unmodified fields survive unchanged
-- Data-driven — perk and tag lists are reference data, not hardcoded enums
-- Type preservation — strings stay strings, numbers stay numbers
-- BOM preserved on download
-- No backend, no server, no auth
-- Save version displayed in header; warn on unknown versions

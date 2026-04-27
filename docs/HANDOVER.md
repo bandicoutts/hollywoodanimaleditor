@@ -16,17 +16,6 @@ the browser.
 
 ---
 
-## Stack
-
-| Layer | Tech |
-|---|---|
-| Framework | Next.js (check `node_modules/next/dist/docs/` — this version has breaking API changes) |
-| Styling | **Inline `style={{}}` with CSS custom properties** in module files. No Tailwind inside module files. Tailwind is used only in global/layout-level files. |
-| Deploy | Vercel |
-| Runtime | All client-side; no API routes, no DB |
-
----
-
 ## Dev environment
 
 - Dev server: `npm run dev` on **port 3009** (not 3000)
@@ -95,7 +84,7 @@ Each module edits a specific slice of `stateJson`. All modules are in
 | `CharactersModule.tsx` | Character data | `stateJson.characters` |
 | `AIScriptsModule.tsx` | Script Workshop — client-side script idea generator | read-only (no save edits) |
 | `CompetitorStudiosModule.tsx` | Competitor studio state | `stateJson.competitorStudios` |
-| `ResearchSpeedupModule.tsx` | Research speed modifiers | `stateJson.researchSpeedup` |
+| `ResearchSpeedupModule.tsx` | Research speed modifiers | `overallPerkResearchSpeedup` + process data objects |
 
 ---
 
@@ -221,132 +210,41 @@ The `src/components/modules/` directory follows a flat sibling-file pattern — 
 
 ---
 
-## Current state (as of 2026-04-27, layout + Script Workshop pass completed 2026-04-27)
+## Key implementation notes
 
-All major data work is complete. A full UX review pass was then completed (same day) covering safety, bulk actions, characters, Script Workshop, and layout.
+### UX safety features (`src/context/SaveFileContext.tsx`)
 
-### Data modules
-
-- **Research module**: All ~230 perks labelled with authoritative game localisation strings,
-  grouped into 20 sections matching the in-game research tree, 49 hidden behaviour=4 perks
-  excluded from UI but preserved in saves.
-- **Writing Tags module**: All 253 script element tags across 8 categories, with human-readable
-  labels for non-obvious IDs. Inactive tags show date/recipe lock hints; active tags never show
-  a hint. Three elements (Toxic Revenger, Killer Toaster, Wizard War) have `availalbeFromStartTag:
-  true` in `TagData.json` and use `">=1929"` unlock conditions despite having an associated recipe.
-- **Competitor Studios module**: Each studio card shows the full studio name, two-letter ID badge,
-  and a read-only reference row (tier, attack capability, quality range, releases/yr, defenceless
-  flag). Metadata lives in `src/data/competitors.ts`.
-- **Technologies module**: Each technology card shows its proper display name (resolved from a
-  static `TECH_INFO` lookup keyed on `configId`), grouped by manufacturer (Dupler / Hespro /
-  Blue Term / Flumen for cameras; Sonatone / Frametone / FilmSound for audio). Cards show format,
-  release year, Quest badge (tooltip: "Unlocked through a quest, not purchased directly"), Color badge,
-  Outdated badge (tooltip: "An upgraded version of this technology is available"), and QPE stats.
-  Custom technologies (no `configId`) appear in a read-only "Custom" section at the bottom of each column.
-- **Milestones & Game Flags module**: Milestones grouped under Studio Policies and Technology Quests
-  super-section headers. Each milestone row shows a human-readable label and description subtitle.
-  Game feature flags grouped into UI / Management / Events & Competition. "Unlock All Milestones"
-  and "Enable All Features" are inline buttons at the top-right of their respective columns — not
-  in the module header.
-- **Characters module** (`CharactersModule.tsx`): Character `birthDate` displayed as current in-game
-  age in the detail panel header. Click-to-edit age back-calculates `birthDate` preserving day/month.
-  Portrait placeholder removed — character images are not available in this editor.
-
-### Script Workshop (`AIScriptsModule.tsx`)
-
-Two modes — "Generate Ideas" and "Build Your Script" — share a single `bias` state lifted to the
-module level so switching tabs preserves the selected bias.
-
-**Generate Ideas:** Up to 6 scored suggestions generated client-side from the player's `tagPool`.
-Controls:
-- Genre filter pills
-- Bias toggle (Art / Balanced / Commercial / Pollux) + Pollux hint ("Filter by genre for best Pollux results") when Pollux selected with no genre
-- Themes/Events per film stepper (min 3, max = `pool.contentTagBudget − 2`), displayed as `N / max`
-- Second genre: Any / Prefer paired / Single only
-- Antagonist: Any / Always / Never
-- Supporting cast: Any / 1+ / None
-- Pool stats toggle (element counts by category, collapsed by default)
-
-Generator algorithm uses **bias-weighted sampling** (`pickWeighted` with `WEIGHT_EPSILON = 0.1` floor so every element has a non-zero draw probability). Genre2 probability is mode-driven: 0 (single-only), 0.35 (any), 1.0 (prefer-paired). After generation, a **post-generation sort bar** lets you re-sort the results by a different bias without regenerating.
-
-Each result card has a "Build Your Script →" button that pre-fills the builder with that combination and switches to the Build tab.
-
-**Build Your Script:** Accordion-based builder with these properties:
-- "Optimise for" bias selector shown at the **top** — choose your goal before picking elements.
-- Element lists are bias-weighted: each row score = `compat + biasFor(item)` where:
-  - Art: `item.art × 2`
-  - Commercial: `item.com × 2`
-  - Balanced: `item.art + item.com`
-  - Pollux (genres): `POLLUX_GENRE_FACTORS[item.id]` — shows actual Pollux eligibility, not raw art
-  - Pollux (non-genre, genre selected): `genreFactor × (item.art × 2 + item.com)`
-  - Pollux (non-genre, no genre yet): `item.art × 2`
-  - These weights match the generator's `biasScore()` function exactly.
-- Compatibility scores exclude the currently-selected item for each single-select category, giving honest "swap to this" scores when re-opening a filled section.
-- Running score bar (Art / Com / Compat) appears once ≥2 elements selected.
-- **Pollux score appears in running bar** once a genre is selected:
-  `polluxPartial = POLLUX_GENRE_FACTORS[genre.id] × (Σart × 2 + Σcom)`.
-- Hint shown when Pollux selected before genre: "Select a genre first — Pollux eligibility depends on genre".
-- **Supporting characters and antagonist are optional** — labelled "(optional)" in the accordion. **Protagonist and Finale each consume 1 fixed content tag slot** (`FIXED_CONTENT_TAGS = 2`). Budget = 5 base + 1 per `TAGS_SLOTS_N` perk in `openedPerks` (up to 10). Full formula: `protagonist(1) + supporting(0–N) + antagonist(0–1) + themesEvents(N) + finale(1) ≤ contentTagBudget`. Genre and Setting are stored separately and are free. `isComplete` requires `contentTagsUsed ≥ 3`, not specific chars.
-- **Supporting Characters is multi-select** (0 to N chars, same UX as Themes/Events — selected items pin to top with remove buttons). `ScriptCombo.supporting` is `ScriptElement[]`.
-- **Budget enforcement has two layers — both are required:**
-  - *Generator* (`generateSuggestions`): randomly picks ~50% antagonist, then 0–N supporting chars (budget-constrained to always leave room for ≥1 theme). `effectiveThemeCount = Math.min(themeEventCount, pool.contentTagBudget − charCount − FIXED_CONTENT_TAGS)`.
-  - *Builder* (`ScriptBuilder`): optional char rows are disabled when `contentTagsUsed >= contentTagBudget`. `selectSingle` (antagonist) and `toggleSupporting` both trim `themes` to `maxAllowedThemes` as a defensive fallback so the builder can never produce an over-budget combo.
-- **Second Genre** is its own accordion section between Genre and Setting. Skip → is pinned at the top; genres below are sorted by pair modifier. Selecting a genre2 auto-advances to Setting; Skip advances without selecting. Changing primary genre clears genre2. Section is omitted entirely when only 1 genre is unlocked. The running bar includes a `X/Y slots left` counter reflecting actual selections (protagonist and finale each decrement it when chosen).
-- **Supporting Characters and Antagonist** also have a **Skip →** button pinned at the top of their optional accordion bodies (same pattern as Second Genre). Implemented via the shared `skipSection(key: SectionKey)` helper in `ScriptBuilder.tsx`.
-- Auto-complete fills empty slots; Complete Script appears when all slots are manually filled.
-- `scorePartialBuild`, `scoreElementCompatibility`, and `getContentTagBudget` exported from `script-suggestions.ts`.
-
-**Pollux tooltips:** The Pollux pill in both tabs has `title="Optimise for the Pollux Award — the game's prestige prize for artistic films"`. The "Pol" score badge in `ScoreBadge` accepts an optional `title` prop and uses it.
-
-### UX safety features (`SaveFileContext.tsx`)
-
-- **Auto-save to localStorage** on every `updateStateJson` call (debounced 500ms). Key: `hae_draft`.
-  Silently skips files >5MB (QuotaExceededError caught). On page load, if a draft exists, the upload
-  screen shows a "Resume editing [filename]?" banner with timestamp.
+- **Auto-save to localStorage** on every `updateStateJson` call (debounced 500ms). Key: `hae_draft`. Silently skips files >5MB. On page load, if a draft exists, the upload screen shows a "Resume editing [filename]?" banner with timestamp.
 - **`beforeunload` warning** fires when `unsavedCount > 0` — prevents accidental tab close.
-- **Change log:** `updateStateJson` accepts an optional `description?: string` second argument.
-  Described edits appear in a clickable "N unsaved changes" popover in the TopBar. Undescribed edits
-  still increment `unsavedCount`. After download, both are reset and the draft is cleared.
+- **Change log:** `updateStateJson` accepts an optional `description?: string` second argument. Described edits appear in a clickable "N unsaved changes" popover in the TopBar. After download, both are reset and the draft is cleared.
 - **`ChangeEntry` interface** exported from `SaveFileContext`: `{ description: string; timestamp: number }`.
 
-### Bulk action confirmations (`ConfirmDialog.tsx`)
+### Shared components
 
-`ConfirmDialog` is a shared component (extracted from `CompetitorStudiosModule.tsx`). Used by:
-- Characters "Max All Characters" — shows count of affected characters, requires confirmation
-- Characters "Remove Caps" — same
-- Competitor Studios "Eliminate" — existing usage
+- **`ConfirmDialog.tsx`** — shared confirmation modal. Used by Characters bulk actions ("Max All Characters", "Remove Caps") and Competitor Studios "Eliminate".
 
-### Characters module UX
+### Characters module UX decisions
 
-- Sort dropdown: hire order / name A–Z / top skill ↓ / mood ↑ (triage)
-- Filter toggle labelled "All (incl. fired)" (was "All")
-- Bulk action area: "Bulk actions" label, then "Max All Characters" and "Remove Caps" buttons stacked vertically below — each button on its own row so width of the list panel is irrelevant
-- Character ID removed from detail panel header (was shown alongside name/age/happiness)
-- "Max All Stats" in detail panel renamed "Max This Character" to distinguish from list-level bulk action
-- Appeal section tier buttons prefixed with "Set tier:" label to clarify slider relationship
-- List panel width: `clamp(360px, 35%, 500px)` — responsive, scales from ~1220px viewport upward; 360px minimum gives comfortable clearance for the bulk bar content
+- Sort options: hire order / name A–Z / top skill ↓ / mood ↑ (triage)
+- Filter toggle label: "All (incl. fired)"
+- Bulk action buttons stacked vertically (one per row) so list panel width is irrelevant
+- Detail panel header: no character ID; "Max This Character" (not "Max All Stats") to distinguish from list-level bulk action
+- List panel width: `clamp(360px, 35%, 500px)`
 
-### Layout
+### Layout decisions
 
-- Sidebar width: `--sidebar-width: 190px` (increased from 148px to prevent label truncation).
-  Label spans have no `overflow: hidden` / `textOverflow: ellipsis` — the aside clips naturally.
+- Sidebar width: `--sidebar-width: 190px`. Label spans have no overflow/ellipsis — the aside clips naturally.
 - `AppShell.tsx` `<main>` has `overflowX: hidden` and `minWidth: 0`.
+- All `ModuleShell` usages have no `maxWidth` — modules fill the full available content area.
 - Script card grid uses `minmax(min(380px, 100%), 1fr)` to prevent overflow on narrow viewports.
-- **All `ModuleShell` usages have no `maxWidth`** — modules fill the full available content area. Previous per-module caps (860px for Milestones, 900px for Script Workshop, etc.) were removed.
-- Characters two-panel layout: list panel `clamp(360px, 35%, 500px)`, detail panel `flex: 1`. `px` is appropriate for the clamp min/max because `GHOST_BTN` uses fixed `fontSize: "10px"` — the content doesn't scale with user font preferences.
 
-### Code quality (completed 2026-04-27)
+### Script Workshop
 
-- `AIScriptsModule.tsx` reduced from 1,042 to ~240 lines; sub-components extracted to sibling files
-- `CharactersModule.tsx` reduced from 1,537 to ~270 lines; sub-components extracted to `CharacterDetailPanel.tsx`, `CharacterStatBar.tsx`, `CharacterProfBadge.tsx`
-- `src/lib/script-suggestions.ts`: magic numbers named; duplicate synergy loop extracted to `computeSynergy()`
-- `src/lib/styles.ts` created with shared button/label style constants
-- `PillButton` and `ScoreBadge` accept optional `title` prop for tooltips
+Fully implemented. See `docs/technical-spec.md` Module 10 for the complete specification.
 
 ### Remaining known gaps
 
-- **Character list virtualisation**: With 200+ characters the list renders all DOM nodes at once.
-  `react-window` or `react-virtual` would be needed for saves with 500+ characters.
+- **Character list virtualisation**: With 200+ characters the list renders all DOM nodes at once. `react-window` or `react-virtual` would be needed for saves with 500+ characters.
 - No undo/redo beyond the localStorage draft recovery.
 
 ---

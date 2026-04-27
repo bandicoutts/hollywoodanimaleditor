@@ -141,7 +141,7 @@ export default function UploadScreen() {
           letterSpacing: "-0.01em",
         }}
       >
-        Studio Archives
+        Hollywood Animal Editor
       </h1>
 
       <p
