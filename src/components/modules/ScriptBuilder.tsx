@@ -13,7 +13,9 @@ import {
   type Bias,
   type UnlockedPool,
 } from "@/lib/script-suggestions";
-import { GENRE_PAIR_MODIFIERS, type ScriptElement } from "@/data/scriptElements";
+import { GENRE_PAIR_MODIFIERS, POLLUX_GENRE_FACTORS, type ScriptElement } from "@/data/scriptElements";
+
+const POLLUX_TOOLTIP = "Pollux Award score — the game's prestige prize for artistic films";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -209,23 +211,40 @@ export default function ScriptBuilder({
     [selectedElements]
   );
 
+  const genreId = sel.genre?.id;
+
   const ranked = useMemo(() => {
+    const polluxFactor = genreId ? (POLLUX_GENRE_FACTORS[genreId] ?? 0) : 0;
     const rank = (items: ScriptElement[]) =>
       [...items]
-        .map(item => ({ item, score: scoreElementCompatibility(item, selectedElements) }))
+        .map(item => {
+          const compat = scoreElementCompatibility(item, selectedElements);
+          let biasValue: number;
+          switch (bias) {
+            case "art":        biasValue = item.art; break;
+            case "commercial": biasValue = item.com; break;
+            case "balanced":   biasValue = (item.art + item.com) * 0.5; break;
+            case "pollux":
+              biasValue = polluxFactor > 0
+                ? polluxFactor * (item.art * 2 + item.com)
+                : item.art; // fall back to art weighting before genre is chosen
+              break;
+          }
+          return { item, score: compat + biasValue };
+        })
         .sort((a, b) => b.score - a.score);
     return {
-      genre:       rank(pool.genres),
-      setting:     rank(pool.settings),
-      protagonist: rank(pool.protagonists),
-      supporting:  rank(pool.supportingChars),
-      antagonist:  rank(pool.antagonists),
+      genre:        rank(pool.genres),
+      setting:      rank(pool.settings),
+      protagonist:  rank(pool.protagonists),
+      supporting:   rank(pool.supportingChars),
+      antagonist:   rank(pool.antagonists),
       themesEvents: rank(pool.themesEvents),
-      finale:      rank(pool.finales),
+      finale:       rank(pool.finales),
     };
     // selectedElements used inside but selectedKey is the stable equality signal
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedKey, pool]);
+  }, [selectedKey, pool, bias, genreId]);
 
   const rankedGenre2 = useMemo(() => {
     if (!sel.genre) return [];
@@ -242,6 +261,15 @@ export default function ScriptBuilder({
     selectedElements.length >= 2 ? scorePartialBuild(selectedElements) : null,
     [selectedElements]
   );
+
+  const polluxPartial = useMemo(() => {
+    if (!sel.genre || selectedElements.length < 1) return null;
+    const factor = POLLUX_GENRE_FACTORS[sel.genre.id] ?? 0;
+    if (factor === 0) return null;
+    let art = 0, com = 0;
+    for (const e of selectedElements) { art += e.art; com += e.com; }
+    return factor * (art * 2 + com);
+  }, [selectedElements, sel.genre]);
 
   // Precompute theme IDs as a Set to avoid O(pool × themes) in the filter
   const themeIds = useMemo(() => new Set(themes.map(t => t.id)), [themes]);
@@ -327,6 +355,39 @@ export default function ScriptBuilder({
 
   return (
     <div>
+      {/* Optimise for — shown first so bias guides all element picks */}
+      <div style={{ marginBottom: "16px" }}>
+        <p
+          style={{
+            fontFamily: "var(--font-ui)",
+            fontSize: "10px",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--color-text-muted)",
+            marginBottom: "8px",
+          }}
+        >
+          Optimise for
+        </p>
+        <div style={{ display: "flex", gap: "6px" }}>
+          {BIAS_OPTIONS.map(({ value, label }) => (
+            <PillButton
+              key={value}
+              active={bias === value}
+              onClick={() => onBiasChange(value)}
+              title={value === "pollux" ? "Optimise for the Pollux Award — the game's prestige prize for artistic films" : undefined}
+            >
+              {label}
+            </PillButton>
+          ))}
+        </div>
+        {bias === "pollux" && !sel.genre && (
+          <p style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)", marginTop: "8px", fontStyle: "italic" }}>
+            Select a genre first — Pollux eligibility depends on genre
+          </p>
+        )}
+      </div>
+
       {/* Running score */}
       {partialScore && (
         <div
@@ -358,10 +419,8 @@ export default function ScriptBuilder({
           {partialScore.synergy > 0 && (
             <ScoreBadge label="Compat" value={partialScore.synergy} color="var(--color-gold)" />
           )}
-          {!sel.genre && (
-            <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", color: "var(--color-text-muted)" }}>
-              — select a genre to unlock Pollux
-            </span>
+          {polluxPartial !== null && (
+            <ScoreBadge label="Pol" value={polluxPartial} color="#b8a0d4" title={POLLUX_TOOLTIP} />
           )}
         </div>
       )}
@@ -546,34 +605,6 @@ export default function ScriptBuilder({
           )}
         </div>
       )}
-
-      {/* Optimise for */}
-      <div style={{ marginBottom: "16px" }}>
-        <p
-          style={{
-            fontFamily: "var(--font-ui)",
-            fontSize: "10px",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "var(--color-text-muted)",
-            marginBottom: "8px",
-          }}
-        >
-          Optimise for
-        </p>
-        <div style={{ display: "flex", gap: "6px" }}>
-          {BIAS_OPTIONS.map(({ value, label }) => (
-            <PillButton
-              key={value}
-              active={bias === value}
-              onClick={() => onBiasChange(value)}
-              title={value === "pollux" ? "Optimise for the Pollux Award — the game's prestige prize for artistic films" : undefined}
-            >
-              {label}
-            </PillButton>
-          ))}
-        </div>
-      </div>
 
       {/* Complete / Auto-complete */}
       {hasSelection && !finalCombo && (

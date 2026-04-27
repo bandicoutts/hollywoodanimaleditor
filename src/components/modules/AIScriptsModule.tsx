@@ -79,10 +79,10 @@ export default function AIScriptsModule() {
           {/* Mode tabs */}
           <div style={{ display: "flex", gap: "6px", marginBottom: "24px" }}>
             <PillButton active={mode === "generate"} onClick={() => setMode("generate")}>
-              Explore Ideas
+              Generate Ideas
             </PillButton>
             <PillButton active={mode === "build"} onClick={() => setMode("build")}>
-              Refine &amp; Score
+              Build Your Script
             </PillButton>
           </div>
 

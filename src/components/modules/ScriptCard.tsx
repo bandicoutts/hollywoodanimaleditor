@@ -155,7 +155,7 @@ export default function ScriptCard({
             onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(184,156,84,0.1)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
           >
-            Refine & Score →
+            Build Your Script →
           </button>
         </div>
       )}
