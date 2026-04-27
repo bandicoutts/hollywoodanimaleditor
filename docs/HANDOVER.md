@@ -221,9 +221,11 @@ The `src/components/modules/` directory follows a flat sibling-file pattern — 
 
 ---
 
-## Current state (as of 2026-04-27, updated same day)
+## Current state (as of 2026-04-27, UX pass completed 2026-04-27)
 
-All major data work is complete:
+All major data work is complete. A full UX review pass was then completed (same day) covering safety, bulk actions, characters, Script Workshop, and layout.
+
+### Data modules
 
 - **Research module**: All ~230 perks labelled with authoritative game localisation strings,
   grouped into 20 sections matching the in-game research tree, 49 hidden behaviour=4 perks
@@ -238,27 +240,91 @@ All major data work is complete:
 - **Technologies module**: Each technology card shows its proper display name (resolved from a
   static `TECH_INFO` lookup keyed on `configId`), grouped by manufacturer (Dupler / Hespro /
   Blue Term / Flumen for cameras; Sonatone / Frametone / FilmSound for audio). Cards show format,
-  release year, Quest badge, Color badge (color cameras only), Outdated badge, and Quality /
-  Practicality / Economy stats as dot rows with numeric values. Custom technologies (no `configId`)
-  appear in a read-only "Custom" section at the bottom of each column. The `TECH_INFO` lookup
-  and manufacturer ordering are hardcoded in `TechnologiesModule.tsx` — source data is
-  `VideoTech.json` and `AudioTech.json` from the game configs.
-- **Milestones & Game Flags module**: Milestones are now grouped under Studio Policies and Technology Quests super-section headers, with per-policy/quest sub-group headers (Trash King, Behemoth, Boutique, Factory, All-Rounder; quest groups for all 18 known tech quests). Each milestone row shows a human-readable label and a description subtitle sourced from `MILESTONE_META` in `MilestonesModule.tsx`. Game feature flags are grouped into UI / Management / Events & Competition with human-readable labels from `FUNC_META`. All toggles (Locked/Finished on milestones; toggle pill on features) are unchanged.
-- **Script Workshop module** (`AIScriptsModule.tsx`): Two modes, toggled by tab at the top of the module.
-  - **Generate Ideas**: Generates up to 6 scored suggestions entirely client-side. Pool filtering uses **`tagPool` membership** — only elements already in the player's `tagPool` (or `tagRecipesPool`) appear as options; date conditions in `scriptElements.ts` are for Writing Tags lock hints only, not for Workshop filtering. Controls: genre filter pills, Art / Balanced / Commercial / Pollux bias toggle, themes/events stepper (3–5). All 3 character types mandatory. Logic in `src/lib/script-suggestions.ts`; element data (art/com, unlock conditions, `COMPAT_SCORES` 5,662 entries, `POLLUX_GENRE_FACTORS`) in `src/data/scriptElements.ts`. Pollux formula: `genre_factor × (art × 2 + com)` from `GameVariables.json`.
-  - **Build Your Script**: Guided accordion-based builder. Selecting any element instantly re-ranks all other category lists by `COMPAT_SCORES` compatibility score (green dot ≥1.0, gold dot >0, no dot = 0). Categories auto-advance on selection. Running Art/Com/Compat score bar appears once ≥2 elements are selected. Optional second genre picker sorted by `GENRE_PAIR_MODIFIERS` benefit. **"Optimise for" bias selector** (Art / Balanced / Commercial / Pollux) mirrors the Generate Ideas control and is passed to `generateSuggestions` when auto-completing. "Auto-complete Script" fills any empty slots using the existing generator and merges with player selections; "Complete Script" appears when everything is manually filled. Final result rendered as a `ScriptCard`. Two new exported helpers in `script-suggestions.ts`: `scoreElementCompatibility` (scores a candidate against a selected set) and `scorePartialBuild` (partial Art/Com/Synergy for the running score bar).
-- **Characters module** (`CharactersModule.tsx`): Character `birthDate` field (format `"DD-MM-YYYY"`) is now read and displayed as the character's current in-game age in the detail panel header (e.g. "Age 39"). Click-to-edit: entering a new age back-calculates a new `birthDate` keeping the original day and month, writing only the year. Age is derived from `parseGameDate(stateJson)` (game date from `stateJson.timePassed`). Characters without a `birthDate` field show nothing. `birthDate?: string` added to the `Character` interface in `save-file.ts`.
-- **Technical spec** (`docs/technical-spec.md`): Up to date with all the above.
+  release year, Quest badge (tooltip: "Unlocked through a quest, not purchased directly"), Color badge,
+  Outdated badge (tooltip: "An upgraded version of this technology is available"), and QPE stats.
+  Custom technologies (no `configId`) appear in a read-only "Custom" section at the bottom of each column.
+- **Milestones & Game Flags module**: Milestones grouped under Studio Policies and Technology Quests
+  super-section headers. Each milestone row shows a human-readable label and description subtitle.
+  Game feature flags grouped into UI / Management / Events & Competition.
+- **Characters module** (`CharactersModule.tsx`): Character `birthDate` displayed as current in-game
+  age in the detail panel header. Click-to-edit age back-calculates `birthDate` preserving day/month.
 
-**Code quality pass completed 2026-04-27:**
-- `AIScriptsModule.tsx` reduced from 1,042 to ~240 lines; sub-components extracted to sibling files (see component architecture table above)
+### Script Workshop (`AIScriptsModule.tsx`)
+
+Two modes — "Generate Ideas" and "Build Your Script" — share a single `bias` state lifted to the
+module level so switching tabs preserves the selected bias.
+
+**Generate Ideas:** Up to 6 scored suggestions generated client-side from the player's `tagPool`.
+Controls: genre filter pills, bias toggle (Art / Balanced / Commercial / Pollux), themes/events
+stepper (3–5). Each result card has a "Build Your Script →" button that pre-fills the builder with
+that combination and switches to the Build tab.
+
+**Build Your Script:** Accordion-based builder with these properties:
+- "Optimise for" bias selector shown at the **top** — choose your goal before picking elements.
+- Element lists are bias-weighted: each row score = `compat + biasFor(item)` where:
+  - Art: `item.art × 2`
+  - Commercial: `item.com × 2`
+  - Balanced: `item.art + item.com`
+  - Pollux (genres): `POLLUX_GENRE_FACTORS[item.id]` — shows actual Pollux eligibility, not raw art
+  - Pollux (non-genre, genre selected): `genreFactor × (item.art × 2 + item.com)`
+  - Pollux (non-genre, no genre yet): `item.art × 2`
+  - These weights match the generator's `biasScore()` function exactly.
+- Running score bar (Art / Com / Compat) appears once ≥2 elements selected.
+- **Pollux score appears in running bar** once a genre is selected:
+  `polluxPartial = POLLUX_GENRE_FACTORS[genre.id] × (Σart × 2 + Σcom)`.
+- Hint shown when Pollux selected before genre: "Select a genre first — Pollux eligibility depends on genre".
+- Auto-complete fills empty slots; Complete Script appears when all slots are manually filled.
+- `scorePartialBuild` and `scoreElementCompatibility` exported from `script-suggestions.ts`.
+
+**Pollux tooltips:** The Pollux pill in both tabs has `title="Optimise for the Pollux Award — the game's prestige prize for artistic films"`. The "Pol" score badge in `ScoreBadge` accepts an optional `title` prop and uses it.
+
+### UX safety features (`SaveFileContext.tsx`)
+
+- **Auto-save to localStorage** on every `updateStateJson` call (debounced 500ms). Key: `hae_draft`.
+  Silently skips files >5MB (QuotaExceededError caught). On page load, if a draft exists, the upload
+  screen shows a "Resume editing [filename]?" banner with timestamp.
+- **`beforeunload` warning** fires when `unsavedCount > 0` — prevents accidental tab close.
+- **Change log:** `updateStateJson` accepts an optional `description?: string` second argument.
+  Described edits appear in a clickable "N unsaved changes" popover in the TopBar. Undescribed edits
+  still increment `unsavedCount`. After download, both are reset and the draft is cleared.
+- **`ChangeEntry` interface** exported from `SaveFileContext`: `{ description: string; timestamp: number }`.
+
+### Bulk action confirmations (`ConfirmDialog.tsx`)
+
+`ConfirmDialog` is a shared component (extracted from `CompetitorStudiosModule.tsx`). Used by:
+- Characters "Max All Characters" — shows count of affected characters, requires confirmation
+- Characters "Remove Caps" — same
+- Competitor Studios "Eliminate" — existing usage
+
+### Characters module UX
+
+- Sort dropdown: hire order / name A–Z / top skill ↓ / mood ↑ (triage)
+- Filter toggle labelled "All (incl. fired)" (was "All")
+- Bulk action bar visually separated from filters with `var(--color-bg-raised)` background
+- Character ID removed from detail panel header (was shown alongside name/age/happiness)
+- "Max All Stats" in detail panel renamed "Max This Character" to distinguish from list-level bulk action
+- Appeal section tier buttons prefixed with "Set tier:" label to clarify slider relationship
+
+### Layout
+
+- Sidebar width: `--sidebar-width: 190px` (increased from 148px to prevent label truncation).
+  Label spans have no `overflow: hidden` / `textOverflow: ellipsis` — the aside clips naturally.
+- `AppShell.tsx` `<main>` has `overflowX: hidden` and `minWidth: 0`.
+- Script card grid uses `minmax(min(380px, 100%), 1fr)` to prevent overflow on narrow viewports.
+
+### Code quality (completed 2026-04-27)
+
+- `AIScriptsModule.tsx` reduced from 1,042 to ~240 lines; sub-components extracted to sibling files
 - `CharactersModule.tsx` reduced from 1,537 to ~270 lines; sub-components extracted to `CharacterDetailPanel.tsx`, `CharacterStatBar.tsx`, `CharacterProfBadge.tsx`
-- `src/lib/script-suggestions.ts`: magic numbers named (`CANDIDATE_COUNT`, `DUAL_GENRE_PROBABILITY`, etc.); duplicate synergy loop extracted to `computeSynergy()` helper
+- `src/lib/script-suggestions.ts`: magic numbers named; duplicate synergy loop extracted to `computeSynergy()`
 - `src/lib/styles.ts` created with shared button/label style constants
-- Repeated `ACTION_BTN`/`GHOST_BTN` patterns replaced with constants across `MilestonesModule`, `ResearchModule`, `WritingTagsModule`, `ResearchSpeedupModule`, `CharactersModule`
-- `ScriptBuilder.tsx` performance: `ranked` useMemo keyed on stable string (`selectedKey`) to avoid recomputing on array reference changes; theme filter converted from O(n×m) find to O(1) Set lookup
+- `PillButton` and `ScoreBadge` accept optional `title` prop for tooltips
 
-No outstanding tasks at this handover point (updated 2026-04-27).
+### Remaining known gaps
+
+- **Character list virtualisation**: With 200+ characters the list renders all DOM nodes at once.
+  `react-window` or `react-virtual` would be needed for saves with 500+ characters.
+- No undo/redo beyond the localStorage draft recovery.
 
 ---
 
