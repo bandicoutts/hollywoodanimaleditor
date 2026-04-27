@@ -127,7 +127,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "research-speedup", label: "Research Speed", icon: <IconSpeedup /> },
   { id: "competitor-studios", label: "Competitors", icon: <IconCompetitors /> },
   { id: "milestones", label: "Milestones", icon: <IconMilestones /> },
-  { id: "ai-scripts", label: "AI Scripts", icon: <IconAIScripts /> },
+  { id: "ai-scripts", label: "Script Workshop", icon: <IconAIScripts /> },
 ];
 
 interface SidebarProps {

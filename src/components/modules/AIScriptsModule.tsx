@@ -75,8 +75,8 @@ function ScriptCard({ combo, index }: { combo: ScriptCombo; index: number }) {
       }}
     >
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", flex: 1, minWidth: 0 }}>
           <span
             style={{
               fontFamily: "var(--font-ui)",
@@ -84,33 +84,37 @@ function ScriptCard({ combo, index }: { combo: ScriptCombo; index: number }) {
               letterSpacing: "0.1em",
               textTransform: "uppercase",
               color: "var(--color-text-muted)",
-              minWidth: "16px",
+              minWidth: "20px",
+              paddingTop: "2px",
+              flexShrink: 0,
             }}
           >
             #{index + 1}
           </span>
-          <span
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: "12px",
-              fontWeight: 600,
-              letterSpacing: "0.06em",
-              color: "var(--color-gold)",
-            }}
-          >
-            {genre.label}
-            {genre2 && <span style={{ color: "var(--color-text-muted)", fontWeight: 400 }}> / {genre2.label}</span>}
-          </span>
-          <span
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: "10px",
-              color: "var(--color-text-muted)",
-              letterSpacing: "0.04em",
-            }}
-          >
-            — {setting.label}
-          </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
+            <span
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "12px",
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                color: "var(--color-gold)",
+              }}
+            >
+              {genre.label}
+              {genre2 && <span style={{ color: "var(--color-text-muted)", fontWeight: 400 }}> / {genre2.label}</span>}
+            </span>
+            <span
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "10px",
+                color: "var(--color-text-muted)",
+                letterSpacing: "0.04em",
+              }}
+            >
+              {setting.label}
+            </span>
+          </div>
         </div>
         <div style={{ display: "flex", gap: "5px", flexShrink: 0 }}>
           <ScoreBadge label="Art" value={scores.art} color="#7ec8a0" />
