@@ -218,9 +218,11 @@ export default function ScriptBuilder({
 
     const biasFor = (item: ScriptElement, isGenre: boolean): number => {
       switch (bias) {
-        case "art":        return item.art;
-        case "commercial": return item.com;
-        case "balanced":   return (item.art + item.com) * 0.5;
+        // Weights match biasScore() in script-suggestions.ts:
+        // art×2, com×2, balanced = art+com, pollux = genreFactor×(art×2+com)
+        case "art":        return item.art * 2;
+        case "commercial": return item.com * 2;
+        case "balanced":   return item.art + item.com;
         case "pollux":
           if (isGenre) {
             // Before a genre is chosen, rank genres by their Pollux eligibility factor
@@ -229,7 +231,7 @@ export default function ScriptBuilder({
           // After genre chosen, weight element by genre_factor × (art×2 + com)
           return polluxFactor > 0
             ? polluxFactor * (item.art * 2 + item.com)
-            : item.art;
+            : item.art * 2;
       }
     };
 
