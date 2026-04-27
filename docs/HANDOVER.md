@@ -279,7 +279,7 @@ that combination and switches to the Build tab.
 - **Budget enforcement has two layers — both are required:**
   - *Generator* (`generateSuggestions`): randomly picks ~50% antagonist, then 0–N supporting chars (budget-constrained to always leave room for ≥1 theme). `effectiveThemeCount = Math.min(themeEventCount, pool.contentTagBudget − charCount − FIXED_CONTENT_TAGS)`.
   - *Builder* (`ScriptBuilder`): optional char rows are disabled when `contentTagsUsed >= contentTagBudget`. `selectSingle` (antagonist) and `toggleSupporting` both trim `themes` to `maxAllowedThemes` as a defensive fallback so the builder can never produce an over-budget combo.
-- **Second genre** is shown as a footer below the genre list inside the Genre accordion — visible immediately when the genre section is open, no extra click needed.
+- **Second Genre** is its own accordion section between Genre and Setting. Skip → is pinned at the top; genres below are sorted by pair modifier. Selecting a genre2 auto-advances to Setting; Skip advances without selecting. Changing primary genre clears genre2. Section is omitted entirely when only 1 genre is unlocked. The running bar includes a `X/Y slots left` counter reflecting actual selections (protagonist and finale each decrement it when chosen).
 - Auto-complete fills empty slots; Complete Script appears when all slots are manually filled.
 - `scorePartialBuild`, `scoreElementCompatibility`, and `getContentTagBudget` exported from `script-suggestions.ts`.
 
