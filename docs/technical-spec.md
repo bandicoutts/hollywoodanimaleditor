@@ -356,6 +356,8 @@ Known keys: `MapNavigation`, `QualitySelection`, `Lieutenants`, `Secrets`, `Prod
 
 Require confirmation before setting `isDead: true` — it permanently removes the competitor and may affect event chains.
 
+**Display metadata** for the five known studios is maintained in `src/data/competitors.ts` as `COMPETITOR_META: Record<string, CompetitorMeta>`. This is UI-only data derived from `CompetitorStudios.json` / `CompetitorStrategies.json` game config files — it is not written to the save. Each entry carries: `name` (full studio name), `tier`, `attackTier` (`"Nuclear" | "Very Aggressive" | "None"`), `qualityRange`, `releases`, and `defenceless` (boolean). The five known IDs are `GB` (Gerstein Brothers), `EM` (Evergreen Movies), `SU` (Supreme), `HE` (Hephaestus), `MA` (Marginese). Unknown studio IDs fall back to "Studio {id}" gracefully.
+
 ---
 
 ### Other notable fields
@@ -432,8 +434,11 @@ Sources used to build `PERK_LABELS`:
 - Entries with empty `configId` shown as read-only
 
 ### 8. Competitor Studios
-- Show and edit budget, aggression, raid status per competitor
-- Confirmation required before `isDead: true`
+- Each studio card shows full name + two-letter ID badge, sourced from `COMPETITOR_META` in `src/data/competitors.ts`
+- Read-only context row per card: tier (gold) · attack capability color-coded (Nuclear = danger, Very Aggressive = warning, None = muted) · quality range · releases/yr · "Defenceless" badge for MA
+- Editable fields: `lastBudget` (click-to-edit), `aggression` (0–1 slider), `isUnderRaid` (toggle)
+- Eliminate sets `isDead: true`; confirmation dialog uses the real studio name. Restore reverts it.
+- Unknown studio IDs (not in `COMPETITOR_META`) display as "Studio {id}" — no data loss
 
 ### 9. Milestones & Game Flags
 - All milestones with finished/locked toggles

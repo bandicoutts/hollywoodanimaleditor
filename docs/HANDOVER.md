@@ -130,6 +130,16 @@ Exports used by `WritingTagsModule.tsx`:
   Antagonist (34), Theme (43), Events (40), Finale (30)
 - `ALL_KNOWN_TAGS: Set<string>` — all IDs across all groups
 
+### `src/data/competitors.ts`
+
+Exports used by `CompetitorStudiosModule.tsx`:
+
+- `COMPETITOR_META: Record<string, CompetitorMeta>` — display metadata for the 5 known studios.
+  Keys: `GB` (Gerstein Brothers), `EM` (Evergreen Movies), `SU` (Supreme), `HE` (Hephaestus), `MA` (Marginese).
+  Each entry: `name`, `tier`, `attackTier` (`"Nuclear" | "Very Aggressive" | "None"`), `qualityRange`, `releases`, `defenceless`.
+- This is **UI-only** — derived from game config files, never written to the save.
+- Source: `CompetitorStudios.json` + `CompetitorStrategies.json` (same Configs.rar archive as Perks/Buildings).
+
 **Special tag IDs** that require quoted keys in TAG_LABELS (contain hyphens or Cyrillic):
 - `"FREE_STATES_IN_SLAVERY-ERA"`, `"SLAVE_STATES_IN_SLAVERY-ERA"` — hyphen in ID
 - `"PROTAGONIST_СORNLIMBED_ROMANTIC"` — uses **Cyrillic С** (not Latin C)
@@ -177,6 +187,9 @@ All major data work is complete:
   excluded from UI but preserved in saves.
 - **Writing Tags module**: All 253 script element tags across 8 categories, with human-readable
   labels for non-obvious IDs. Previously missing tags have been added.
+- **Competitor Studios module**: Each studio card shows the full studio name, two-letter ID badge,
+  and a read-only reference row (tier, attack capability, quality range, releases/yr, defenceless
+  flag). Metadata lives in `src/data/competitors.ts`.
 - **Technical spec** (`docs/technical-spec.md`): Up to date with all the above.
 
 No outstanding tasks at this handover point.
@@ -189,8 +202,9 @@ For most tasks, read these first:
 
 1. `src/data/perks.ts` — if working on the Research module
 2. `src/data/tags.ts` — if working on the Writing Tags module
-3. `docs/technical-spec.md` — for save file format and field reference
-4. The specific module file you're editing
+3. `src/data/competitors.ts` — if working on the Competitor Studios module
+4. `docs/technical-spec.md` — for save file format and field reference
+5. The specific module file you're editing
 
 For game data questions (what IDs exist, what they do):
 - Extract `/Users/davidcoutts/Downloads/Configs.rar` to `/tmp/ha-configs/` with:
