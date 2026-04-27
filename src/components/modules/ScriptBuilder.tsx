@@ -512,7 +512,7 @@ export default function ScriptBuilder({
               marginLeft: "4px",
             }}
           >
-            {contentTagBudget - contentTagsUsed}/{contentTagBudget}
+            {contentTagBudget - (themes.length + charCount + (sel.protagonist ? 1 : 0) + (sel.finale ? 1 : 0))}/{contentTagBudget}
           </span>
           <span
             style={{
