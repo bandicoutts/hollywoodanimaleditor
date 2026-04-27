@@ -9,8 +9,12 @@ import { useSaveFile } from "@/context/SaveFileContext";
 import {
   getUnlockedPool,
   generateSuggestions,
+  biasScore,
   type ScriptCombo,
   type Bias,
+  type AntagonistMode,
+  type SupportingMode,
+  type DualGenreMode,
   type UnlockedPool,
 } from "@/lib/script-suggestions";
 import { LABEL_STYLE } from "@/lib/styles";
@@ -28,6 +32,73 @@ const BIAS_OPTIONS: { value: Bias; label: string }[] = [
 
 const MIN_THEME_COUNT = 3;
 
+// ── Stepper ───────────────────────────────────────────────────────────────────
+
+function Stepper({
+  value,
+  min,
+  max,
+  onChange,
+  suffix,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onChange: (n: number) => void;
+  suffix?: string;
+}) {
+  const btnStyle = (disabled: boolean): React.CSSProperties => ({
+    fontFamily: "var(--font-ui)",
+    fontSize: "14px",
+    width: "28px",
+    height: "28px",
+    border: "1px solid var(--color-border)",
+    background: "transparent",
+    color: disabled ? "var(--color-text-muted)" : "var(--color-text-secondary)",
+    cursor: disabled ? "not-allowed" : "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  });
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <button onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} style={btnStyle(value <= min)}>−</button>
+      <span style={{ fontFamily: "var(--font-ui)", fontSize: "13px", fontWeight: 600, color: "var(--color-text-primary)", minWidth: "16px", textAlign: "center" }}>
+        {value}
+        {suffix && <span style={{ fontWeight: 400, color: "var(--color-text-muted)" }}>{suffix}</span>}
+      </span>
+      <button onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} style={btnStyle(value >= max)}>+</button>
+    </div>
+  );
+}
+
+// ── Three-way pill row ────────────────────────────────────────────────────────
+
+function ThreeWay<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div>
+      <p style={{ ...LABEL_STYLE, marginBottom: "8px" }}>{label}</p>
+      <div style={{ display: "flex", gap: "6px" }}>
+        {options.map((o) => (
+          <PillButton key={o.value} active={value === o.value} onClick={() => onChange(o.value)}>
+            {o.label}
+          </PillButton>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Main module ───────────────────────────────────────────────────────────────
 
 export default function AIScriptsModule() {
@@ -37,8 +108,13 @@ export default function AIScriptsModule() {
   const [genreFilter, setGenreFilter] = useState<string | null>(null);
   const [bias, setBias] = useState<Bias>("balanced");
   const [themeCount, setThemeCount] = useState(MIN_THEME_COUNT);
+  const [antagonistMode, setAntagonistMode] = useState<AntagonistMode>("any");
+  const [supportingMode, setSupportingMode] = useState<SupportingMode>("any");
+  const [dualGenreMode, setDualGenreMode] = useState<DualGenreMode>("any");
   const [results, setResults] = useState<ScriptCombo[]>([]);
+  const [sortBias, setSortBias] = useState<Bias>("balanced");
   const [generated, setGenerated] = useState(false);
+  const [showPoolStats, setShowPoolStats] = useState(false);
   const [builderPreload, setBuilderPreload] = useState<ScriptCombo | undefined>(undefined);
   const [builderKey, setBuilderKey] = useState(0);
 
@@ -55,13 +131,27 @@ export default function AIScriptsModule() {
 
   function generate() {
     if (!pool) return;
-    const suggestions = generateSuggestions(pool, { genreFilter, bias, themeEventCount: themeCount });
+    const suggestions = generateSuggestions(pool, {
+      genreFilter,
+      bias,
+      themeEventCount: themeCount,
+      antagonistMode,
+      supportingMode,
+      dualGenreMode,
+    });
     setResults(suggestions);
+    setSortBias(bias);
     setGenerated(true);
   }
 
   const genreIds = useMemo(() => new Set(pool?.genres.map((g) => g.id) ?? []), [pool]);
   const activeGenreFilter = genreFilter && genreIds.has(genreFilter) ? genreFilter : null;
+
+  // Client-side re-sort of existing results without regenerating
+  const sortedResults = useMemo(() => {
+    if (results.length === 0) return results;
+    return [...results].sort((a, b) => biasScore(b.scores, sortBias) - biasScore(a.scores, sortBias));
+  }, [results, sortBias]);
 
   return (
     <ModuleShell
@@ -111,7 +201,7 @@ export default function AIScriptsModule() {
                   </div>
                 </div>
 
-                {/* Bias + theme count */}
+                {/* Row 2: Bias + Dual genre */}
                 <div style={{ display: "flex", gap: "32px", flexWrap: "wrap" }}>
                   <div>
                     <p style={{ ...LABEL_STYLE, marginBottom: "8px" }}>Optimise for</p>
@@ -127,74 +217,68 @@ export default function AIScriptsModule() {
                         </PillButton>
                       ))}
                     </div>
+                    {bias === "pollux" && activeGenreFilter === null && (
+                      <p style={{ ...LABEL_STYLE, marginTop: "6px", fontStyle: "italic", textTransform: "none", letterSpacing: 0 }}>
+                        Filter by genre for best Pollux results
+                      </p>
+                    )}
                   </div>
 
-                  <div>
-                    <p style={{ ...LABEL_STYLE, marginBottom: "8px" }}>Themes / Events per film</p>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      {(() => {
-                        const maxThemeCount = (pool?.contentTagBudget ?? 5) - 2; // reserve protagonist + finale
-                        return (
-                          <>
-                            <button
-                              onClick={() => setThemeCount((n) => Math.max(MIN_THEME_COUNT, n - 1))}
-                              disabled={themeCount <= MIN_THEME_COUNT}
-                              style={{
-                                fontFamily: "var(--font-ui)",
-                                fontSize: "14px",
-                                width: "28px",
-                                height: "28px",
-                                border: "1px solid var(--color-border)",
-                                background: "transparent",
-                                color: themeCount <= MIN_THEME_COUNT ? "var(--color-text-muted)" : "var(--color-text-secondary)",
-                                cursor: themeCount <= MIN_THEME_COUNT ? "not-allowed" : "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
-                            >
-                              −
-                            </button>
-                            <span
-                              style={{
-                                fontFamily: "var(--font-ui)",
-                                fontSize: "13px",
-                                fontWeight: 600,
-                                color: "var(--color-text-primary)",
-                                minWidth: "16px",
-                                textAlign: "center",
-                              }}
-                            >
-                              {themeCount}
-                            </span>
-                            <button
-                              onClick={() => setThemeCount((n) => Math.min(maxThemeCount, n + 1))}
-                              disabled={themeCount >= maxThemeCount}
-                              style={{
-                                fontFamily: "var(--font-ui)",
-                                fontSize: "14px",
-                                width: "28px",
-                                height: "28px",
-                                border: "1px solid var(--color-border)",
-                                background: "transparent",
-                                color: themeCount >= maxThemeCount ? "var(--color-text-muted)" : "var(--color-text-secondary)",
-                                cursor: themeCount >= maxThemeCount ? "not-allowed" : "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
-                            >
-                              +
-                            </button>
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </div>
+                  <ThreeWay
+                    label="Second genre"
+                    options={[
+                      { value: "any" as DualGenreMode, label: "Any" },
+                      { value: "prefer" as DualGenreMode, label: "Prefer paired" },
+                      { value: "single" as DualGenreMode, label: "Single only" },
+                    ]}
+                    value={dualGenreMode}
+                    onChange={setDualGenreMode}
+                  />
                 </div>
 
-                {/* Generate button */}
-                <div>
+                {/* Row 3: Theme count + character controls */}
+                <div style={{ display: "flex", gap: "32px", flexWrap: "wrap", alignItems: "flex-start" }}>
+                  {(() => {
+                    const maxThemeCount = (pool?.contentTagBudget ?? 5) - 2;
+                    return (
+                      <div>
+                        <p style={{ ...LABEL_STYLE, marginBottom: "8px" }}>Themes / Events per film</p>
+                        <Stepper
+                          value={themeCount}
+                          min={MIN_THEME_COUNT}
+                          max={maxThemeCount}
+                          onChange={setThemeCount}
+                          suffix={` / ${maxThemeCount}`}
+                        />
+                      </div>
+                    );
+                  })()}
+
+                  <ThreeWay
+                    label="Antagonist"
+                    options={[
+                      { value: "any" as AntagonistMode, label: "Any" },
+                      { value: "always" as AntagonistMode, label: "Always" },
+                      { value: "never" as AntagonistMode, label: "Never" },
+                    ]}
+                    value={antagonistMode}
+                    onChange={setAntagonistMode}
+                  />
+
+                  <ThreeWay
+                    label="Supporting cast"
+                    options={[
+                      { value: "any" as SupportingMode, label: "Any" },
+                      { value: "some" as SupportingMode, label: "1+" },
+                      { value: "none" as SupportingMode, label: "None" },
+                    ]}
+                    value={supportingMode}
+                    onChange={setSupportingMode}
+                  />
+                </div>
+
+                {/* Generate button + pool stats toggle */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                   <button
                     onClick={generate}
                     style={{
@@ -210,66 +294,64 @@ export default function AIScriptsModule() {
                       cursor: "pointer",
                       transition: "all 0.12s ease",
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--color-gold)18";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-gold)18"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                   >
                     {generated ? "Generate Again" : "Generate Ideas"}
                   </button>
-                </div>
-              </div>
 
-              {/* Pool stats */}
-              {pool && (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "16px",
-                    flexWrap: "wrap",
-                    marginBottom: "20px",
-                    padding: "8px 12px",
-                    background: "var(--color-bg-panel)",
-                    border: "1px solid var(--color-border-subtle)",
-                  }}
-                >
-                  {[
-                    { label: "Genres",        count: pool.genres.length },
-                    { label: "Settings",      count: pool.settings.length },
-                    { label: "Protagonists",  count: pool.protagonists.length },
-                    { label: "Supporting",    count: pool.supportingChars.length },
-                    { label: "Antagonists",   count: pool.antagonists.length },
-                    { label: "Themes/Events", count: pool.themesEvents.length },
-                    { label: "Finales",       count: pool.finales.length },
-                  ].map(({ label, count }) => (
-                    <div key={label} style={{ display: "flex", gap: "5px", alignItems: "baseline" }}>
-                      <span
-                        style={{
-                          fontFamily: "var(--font-ui)",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          color: "var(--color-text-primary)",
-                        }}
-                      >
-                        {count}
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: "var(--font-ui)",
-                          fontSize: "9px",
-                          letterSpacing: "0.07em",
-                          textTransform: "uppercase",
-                          color: "var(--color-text-muted)",
-                        }}
-                      >
-                        {label}
-                      </span>
-                    </div>
-                  ))}
+                  {pool && (
+                    <button
+                      onClick={() => setShowPoolStats((v) => !v)}
+                      title="Show unlocked element counts"
+                      style={{
+                        fontFamily: "var(--font-ui)",
+                        fontSize: "11px",
+                        color: showPoolStats ? "var(--color-text-secondary)" : "var(--color-text-muted)",
+                        background: "transparent",
+                        border: "1px solid var(--color-border-subtle)",
+                        padding: "4px 10px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Pool stats
+                    </button>
+                  )}
                 </div>
-              )}
+
+                {/* Pool stats (collapsed by default) */}
+                {showPoolStats && pool && (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "16px",
+                      flexWrap: "wrap",
+                      padding: "8px 12px",
+                      background: "var(--color-bg-panel)",
+                      border: "1px solid var(--color-border-subtle)",
+                    }}
+                  >
+                    {[
+                      { label: "Genres",        count: pool.genres.length },
+                      { label: "Settings",      count: pool.settings.length },
+                      { label: "Protagonists",  count: pool.protagonists.length },
+                      { label: "Supporting",    count: pool.supportingChars.length },
+                      { label: "Antagonists",   count: pool.antagonists.length },
+                      { label: "Themes/Events", count: pool.themesEvents.length },
+                      { label: "Finales",       count: pool.finales.length },
+                    ].map(({ label, count }) => (
+                      <div key={label} style={{ display: "flex", gap: "5px", alignItems: "baseline" }}>
+                        <span style={{ fontFamily: "var(--font-ui)", fontSize: "12px", fontWeight: 600, color: "var(--color-text-primary)" }}>
+                          {count}
+                        </span>
+                        <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--color-text-muted)" }}>
+                          {label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Results */}
               {generated && results.length === 0 && (
@@ -278,18 +360,37 @@ export default function AIScriptsModule() {
                 </div>
               )}
 
-              {results.length > 0 && (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(min(380px, 100%), 1fr))",
-                    gap: "12px",
-                  }}
-                >
-                  {results.map((combo, i) => (
-                    <ScriptCard key={i} combo={combo} index={i} onUse={useCombo} />
-                  ))}
-                </div>
+              {sortedResults.length > 0 && (
+                <>
+                  {/* Sort bar */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+                    <span style={{ ...LABEL_STYLE }}>Sort by</span>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      {BIAS_OPTIONS.map(({ value, label }) => (
+                        <PillButton
+                          key={value}
+                          active={sortBias === value}
+                          onClick={() => setSortBias(value)}
+                          title={value === "pollux" ? "Optimise for the Pollux Award — the game's prestige prize for artistic films" : undefined}
+                        >
+                          {label}
+                        </PillButton>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(min(380px, 100%), 1fr))",
+                      gap: "12px",
+                    }}
+                  >
+                    {sortedResults.map((combo, i) => (
+                      <ScriptCard key={`${combo.genre.id}|${combo.setting.id}|${combo.protagonist.id}`} combo={combo} index={i} onUse={useCombo} />
+                    ))}
+                  </div>
+                </>
               )}
             </>
           ) : (

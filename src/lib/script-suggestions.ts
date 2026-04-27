@@ -18,11 +18,17 @@ import {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type Bias = "art" | "balanced" | "commercial" | "pollux";
+export type AntagonistMode = "any" | "always" | "never";
+export type SupportingMode = "any" | "some" | "none";
+export type DualGenreMode = "any" | "prefer" | "single";
 
 export interface SuggestionOpts {
   genreFilter: string | null;
   bias: Bias;
   themeEventCount: number;
+  antagonistMode?: AntagonistMode;
+  supportingMode?: SupportingMode;
+  dualGenreMode?: DualGenreMode;
 }
 
 export interface ScriptCombo {
@@ -175,6 +181,8 @@ const CANDIDATE_COUNT = 300;
 const DUAL_GENRE_PROBABILITY = 0.35;
 const SECONDARY_GENRE_WEIGHT = 0.5;
 const SYNERGY_MULTIPLIER = 0.1;
+// Floor probability ensures every element can still appear even when bias-weighted
+const WEIGHT_EPSILON = 0.1;
 
 // ── Scoring ───────────────────────────────────────────────────────────────────
 
@@ -229,13 +237,25 @@ export function scoreCombination(combo: Omit<ScriptCombo, "scores">): ScoreResul
   return { art, com, synergy, pollux };
 }
 
-function biasScore(scores: ScoreResult, bias: Bias): number {
+// Exported so AIScriptsModule can use it for client-side re-sorting
+export function biasScore(scores: ScoreResult, bias: Bias): number {
   const syn = scores.synergy * SYNERGY_MULTIPLIER;
   switch (bias) {
     case "art":        return scores.art * 2 + syn;
     case "commercial": return scores.com * 2 + syn;
     case "balanced":   return scores.art + scores.com + syn;
     case "pollux":     return scores.pollux + scores.synergy * SYNERGY_MULTIPLIER;
+  }
+}
+
+// Per-element bias weight used during candidate construction (no synergy — we're
+// scoring a single element in isolation, not a full combo).
+function elementBiasWeight(el: ScriptElement, bias: Bias, genreFactor: number): number {
+  switch (bias) {
+    case "art":        return el.art * 2;
+    case "commercial": return el.com * 2;
+    case "balanced":   return el.art + el.com;
+    case "pollux":     return genreFactor * (el.art * 2 + el.com);
   }
 }
 
@@ -248,13 +268,48 @@ function pickN<T>(arr: T[], n: number): T[] {
   return shuffled.slice(0, Math.min(n, arr.length));
 }
 
+// Weighted random draw. Each element's weight = max(0, rawWeight) + WEIGHT_EPSILON,
+// ensuring every element has a floor probability while still favouring high-scoring ones.
+function pickWeighted<T>(arr: T[], weights: number[]): T {
+  const adjusted = weights.map((w) => Math.max(0, w) + WEIGHT_EPSILON);
+  const total = adjusted.reduce((s, w) => s + w, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < arr.length; i++) {
+    r -= adjusted[i];
+    if (r <= 0) return arr[i];
+  }
+  return arr[arr.length - 1];
+}
+
+function pickNWeighted<T>(arr: T[], weights: number[], n: number): T[] {
+  if (n <= 0) return [];
+  const remaining = arr.map((item, i) => ({ item, weight: weights[i] }));
+  const result: T[] = [];
+  for (let i = 0; i < Math.min(n, arr.length); i++) {
+    const items = remaining.map((x) => x.item);
+    const ws = remaining.map((x) => x.weight);
+    const chosen = pickWeighted(items, ws);
+    result.push(chosen);
+    const idx = remaining.findIndex((x) => x.item === chosen);
+    remaining.splice(idx, 1);
+  }
+  return result;
+}
+
 // ── Suggestion generation ─────────────────────────────────────────────────────
 
 export function generateSuggestions(
   pool: UnlockedPool,
   opts: SuggestionOpts
 ): ScriptCombo[] {
-  const { genreFilter, bias, themeEventCount } = opts;
+  const {
+    genreFilter,
+    bias,
+    themeEventCount,
+    antagonistMode = "any",
+    supportingMode = "any",
+    dualGenreMode = "any",
+  } = opts;
 
   const genrePool = genreFilter
     ? pool.genres.filter((g) => g.id === genreFilter)
@@ -270,47 +325,94 @@ export function generateSuggestions(
     return [];
   }
 
-  const candidates: ScriptCombo[] = [];
+  // Determine dual-genre probability from mode
+  const dualProb =
+    dualGenreMode === "prefer" ? 1.0 :
+    dualGenreMode === "single" ? 0.0 :
+    DUAL_GENRE_PROBABILITY;
 
-  for (let i = 0; i < CANDIDATE_COUNT; i++) {
+  const candidates: ScriptCombo[] = [];
+  // Extra headroom when character modes are constrained — more candidates may be
+  // rejected, so we generate proportionally more to still get 6 unique results.
+  const constrained = antagonistMode !== "any" || supportingMode !== "any";
+  const candidateTarget = constrained ? CANDIDATE_COUNT * 3 : CANDIDATE_COUNT;
+
+  for (let i = 0; i < candidateTarget; i++) {
     const genre = pick(genrePool);
 
-    // Optionally pick a 2nd genre when the pair modifier is positive
+    // Pollux genre factor for this candidate's primary genre (used for element weighting)
+    const genreFactor = POLLUX_GENRE_FACTORS[genre.id] ?? 0;
+
+    // Bias weights for non-genre element categories
+    const settingWeights   = pool.settings.map((e)    => elementBiasWeight(e, bias, genreFactor));
+    const protWeights      = pool.protagonists.map((e) => elementBiasWeight(e, bias, genreFactor));
+    const suppWeights      = pool.supportingChars.map((e) => elementBiasWeight(e, bias, genreFactor));
+    const antWeights       = pool.antagonists.map((e)  => elementBiasWeight(e, bias, genreFactor));
+    const themeWeights     = pool.themesEvents.map((e) => elementBiasWeight(e, bias, genreFactor));
+    const finaleWeights    = pool.finales.map((e)      => elementBiasWeight(e, bias, genreFactor));
+
+    // Optionally pick a 2nd genre, weighted by pair modifier strength
     let genre2: ScriptElement | undefined;
-    if (pool.genres.length > 1 && Math.random() < DUAL_GENRE_PROBABILITY) {
+    if (pool.genres.length > 1 && Math.random() < dualProb) {
       const others = pool.genres.filter((g) => g.id !== genre.id);
-      const g2 = pick(others);
+      // Weight by pair modifier magnitude; positive-only (floor handles negatives)
+      const pairWeights = others.map((g) => {
+        const key = `${genre.label}|${g.label}`;
+        const mod = GENRE_PAIR_MODIFIERS[key];
+        return mod ? mod.art + mod.com : 0;
+      });
+      const g2 = pickWeighted(others, pairWeights);
       const key = `${genre.label}|${g2.label}`;
       const mod = GENRE_PAIR_MODIFIERS[key];
       if (mod && mod.art + mod.com > 0) genre2 = g2;
     }
 
-    // Protagonist + finale always consume 2 slots; chars and themes share the rest.
-    // Antagonist and supporting are optional — include each ~50% of the time for variety.
-    const antagonist = pool.antagonists.length > 0 && Math.random() > 0.5
-      ? pick(pool.antagonists) : undefined;
-    // Determine how many supporting chars can fit while leaving room for at least 1 theme
+    // Antagonist
+    let antagonist: ScriptElement | undefined;
+    if (antagonistMode === "never" || pool.antagonists.length === 0) {
+      antagonist = undefined;
+    } else if (antagonistMode === "always") {
+      antagonist = pickWeighted(pool.antagonists, antWeights);
+    } else {
+      // any: ~50% chance
+      antagonist = Math.random() > 0.5 ? pickWeighted(pool.antagonists, antWeights) : undefined;
+    }
+
+    // Supporting characters
+    let supporting: ScriptElement[];
     const maxSupportingSlots = Math.max(0,
       pool.contentTagBudget - 2 - (antagonist ? 1 : 0) - 1);
-    const supportingCount = pool.supportingChars.length > 0
-      ? Math.floor(Math.random() * (maxSupportingSlots + 1))
-      : 0;
-    const supporting = supportingCount > 0
-      ? pickN(pool.supportingChars, supportingCount)
-      : [];
+
+    if (supportingMode === "none" || pool.supportingChars.length === 0) {
+      supporting = [];
+    } else if (supportingMode === "some") {
+      const count = Math.max(1, Math.floor(Math.random() * (maxSupportingSlots + 1)));
+      supporting = pool.supportingChars.length > 0
+        ? pickNWeighted(pool.supportingChars, suppWeights, Math.min(count, maxSupportingSlots))
+        : [];
+    } else {
+      // any: 0–N
+      const count = Math.floor(Math.random() * (maxSupportingSlots + 1));
+      supporting = count > 0
+        ? pickNWeighted(pool.supportingChars, suppWeights, count)
+        : [];
+    }
+
+    // Skip candidate if it doesn't meet supporting constraint
+    if (supportingMode === "some" && supporting.length === 0) continue;
+
     const charCount = supporting.length + (antagonist ? 1 : 0);
-    // Cap themes so protagonist + supporting + antagonist + themes + finale ≤ budget
     const effectiveThemeCount = Math.min(themeEventCount, pool.contentTagBudget - charCount - 2);
 
     const base: Omit<ScriptCombo, "scores"> = {
       genre,
       genre2,
-      setting: pick(pool.settings),
-      protagonist: pick(pool.protagonists),
+      setting:     pickWeighted(pool.settings,     settingWeights),
+      protagonist: pickWeighted(pool.protagonists,  protWeights),
       supporting,
       antagonist,
-      themesEvents: pickN(pool.themesEvents, Math.max(1, effectiveThemeCount)),
-      finale: pick(pool.finales),
+      themesEvents: pickNWeighted(pool.themesEvents, themeWeights, Math.max(1, effectiveThemeCount)),
+      finale:      pickWeighted(pool.finales,       finaleWeights),
     };
 
     candidates.push({ ...base, scores: scoreCombination(base) });
