@@ -52,14 +52,24 @@ type SelState = {
 
 // ── Element row ───────────────────────────────────────────────────────────────
 
+function BanLabel({ pending }: { pending?: boolean }) {
+  return (
+    <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", color: pending ? "#a07830" : "#a05050" }}>
+      {pending ? "pending ban" : "banned"}
+    </span>
+  );
+}
+
 function ElementRow({
-  item, score, selected, disabled, onSelect,
+  item, score, selected, disabled, onSelect, banned, pending,
 }: {
   item: ScriptElement;
   score: number;
   selected: boolean;
   disabled?: boolean;
   onSelect: () => void;
+  banned?: boolean;
+  pending?: boolean;
 }) {
   const dotColor = score >= 1.0 ? "#7ec8a0" : score > 0 ? "var(--color-gold)" : "transparent";
   return (
@@ -91,6 +101,8 @@ function ElementRow({
       >
         {item.label}
       </span>
+      {banned && <BanLabel />}
+      {!banned && pending && <BanLabel pending />}
       {score > 0 && (
         <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", color: "var(--color-text-muted)" }}>
           +{score.toFixed(1)}
@@ -183,11 +195,15 @@ export default function ScriptBuilder({
   bias,
   onBiasChange,
   initialCombo,
+  bannedIds,
+  pendingBannedIds,
 }: {
   pool: UnlockedPool;
   bias: Bias;
   onBiasChange: (b: Bias) => void;
   initialCombo?: ScriptCombo;
+  bannedIds?: Set<string>;
+  pendingBannedIds?: Set<string>;
 }) {
   const [sel, setSel] = useState<SelState>(() => initialCombo ? {
     genre:       initialCombo.genre,
@@ -204,6 +220,9 @@ export default function ScriptBuilder({
   const [themes, setThemes] = useState<ScriptElement[]>(() => initialCombo?.themesEvents ?? []);
   const [activeSection, setActiveSection] = useState<SectionKey | null>(initialCombo ? null : "genre");
   const [finalCombo, setFinalCombo] = useState<ScriptCombo | null>(null);
+
+  function isBanned(id: string) { return bannedIds?.has(id) ?? false; }
+  function isPending(id: string) { return !isBanned(id) && (pendingBannedIds?.has(id) ?? false); }
 
   const selectedElements = useMemo(() =>
     [sel.genre, sel.genre2, sel.setting, sel.protagonist, ...sel.supporting, sel.antagonist, sel.finale, ...themes]
@@ -607,6 +626,8 @@ export default function ScriptBuilder({
                       }}>
                         {item.label}
                       </span>
+                      {isBanned(item.id) && <BanLabel />}
+                      {isPending(item.id) && <BanLabel pending />}
                       {Math.abs(total) > 0.01 && (
                         <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", color: modColor }}>
                           {total > 0 ? "+" : ""}{total.toFixed(2)}
@@ -629,6 +650,8 @@ export default function ScriptBuilder({
                     <span style={{ fontFamily: "var(--font-ui)", fontSize: "11px", flex: 1, color: "var(--color-gold)" }}>
                       {t.label}
                     </span>
+                    {isBanned(t.id) && <BanLabel />}
+                    {isPending(t.id) && <BanLabel pending />}
                     <button
                       onClick={() => toggleTheme(t)}
                       style={{ fontFamily: "var(--font-ui)", fontSize: "12px", color: "var(--color-text-muted)", background: "none", border: "none", cursor: "pointer", padding: "0 4px", lineHeight: 1 }}
@@ -647,6 +670,8 @@ export default function ScriptBuilder({
                       selected={false}
                       disabled={contentTagsUsed >= contentTagBudget}
                       onSelect={() => toggleTheme(item)}
+                      banned={isBanned(item.id)}
+                      pending={isPending(item.id)}
                     />
                   ))}
               </>
@@ -680,6 +705,8 @@ export default function ScriptBuilder({
                     <span style={{ fontFamily: "var(--font-ui)", fontSize: "11px", flex: 1, color: "var(--color-gold)" }}>
                       {s.label}
                     </span>
+                    {isBanned(s.id) && <BanLabel />}
+                    {isPending(s.id) && <BanLabel pending />}
                     <button
                       onClick={() => toggleSupporting(s)}
                       style={{ fontFamily: "var(--font-ui)", fontSize: "12px", color: "var(--color-text-muted)", background: "none", border: "none", cursor: "pointer", padding: "0 4px", lineHeight: 1 }}
@@ -698,6 +725,8 @@ export default function ScriptBuilder({
                       selected={false}
                       disabled={contentTagsUsed >= contentTagBudget}
                       onSelect={() => toggleSupporting(item)}
+                      banned={isBanned(item.id)}
+                      pending={isPending(item.id)}
                     />
                   ))}
               </>
@@ -715,6 +744,8 @@ export default function ScriptBuilder({
                   selected={(sel[key as keyof SelState] as ScriptElement | null)?.id === item.id}
                   disabled={disabled}
                   onSelect={() => selectSingle(key as Exclude<SectionKey, "themesEvents" | "supporting">, item)}
+                  banned={isBanned(item.id)}
+                  pending={isPending(item.id)}
                 />
               );
             });

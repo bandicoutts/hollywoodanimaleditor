@@ -5,21 +5,38 @@ import type { ScriptCombo } from "@/lib/script-suggestions";
 
 const POLLUX_TOOLTIP = "Pollux Award score — the game's prestige prize for artistic films";
 
-function Chip({ label, muted }: { label: string; muted?: boolean }) {
+function BanTag({ pending }: { pending?: boolean }) {
+  return (
+    <span style={{
+      fontFamily: "var(--font-ui)",
+      fontSize: "8px",
+      letterSpacing: "0.05em",
+      color: pending ? "#a07830" : "#a05050",
+      marginLeft: "4px",
+      verticalAlign: "middle",
+    }}>
+      {pending ? "pending ban" : "banned"}
+    </span>
+  );
+}
+
+function Chip({ label, muted, banned, pending }: { label: string; muted?: boolean; banned?: boolean; pending?: boolean }) {
   return (
     <span
       style={{
         fontFamily: "var(--font-ui)",
         fontSize: "10px",
         letterSpacing: "0.04em",
-        color: muted ? "var(--color-text-muted)" : "var(--color-text-secondary)",
+        color: banned || pending ? (banned ? "#a05050" : "#a07830") : muted ? "var(--color-text-muted)" : "var(--color-text-secondary)",
         background: "var(--color-bg-panel)",
-        border: "1px solid var(--color-border-subtle)",
+        border: `1px solid ${banned ? "#a0505040" : pending ? "#a0783040" : "var(--color-border-subtle)"}`,
         padding: "2px 8px",
         whiteSpace: "nowrap",
       }}
     >
       {label}
+      {banned && <BanTag />}
+      {!banned && pending && <BanTag pending />}
     </span>
   );
 }
@@ -37,12 +54,19 @@ export default function ScriptCard({
   combo,
   index,
   onUse,
+  bannedIds,
+  pendingBannedIds,
 }: {
   combo: ScriptCombo;
   index: number;
   onUse?: (combo: ScriptCombo) => void;
+  bannedIds?: Set<string>;
+  pendingBannedIds?: Set<string>;
 }) {
   const { genre, genre2, setting, protagonist, supporting, antagonist, themesEvents, finale, scores } = combo;
+
+  function isBanned(id: string) { return bannedIds?.has(id) ?? false; }
+  function isPending(id: string) { return !isBanned(id) && (pendingBannedIds?.has(id) ?? false); }
 
   return (
     <div
@@ -82,9 +106,13 @@ export default function ScriptCard({
             }}
           >
             {genre.label}
+            {isBanned(genre.id) && <BanTag />}
+            {isPending(genre.id) && <BanTag pending />}
             {genre2 && (
               <span style={{ color: "var(--color-text-muted)", fontWeight: 400 }}>
                 {" / "}{genre2.label}
+                {isBanned(genre2.id) && <BanTag />}
+                {isPending(genre2.id) && <BanTag pending />}
               </span>
             )}
           </span>
@@ -97,6 +125,8 @@ export default function ScriptCard({
             }}
           >
             {setting.label}
+            {isBanned(setting.id) && <BanTag />}
+            {isPending(setting.id) && <BanTag pending />}
           </span>
         </div>
       </div>
@@ -116,23 +146,23 @@ export default function ScriptCard({
       {/* Cast row */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
         <span style={ROW_LABEL}>Cast</span>
-        <Chip label={protagonist.label} />
-        {supporting.map(s => <Chip key={s.id} label={s.label} />)}
-        {antagonist && <Chip label={antagonist.label} />}
+        <Chip label={protagonist.label} banned={isBanned(protagonist.id)} pending={isPending(protagonist.id)} />
+        {supporting.map(s => <Chip key={s.id} label={s.label} banned={isBanned(s.id)} pending={isPending(s.id)} />)}
+        {antagonist && <Chip label={antagonist.label} banned={isBanned(antagonist.id)} pending={isPending(antagonist.id)} />}
       </div>
 
       {/* Themes & events */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
         <span style={ROW_LABEL}>Story</span>
         {themesEvents.map((te) => (
-          <Chip key={te.id} label={te.label} />
+          <Chip key={te.id} label={te.label} banned={isBanned(te.id)} pending={isPending(te.id)} />
         ))}
       </div>
 
       {/* Finale */}
       <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
         <span style={ROW_LABEL}>End</span>
-        <Chip label={finale.label} />
+        <Chip label={finale.label} banned={isBanned(finale.id)} pending={isPending(finale.id)} />
       </div>
 
       {onUse && (

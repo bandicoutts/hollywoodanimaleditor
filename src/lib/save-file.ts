@@ -100,6 +100,9 @@ export interface StateJson {
   nextBuildingId: number;
   nextTechId: number;
   tagRecipesPool: string[];
+  joinedAssociation?: boolean;
+  currentTagsInCodex?: Record<string, { id: string; addingDate: string; fromStudioId: string; [key: string]: unknown }>;
+  queueTagsForCodex?: Record<string, { id: string; addingDate: string; fromStudioId: string; [key: string]: unknown }>;
   movieScriptIdeas?: unknown[];
   [key: string]: unknown;
 }

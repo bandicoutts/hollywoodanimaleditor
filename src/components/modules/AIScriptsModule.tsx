@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import type { ScriptElement } from "@/data/scriptElements";
 import ModuleShell, { EmptyState } from "./ModuleShell";
 import PillButton from "./PillButton";
 import ScriptCard from "./ScriptCard";
@@ -117,6 +118,25 @@ export default function AIScriptsModule() {
   const [showPoolStats, setShowPoolStats] = useState(false);
   const [builderPreload, setBuilderPreload] = useState<ScriptCombo | undefined>(undefined);
   const [builderKey, setBuilderKey] = useState(0);
+  const [excludeBanned, setExcludeBanned] = useState(false);
+  const allianceInitialized = useRef(false);
+
+  useEffect(() => {
+    if (saveData && !allianceInitialized.current) {
+      allianceInitialized.current = true;
+      setExcludeBanned(saveData.stateJson.joinedAssociation ?? false);
+    }
+  }, [saveData]);
+
+  const bannedIds = useMemo(() =>
+    new Set(Object.keys(saveData?.stateJson.currentTagsInCodex ?? {})),
+    [saveData]
+  );
+
+  const pendingBannedIds = useMemo(() =>
+    new Set(Object.keys(saveData?.stateJson.queueTagsForCodex ?? {})),
+    [saveData]
+  );
 
   function useCombo(combo: ScriptCombo) {
     setBuilderPreload(combo);
@@ -129,9 +149,24 @@ export default function AIScriptsModule() {
     return getUnlockedPool(saveData.stateJson);
   }, [isLoaded, saveData]);
 
+  const effectivePool = useMemo<UnlockedPool | null>(() => {
+    if (!pool || !excludeBanned || bannedIds.size === 0) return pool;
+    const allowed = (el: ScriptElement) => !bannedIds.has(el.id);
+    return {
+      ...pool,
+      genres: pool.genres.filter(allowed),
+      settings: pool.settings.filter(allowed),
+      protagonists: pool.protagonists.filter(allowed),
+      supportingChars: pool.supportingChars.filter(allowed),
+      antagonists: pool.antagonists.filter(allowed),
+      themesEvents: pool.themesEvents.filter(allowed),
+      finales: pool.finales.filter(allowed),
+    };
+  }, [pool, excludeBanned, bannedIds]);
+
   function generate() {
-    if (!pool) return;
-    const suggestions = generateSuggestions(pool, {
+    if (!effectivePool) return;
+    const suggestions = generateSuggestions(effectivePool, {
       genreFilter,
       bias,
       themeEventCount: themeCount,
@@ -276,6 +311,19 @@ export default function AIScriptsModule() {
                   />
                 </div>
 
+                {/* Alliance filter */}
+                {bannedIds.size > 0 && (
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <span style={LABEL_STYLE}>Alliance</span>
+                    <PillButton active={excludeBanned} onClick={() => setExcludeBanned((v) => !v)}>
+                      Alliance-safe only
+                    </PillButton>
+                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)" }}>
+                      {bannedIds.size} banned{pendingBannedIds.size > 0 ? ` · ${pendingBannedIds.size} pending` : ""}
+                    </span>
+                  </div>
+                )}
+
                 {/* Generate button + pool stats toggle */}
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                   <button
@@ -386,7 +434,14 @@ export default function AIScriptsModule() {
                     }}
                   >
                     {sortedResults.map((combo, i) => (
-                      <ScriptCard key={`${combo.genre.id}|${combo.setting.id}|${combo.protagonist.id}`} combo={combo} index={i} onUse={useCombo} />
+                      <ScriptCard
+                        key={`${combo.genre.id}|${combo.setting.id}|${combo.protagonist.id}`}
+                        combo={combo}
+                        index={i}
+                        onUse={useCombo}
+                        bannedIds={bannedIds.size > 0 ? bannedIds : undefined}
+                        pendingBannedIds={pendingBannedIds.size > 0 ? pendingBannedIds : undefined}
+                      />
                     ))}
                   </div>
                 </>
@@ -400,6 +455,8 @@ export default function AIScriptsModule() {
                 bias={bias}
                 onBiasChange={setBias}
                 initialCombo={builderPreload}
+                bannedIds={bannedIds.size > 0 ? bannedIds : undefined}
+                pendingBannedIds={pendingBannedIds.size > 0 ? pendingBannedIds : undefined}
               />
             ) : null
           )}
