@@ -9,11 +9,17 @@ import { formatDecimalString, hasActiveResearch, hasActiveConstruction } from "@
 
 const NEGOTIATION_PERKS = ["NEGOTIATION_SCALE_50", "NEGOTIATION_SCALE_75"] as const;
 
-const AD_AGENCY_IDS = [
+// Always available from the start — isVisibleFromStart: true in AdsAgents.json
+// These do not need to be in openedAdsAgents
+const AD_AGENCY_DEFAULT_IDS = [
   "B1RADIO",  // NBG
   "B1BLBRD",  // Ross & Ross Bros.
   "ARTMAG",   // Vien Pascal
   "TYC1",     // Spice Mice
+] as const;
+
+// Date-gated agencies (enableDate: 1938) — must be in openedAdsAgents to unlock early
+const AD_AGENCY_GATED_IDS = [
   "COMMAG",   // Spark
   "B3PRINT",  // Nate Sparrow Press
   "FC2",      // Velvet Gloss
@@ -31,11 +37,14 @@ const AD_AGENCY_NAMES: Record<string, string> = {
   MCA1: "Pierre Zola Company",
 };
 
+// Policy IDs derived from milestone condition strings (e.g. POLICY_ACTIVE:POLICY_TRASH)
+// "REJECTED" is a game-generated state when a policy attempt fails — not settable
 const POLICIES = [
-  { id: "",               label: "None" },
-  { id: "TRASH_DOMINION", label: "Trash King" },
-  { id: "MAJOR_DOMINION", label: "Behemoth" },
-  { id: "BOUTIQUE_DOMINION", label: "Boutique" },
+  { id: "",                label: "None" },
+  { id: "POLICY_TRASH",   label: "Trash King" },
+  { id: "POLICY_MAJOR",   label: "Behemoth" },
+  { id: "POLICY_BOUTIQUE", label: "Boutique" },
+  { id: "POLICY_CONVEYOR", label: "Factory" },
 ] as const;
 
 const RESEARCH_PRESETS = [
@@ -173,8 +182,8 @@ export default function CheatsModule() {
     [saveData]
   );
 
-  const unlockedAgencyCount = useMemo(
-    () => AD_AGENCY_IDS.filter((id) => openedAgencies.includes(id)).length,
+  const unlockedGatedCount = useMemo(
+    () => AD_AGENCY_GATED_IDS.filter((id) => openedAgencies.includes(id)).length,
     [openedAgencies]
   );
 
@@ -201,7 +210,7 @@ export default function CheatsModule() {
     updateStateJson((s) => {
       if (!Array.isArray(s.openedAdsAgents)) s.openedAdsAgents = [];
       const existing = new Set(s.openedAdsAgents as string[]);
-      for (const id of AD_AGENCY_IDS) {
+      for (const id of AD_AGENCY_GATED_IDS) {
         if (!existing.has(id)) (s.openedAdsAgents as string[]).push(id);
       }
     }, "Cheats — unlock all ad agencies");
@@ -287,7 +296,11 @@ export default function CheatsModule() {
   }
 
   const _foundPolicy = POLICIES.find((p) => p.id === currentPolicy);
-  const policyLabel = _foundPolicy ? _foundPolicy.label : (currentPolicy || "None");
+  const policyLabel = _foundPolicy
+    ? _foundPolicy.label
+    : currentPolicy === "REJECTED"
+    ? "Rejected"
+    : (currentPolicy || "None");
   const speedupDisplay = parseFloat(currentSpeedup).toFixed(0) + "×";
 
   return (
@@ -370,16 +383,35 @@ export default function CheatsModule() {
       <Section title="Advertising Agencies">
         <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "10px", flexWrap: "wrap" }}>
           <CheatButton
-            label={unlockedAgencyCount === AD_AGENCY_IDS.length ? "All Unlocked" : "Unlock All Agencies"}
+            label={unlockedGatedCount === AD_AGENCY_GATED_IDS.length ? "All Unlocked" : "Unlock All Agencies"}
             onClick={unlockAllAgencies}
-            color={unlockedAgencyCount === AD_AGENCY_IDS.length ? "#8fbc55" : "var(--color-gold)"}
+            color={unlockedGatedCount === AD_AGENCY_GATED_IDS.length ? "#8fbc55" : "var(--color-gold)"}
           />
-          <span style={unlockedAgencyCount === AD_AGENCY_IDS.length ? STATUS_OK : STATUS_WARN}>
-            {unlockedAgencyCount} / {AD_AGENCY_IDS.length} unlocked
+          <span style={unlockedGatedCount === AD_AGENCY_GATED_IDS.length ? STATUS_OK : STATUS_WARN}>
+            {unlockedGatedCount} / {AD_AGENCY_GATED_IDS.length} date-gated unlocked
           </span>
         </div>
+        <p style={{ ...HINT, marginBottom: "6px" }}>Always available</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "10px" }}>
+          {AD_AGENCY_DEFAULT_IDS.map((id) => (
+            <span
+              key={id}
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "10px",
+                letterSpacing: "0.04em",
+                color: "#8fbc55",
+                border: "1px solid #8fbc5544",
+                padding: "2px 8px",
+              }}
+            >
+              {AD_AGENCY_NAMES[id]}
+            </span>
+          ))}
+        </div>
+        <p style={{ ...HINT, marginBottom: "6px" }}>Date-gated (unlock early)</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-          {AD_AGENCY_IDS.map((id) => {
+          {AD_AGENCY_GATED_IDS.map((id) => {
             const unlocked = openedAgencies.includes(id);
             return (
               <span
