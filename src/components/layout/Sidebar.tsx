@@ -8,7 +8,6 @@ export type ModuleId =
   | "writing-tags"
   | "research"
   | "technologies"
-  | "research-speedup"
   | "competitor-studios"
   | "milestones"
   | "ai-scripts"
@@ -135,7 +134,6 @@ const NAV_ITEMS: NavItem[] = [
   { id: "writing-tags", label: "Writing Tags", icon: <IconWritingTags /> },
   { id: "research", label: "Research", icon: <IconResearch /> },
   { id: "technologies", label: "Technologies", icon: <IconTechnologies /> },
-  { id: "research-speedup", label: "Research Speed", icon: <IconSpeedup /> },
   { id: "competitor-studios", label: "Competitors", icon: <IconCompetitors /> },
   { id: "milestones", label: "Milestones", icon: <IconMilestones /> },
   { id: "ai-scripts", label: "Script Workshop", icon: <IconAIScripts /> },

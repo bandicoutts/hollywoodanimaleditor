@@ -8,7 +8,6 @@ import CharactersModule from "@/components/modules/CharactersModule";
 import WritingTagsModule from "@/components/modules/WritingTagsModule";
 import ResearchModule from "@/components/modules/ResearchModule";
 import TechnologiesModule from "@/components/modules/TechnologiesModule";
-import ResearchSpeedupModule from "@/components/modules/ResearchSpeedupModule";
 import CompetitorStudiosModule from "@/components/modules/CompetitorStudiosModule";
 import MilestonesModule from "@/components/modules/MilestonesModule";
 import AIScriptsModule from "@/components/modules/AIScriptsModule";
@@ -26,8 +25,6 @@ function ModuleContent({ active }: { active: ModuleId }) {
       return <ResearchModule />;
     case "technologies":
       return <TechnologiesModule />;
-    case "research-speedup":
-      return <ResearchSpeedupModule />;
     case "competitor-studios":
       return <CompetitorStudiosModule />;
     case "milestones":

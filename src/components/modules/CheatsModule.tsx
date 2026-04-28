@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import ModuleShell, { EmptyState } from "./ModuleShell";
 import { useSaveFile } from "@/context/SaveFileContext";
-import { formatDecimalString } from "@/lib/save-file";
+import { formatDecimalString, hasActiveResearch, hasActiveConstruction } from "@/lib/save-file";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -163,6 +163,16 @@ export default function CheatsModule() {
     scale75: openedPerks.includes("NEGOTIATION_SCALE_75"),
   }), [openedPerks]);
 
+  const activeResearch = useMemo(
+    () => (saveData?.stateJson ? hasActiveResearch(saveData.stateJson) : false),
+    [saveData]
+  );
+
+  const activeConstruction = useMemo(
+    () => (saveData?.stateJson ? hasActiveConstruction(saveData.stateJson) : false),
+    [saveData]
+  );
+
   const unlockedAgencyCount = useMemo(
     () => AD_AGENCY_IDS.filter((id) => openedAgencies.includes(id)).length,
     [openedAgencies]
@@ -224,6 +234,48 @@ export default function CheatsModule() {
       s.reputation = formatDecimalString(200_000);
       s.influence = 1_000_000;
     }, "Cheats — max all resources");
+  }, [updateStateJson]);
+
+  const completeResearch = useCallback(() => {
+    updateStateJson((s) => {
+      const processFields = [
+        "tagResearchProcessesData",
+        "techProcessesData",
+        "trashTagResearchProcessesData",
+        "trashRecipeResearchProcessesData",
+        "partyProcessesData",
+      ] as const;
+      for (const field of processFields) {
+        const procs = s[field] as Record<string, Record<string, unknown>>;
+        for (const key of Object.keys(procs)) {
+          const proc = procs[key];
+          if (proc && typeof proc === "object") {
+            for (const k of Object.keys(proc)) {
+              if (
+                k.toLowerCase().includes("duration") ||
+                k.toLowerCase().includes("remaining") ||
+                k.toLowerCase().includes("time") ||
+                (k.toLowerCase().includes("progress") && typeof proc[k] === "number")
+              ) {
+                if (typeof proc[k] === "number") proc[k] = 0;
+              }
+            }
+          }
+        }
+      }
+    }, "Cheats — complete all research");
+  }, [updateStateJson]);
+
+  const completeConstruction = useCallback(() => {
+    updateStateJson((s) => {
+      for (const b of s.buildings) {
+        if (b.state === 1) {
+          b.state = 2;
+          b.constructionDuration = 0;
+          b.constructionQuality = "1.000";
+        }
+      }
+    }, "Cheats — complete all construction");
   }, [updateStateJson]);
 
   if (!isLoaded || !saveData) {
@@ -398,6 +450,36 @@ export default function CheatsModule() {
           </span>
         </div>
         <p style={HINT}>Multiplies the speed of all future research in the perk tree</p>
+      </Section>
+
+      {/* ── Complete Research ─────────────────────────────────────────────── */}
+      <Section title="Active Research">
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap", marginBottom: "10px" }}>
+          <CheatButton
+            label="Complete All Research"
+            onClick={completeResearch}
+            color={activeResearch ? "var(--color-success, #8fbc55)" : "var(--color-text-muted)"}
+          />
+          <span style={activeResearch ? STATUS_OK : STATUS_WARN}>
+            {activeResearch ? "✓ Research in progress" : "✗ No active research"}
+          </span>
+        </div>
+        <p style={HINT}>Instantly finishes all active tag, technology, recipe, and party research</p>
+      </Section>
+
+      {/* ── Complete Construction ─────────────────────────────────────────── */}
+      <Section title="Construction">
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap", marginBottom: "10px" }}>
+          <CheatButton
+            label="Complete All Construction"
+            onClick={completeConstruction}
+            color={activeConstruction ? "var(--color-gold)" : "var(--color-text-muted)"}
+          />
+          <span style={activeConstruction ? STATUS_OK : STATUS_WARN}>
+            {activeConstruction ? "✓ Buildings under construction" : "✗ No active construction"}
+          </span>
+        </div>
+        <p style={HINT}>Sets all buildings under construction to built at 100% quality</p>
       </Section>
 
       {/* ── XP ────────────────────────────────────────────────────────────── */}
