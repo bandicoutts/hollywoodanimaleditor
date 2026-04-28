@@ -12,6 +12,7 @@ import ResearchSpeedupModule from "@/components/modules/ResearchSpeedupModule";
 import CompetitorStudiosModule from "@/components/modules/CompetitorStudiosModule";
 import MilestonesModule from "@/components/modules/MilestonesModule";
 import AIScriptsModule from "@/components/modules/AIScriptsModule";
+import CheatsModule from "@/components/modules/CheatsModule";
 
 function ModuleContent({ active }: { active: ModuleId }) {
   switch (active) {
@@ -33,6 +34,8 @@ function ModuleContent({ active }: { active: ModuleId }) {
       return <MilestonesModule />;
     case "ai-scripts":
       return <AIScriptsModule />;
+    case "cheats":
+      return <CheatsModule />;
   }
 }
 

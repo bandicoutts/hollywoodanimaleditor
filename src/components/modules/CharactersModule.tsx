@@ -359,9 +359,16 @@ export default function CharactersModule() {
         c.Limit = "1.000";
         c.mood = "1.000";
         c.attitude = "1.000";
-        const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
+        if (!c.whiteTagsNEW) c.whiteTagsNEW = {};
+        const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>>;
         if (wt?.ART) wt.ART.value = "1.000";
         if (wt?.COM) wt.COM.value = "1.000";
+        if ("Cinematographer" in c.professions) {
+          for (const key of ["INDOOR", "OUTDOOR"]) {
+            if (!wt[key]) wt[key] = { overallValues: [], id: key, dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
+            wt[key].value = "0.400";
+          }
+        }
       }
     }, `Characters — max all stats (${scope})`);
     setPendingBulk(null);
@@ -401,10 +408,29 @@ export default function CharactersModule() {
       c.Limit = "1.000";
       c.mood = "1.000";
       c.attitude = "1.000";
-      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
+      if (!c.whiteTagsNEW) c.whiteTagsNEW = {};
+      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>>;
       if (wt?.ART) wt.ART.value = "1.000";
       if (wt?.COM) wt.COM.value = "1.000";
+      if ("Cinematographer" in c.professions) {
+        for (const key of ["INDOOR", "OUTDOOR"]) {
+          if (!wt[key]) wt[key] = { overallValues: [], id: key, dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
+          wt[key].value = "0.400";
+        }
+      }
     }, `Characters — max all (${n} selected)`),
+  [applyToSelected, n]);
+
+  const applySelMaxFilmingSkills = useCallback(() =>
+    applyToSelected((c) => {
+      if (!("Cinematographer" in c.professions)) return;
+      if (!c.whiteTagsNEW) c.whiteTagsNEW = {};
+      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>>;
+      for (const key of ["INDOOR", "OUTDOOR"]) {
+        if (!wt[key]) wt[key] = { overallValues: [], id: key, dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
+        wt[key].value = "0.400";
+      }
+    }, `Characters — max filming skills (${n} selected)`),
   [applyToSelected, n]);
 
   const applySelMaxSkills = useCallback(() =>
@@ -627,6 +653,7 @@ export default function CharactersModule() {
                 <BulkBtn label="Max Happiness" onClick={applySelMaxHappiness} />
                 <BulkBtn label="Max Loyalty" onClick={applySelMaxLoyalty} />
                 <BulkBtn label="Max Appeal" onClick={applySelMaxAppeal} />
+                <BulkBtn label="Max Filming Skills" onClick={applySelMaxFilmingSkills} />
               </div>
             </>
           ) : (

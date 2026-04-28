@@ -69,6 +69,13 @@ const APPEAL_TIERS = {
   ],
 } as const;
 
+const CINE_SKILL_TIERS = [
+  { label: "1",   value: 0.1 },
+  { label: "2",   value: 0.2 },
+  { label: "3",   value: 0.3 },
+  { label: "Max (4)", value: 0.4 },
+];
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 export function moodColor(val: string): string {
@@ -86,6 +93,10 @@ export function displayName(char: Character): string {
 
 function isAppealEligible(professions: Record<string, string>): boolean {
   return "Actor" in professions || "Director" in professions;
+}
+
+function isCinematographer(professions: Record<string, string>): boolean {
+  return "Cinematographer" in professions;
 }
 
 function isLieutenant(professions: Record<string, string>): boolean {
@@ -346,6 +357,106 @@ function UpgradeBonusSection({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
         <span style={FIELD_LABEL_STYLE}>Influence Points</span>
         <BonusEditor pct={ipPct} onChange={(v) => onSetBonus("BonusCardInfluencePoints", v)} />
+      </div>
+    </>
+  );
+}
+
+// ── Cinematographer filming skills ────────────────────────────────────────────
+
+function CineSkillColumn({
+  label,
+  skillKey,
+  value,
+  color,
+  onSet,
+}: {
+  label: string;
+  skillKey: "INDOOR" | "OUTDOOR";
+  value: number;
+  color: string;
+  onSet: (key: "INDOOR" | "OUTDOOR", v: number) => void;
+}) {
+  return (
+    <div>
+      <StatBar
+        label={label}
+        value={value}
+        cap={0.4}
+        color={color}
+        onChange={(v) => onSet(skillKey, Math.min(0.4, Math.max(0, v)))}
+        scale={1}
+        precision={3}
+      />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", marginTop: "-6px", marginBottom: "14px" }}>
+        {CINE_SKILL_TIERS.map((tier, i) => {
+          const isActive = Math.abs(value - tier.value) < 0.005;
+          const isFirst = i === 0;
+          const isLast = i === CINE_SKILL_TIERS.length - 1;
+          return (
+            <button
+              key={tier.label}
+              onClick={() => onSet(skillKey, tier.value)}
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "9px",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                color: isActive ? color : "var(--color-text-muted)",
+                background: isActive ? color + "22" : "transparent",
+                border: `1px solid ${isActive ? color + "88" : "var(--color-border)"}`,
+                marginLeft: isFirst ? 0 : "-1px",
+                borderRadius: isFirst ? "2px 0 0 2px" : isLast ? "0 2px 2px 0" : 0,
+                padding: "4px 2px",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+                position: "relative",
+                zIndex: isActive ? 1 : 0,
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.color = color;
+                  e.currentTarget.style.borderColor = color + "66";
+                  e.currentTarget.style.zIndex = "1";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.color = "var(--color-text-muted)";
+                  e.currentTarget.style.borderColor = "var(--color-border)";
+                  e.currentTarget.style.zIndex = "0";
+                }
+              }}
+            >
+              {tier.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CinematographerSection({
+  char,
+  onSet,
+}: {
+  char: Character;
+  onSet: (key: "INDOOR" | "OUTDOOR", value: number) => void;
+}) {
+  if (!isCinematographer(char.professions)) return null;
+
+  const wt = char.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
+  const indoorValue = parseFloat(String(wt?.INDOOR?.value)) || 0;
+  const outdoorValue = parseFloat(String(wt?.OUTDOOR?.value)) || 0;
+
+  return (
+    <>
+      <hr className="gold-divider" style={{ margin: "8px 0 20px" }} />
+      <p style={{ ...FIELD_LABEL_STYLE, marginBottom: "16px" }}>Filming Skills</p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
+        <CineSkillColumn label="Indoor (Soundstage)" skillKey="INDOOR" value={indoorValue} color="#5bb8d4" onSet={onSet} />
+        <CineSkillColumn label="Outdoor (Location)" skillKey="OUTDOOR" value={outdoorValue} color="#8fbc55" onSet={onSet} />
       </div>
     </>
   );
@@ -744,6 +855,23 @@ export default function DetailPanel({
       wt[type].value = formatDecimalString(value);
     });
 
+  const setCineSkill = (key: "INDOOR" | "OUTDOOR", value: number) =>
+    onUpdate((c) => {
+      if (!c.whiteTagsNEW) c.whiteTagsNEW = {};
+      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>>;
+      if (!wt[key]) {
+        wt[key] = {
+          overallValues: [],
+          id: key,
+          dateAdded: "0001-01-01T00:00:00",
+          movieId: 0,
+          value: "0.000",
+          IsOverall: false,
+        };
+      }
+      wt[key].value = formatDecimalString(Math.min(0.4, Math.max(0, value)));
+    });
+
   const setXp = (value: number) =>
     onUpdate((c) => { c.xp = Math.max(0, Math.round(value)); });
 
@@ -763,20 +891,18 @@ export default function DetailPanel({
       c.Limit = "1.000";
       c.mood = "1.000";
       c.attitude = "1.000";
-      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
-      if (wt && isAppealEligible(c.professions)) {
+      if (!c.whiteTagsNEW) c.whiteTagsNEW = {};
+      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>>;
+      if (isAppealEligible(c.professions)) {
         for (const type of ["ART", "COM"] as const) {
-          if (!wt[type]) {
-            wt[type] = {
-              overallValues: [],
-              id: type,
-              dateAdded: "0001-01-01T00:00:00",
-              movieId: 0,
-              value: "0.000",
-              IsOverall: false,
-            };
-          }
+          if (!wt[type]) wt[type] = { overallValues: [], id: type, dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
           wt[type].value = "1.000";
+        }
+      }
+      if (isCinematographer(c.professions)) {
+        for (const key of ["INDOOR", "OUTDOOR"] as const) {
+          if (!wt[key]) wt[key] = { overallValues: [], id: key, dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
+          wt[key].value = "0.400";
         }
       }
     });
@@ -954,6 +1080,8 @@ export default function DetailPanel({
       {isLieutenant(char.professions) && (
         <UpgradeBonusSection char={char} onSetBonus={setBonusCard} />
       )}
+
+      <CinematographerSection char={char} onSet={setCineSkill} />
 
       <AppealSection char={char} onSetAppeal={setAppeal} />
 

@@ -126,7 +126,8 @@ function TagGroupSection({
   lockHintFor: (id: string) => string | null;
 }) {
   const activeCount = group.tags.filter((id) => activeSet.has(id)).length;
-  const lockedCount = group.tags.filter((id) => !!lockHintFor(id)).length;
+  // Only count inactive tags with a lock condition — active ones aren't "locked" from the editor's perspective
+  const lockedCount = group.tags.filter((id) => !activeSet.has(id) && !!lockHintFor(id)).length;
 
   return (
     <div style={{ marginBottom: "28px" }}>

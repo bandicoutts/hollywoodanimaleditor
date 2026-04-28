@@ -76,7 +76,7 @@ Each module edits a specific slice of `stateJson`. All modules are in
 
 | Module file | What it edits | Save field |
 |---|---|---|
-| `ResourcesModule.tsx` | Money, cash, reputation, fans, awards | `budget`, `cash`, `reputation`, etc. |
+| `ResourcesModule.tsx` | Money, cash, reputation, influence, water, electricity | `budget`, `cash`, `reputation`, `influence`, `availableWater`, `availableElectricity` |
 | `ResearchModule.tsx` | Research tree unlocks | `stateJson.openedPerks` (string[]) |
 | `WritingTagsModule.tsx` | Story elements (genre, setting, protagonist…) | `stateJson.tagPool` (TagPoolEntry[]) |
 | `TechnologiesModule.tsx` | Technology unlocks | `stateJson.technologies` |
@@ -85,6 +85,7 @@ Each module edits a specific slice of `stateJson`. All modules are in
 | `AIScriptsModule.tsx` | Script Workshop — client-side script idea generator | read-only (no save edits) |
 | `CompetitorStudiosModule.tsx` | Competitor studio state | `stateJson.competitorStudios` |
 | `ResearchSpeedupModule.tsx` | Research speed modifiers | `overallPerkResearchSpeedup` + process data objects |
+| `CheatsModule.tsx` | One-click bulk edits (negotiation, policy, agencies, XP, research speed) | multiple fields — see Module 11 in `technical-spec.md` |
 
 ---
 
@@ -227,9 +228,10 @@ The `src/components/modules/` directory follows a flat sibling-file pattern — 
 
 - Sort options: hire order / name A–Z / top skill ↓ / mood ↑ (triage)
 - Filter toggle label: "All (incl. fired)"
-- **Global bulk actions** (normal mode): "Max All Stats" (all skills + cap + mood + attitude + appeal) and "Uncap All Skills" (sets `limit`/`Limit` to `"1.000"`). Both show a confirmation dialog.
-- **Selection mode**: toggled by a "Select" button in the bulk actions header. In selection mode clicking a row selects/deselects it (no detail panel opens); shift-click range-selects. "Select all visible" checkbox appears above the list. Six granular bulk action buttons replace the global ones — Max All, Max Skills, Max Cap, Max Happiness, Max Loyalty, Max Appeal — applying only to selected characters, no confirmation required. "Done" exits selection mode. Selection clears automatically on any filter change.
+- **Global bulk actions** (normal mode): "Max All Stats" (all skills + cap + mood + attitude + appeal + cinematographer filming skills) and "Uncap All Skills" (sets `limit`/`Limit` to `"1.000"`). Both show a confirmation dialog.
+- **Selection mode**: toggled by a "Select" button in the bulk actions header. In selection mode clicking a row selects/deselects it (no detail panel opens); shift-click range-selects. "Select all visible" checkbox appears above the list. Seven granular bulk action buttons replace the global ones — Max All, Max Skills, Max Cap, Max Happiness, Max Loyalty, Max Appeal, **Max Filming Skills** — applying only to selected characters, no confirmation required. Max Filming Skills applies only to selected Cinematographer characters. "Done" exits selection mode. Selection clears automatically on any filter change.
 - Detail panel header: "Max This Character" button sits in the header alongside name/badge/age/happiness. Per-stat "Max" buttons appear on individual stat bars, hidden once the value reaches 1.000.
+- **Cinematographer filming skills** (Cinematographers only): Indoor (Soundstage) and Outdoor (Location) shown in a "Filming Skills" section. Each uses a 4-segment tier control (`1 / 2 / 3 / Max (4)`) capped at `0.400` (confirmed from `GameVariables.json: cinematographer_skill_bonus_range: "0_0.4"`). Values above `0.400` may exist in saves from in-game levelling but the editor clamps writes to `0.400`. Entry created on first write using the same default sentinel structure as appeal.
 - Appeal tier selector: 4-segment joined control (not flex-wrap buttons). Each segment = one tier. Active tier highlighted with gold fill; inactive segments are ghost.
 - List panel width: `clamp(360px, 35%, 500px)`
 

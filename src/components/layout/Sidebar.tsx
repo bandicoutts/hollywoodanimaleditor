@@ -11,7 +11,8 @@ export type ModuleId =
   | "research-speedup"
   | "competitor-studios"
   | "milestones"
-  | "ai-scripts";
+  | "ai-scripts"
+  | "cheats";
 
 interface NavItem {
   id: ModuleId;
@@ -118,6 +119,16 @@ function IconAIScripts() {
   );
 }
 
+function IconCheats() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3">
+      <path d="M8 1 L15 8 L8 15 L1 8 Z" />
+      <line x1="8" y1="5" x2="8" y2="9" />
+      <circle cx="8" cy="11" r="0.8" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 const NAV_ITEMS: NavItem[] = [
   { id: "resources", label: "Resources", icon: <IconResources /> },
   { id: "characters", label: "Characters", icon: <IconCharacters /> },
@@ -128,6 +139,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "competitor-studios", label: "Competitors", icon: <IconCompetitors /> },
   { id: "milestones", label: "Milestones", icon: <IconMilestones /> },
   { id: "ai-scripts", label: "Script Workshop", icon: <IconAIScripts /> },
+  { id: "cheats", label: "Cheats & Mods", icon: <IconCheats /> },
 ];
 
 interface SidebarProps {

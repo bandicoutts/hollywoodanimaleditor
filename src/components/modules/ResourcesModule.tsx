@@ -24,6 +24,15 @@ interface ReputationConfig {
   color: string;
 }
 
+interface UtilityConfig {
+  key: "availableWater" | "availableElectricity";
+  label: string;
+  description: string;
+  max: number;
+  color: string;
+  unit: string;
+}
+
 const RESOURCES: ResourceConfig[] = [
   {
     key: "budget",
@@ -60,6 +69,25 @@ const REPUTATION: ReputationConfig = {
   max: 200_000,
   color: "#a9a4e8",
 };
+
+const UTILITIES: UtilityConfig[] = [
+  {
+    key: "availableWater",
+    label: "Water Supply",
+    description: "Available water units (4 per staff/tick)",
+    max: 999_999,
+    color: "#5bb8d4",
+    unit: "units",
+  },
+  {
+    key: "availableElectricity",
+    label: "Electricity Supply",
+    description: "Available electricity units (5 per staff/tick)",
+    max: 999_999,
+    color: "#f0c060",
+    unit: "units",
+  },
+];
 
 const PRESETS = [0.25, 0.5, 0.75, 1.0];
 
@@ -338,6 +366,25 @@ export default function ResourcesModule() {
     [updateStateJson]
   );
 
+  const handleUtilityChange = useCallback(
+    (key: "availableWater" | "availableElectricity", value: number) => {
+      const label = key === "availableWater" ? "Water Supply" : "Electricity Supply";
+      updateStateJson((s) => {
+        s[key] = formatDecimalString(Math.round(value));
+      }, `${label} updated`);
+    },
+    [updateStateJson]
+  );
+
+  const handleMaxAll = useCallback(() => {
+    updateStateJson((s) => {
+      s.budget = 1_000_000_000;
+      s.cash = 1_000_000_000;
+      s.reputation = formatDecimalString(200_000);
+      s.influence = 1_000_000;
+    }, "All resources maxed");
+  }, [updateStateJson]);
+
   if (!isLoaded || !saveData) {
     return (
       <ModuleShell
@@ -355,8 +402,38 @@ export default function ResourcesModule() {
   return (
     <ModuleShell
       title="Resources"
-      subtitle="Edit studio budget, cash, reputation, and influence"
+      subtitle="Edit studio budget, cash, reputation, influence, water, and electricity"
     >
+      {/* Max All button */}
+      <div style={{ paddingTop: "16px", paddingBottom: "4px" }}>
+        <button
+          onClick={handleMaxAll}
+          style={{
+            fontFamily: "var(--font-ui)",
+            fontSize: "10px",
+            fontWeight: 600,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "var(--color-gold)",
+            background: "transparent",
+            border: "1px solid var(--color-gold)",
+            padding: "6px 16px",
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--color-gold)";
+            e.currentTarget.style.color = "var(--color-bg)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "var(--color-gold)";
+          }}
+        >
+          Max All Resources
+        </button>
+      </div>
+
       {RESOURCES.map((r) => (
         <ResourceField
           key={r.key}
@@ -387,6 +464,47 @@ export default function ResourcesModule() {
         parseInput={(str) => clamp(parseFloat(str) || 0, 0, REPUTATION.max)}
         formatInput={(v) => v.toLocaleString()}
       />
+
+      {/* Utilities section */}
+      <div
+        style={{
+          marginTop: "28px",
+          paddingTop: "20px",
+          borderTop: "1px solid var(--color-border)",
+        }}
+      >
+        <p
+          style={{
+            fontFamily: "var(--font-ui)",
+            fontSize: "10px",
+            fontWeight: 600,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "var(--color-text-muted)",
+            marginBottom: "4px",
+          }}
+        >
+          Utilities
+        </p>
+      </div>
+
+      {UTILITIES.map((u) => {
+        const utilVal = parseFloat(s[u.key] as string) || 0;
+        return (
+          <ResourceField
+            key={u.key}
+            label={u.label}
+            description={u.description}
+            value={utilVal}
+            max={u.max}
+            color={u.color}
+            displayValue={Math.round(utilVal).toLocaleString()}
+            onChange={(v) => handleUtilityChange(u.key, v)}
+            parseInput={parseNumber}
+            formatInput={(v) => Math.round(v).toLocaleString()}
+          />
+        );
+      })}
     </ModuleShell>
   );
 }

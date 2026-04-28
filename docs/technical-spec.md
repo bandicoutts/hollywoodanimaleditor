@@ -59,6 +59,8 @@ Top-level fields in `stateJson`:
 | `cash` | number | Cash on hand |
 | `reputation` | string | Float as string e.g. `"300.000"` |
 | `influence` | number | Influence points |
+| `availableWater` | string | Decimal string e.g. `"127.000"`. Each staff member consumes 4 units/tick. Shortage costs money. |
+| `availableElectricity` | string | Decimal string e.g. `"127.000"`. Each staff member consumes 5 units/tick. Shortage costs money. |
 
 ---
 
@@ -126,6 +128,8 @@ Observed range: 0–4+ cards. Each card = 10% bonus. A value of 4 displays as 40
 
 **Known label values (31 observed):**
 `ALCOHOLIC`, `ARROGANT`, `CALM`, `CHASTE`, `CHEERY`, `DEMANDING`, `DISCIPLINED`, `HARDWORKING`, `HEARTBREAKER`, `HOTHEADED`, `IMMORTAL`, `INDIFFERENT`, `JUNKIE`, `LAZY`, `LEADER`, `LUDOMANIAC`, `MAIN_CHARACTER`, `MELANCHOLIC`, `MISOGYNIST`, `MODEST`, `OPEN_MINDED`, `PERFECTIONIST`, `RACIST`, `SIMPLE`, `STERILE`, `SUPER_IMMORTAL`, `TEAM_PLAYER`, `UNDISCIPLINED`, `UNTOUCHABLE`, `UNWANTED_ACTOR`, `XENOPHOBE`
+
+**Cinematographer filming skills** are stored in `whiteTagsNEW` under keys `"INDOOR"` (soundstage) and `"OUTDOOR"` (location shooting). Only characters with the `Cinematographer` profession have these fields. The `value` is a decimal string in the range `0.000–0.400` (4 tiers, matching the game's 4-icon display). `cinematographer_skill_bonus_range: "0_0.4"` in `GameVariables.json` defines this cap. Values above `0.400` may exist in saves (from in-game levelling) but the editor treats `0.400` as the safe maximum. Same entry structure as appeal — create with default sentinel values when writing for the first time.
 
 **Artistic and commercial appeal** are stored as special entries in `whiteTagsNEW` under the abbreviated keys `"ART"` (artistic) and `"COM"` (commercial). Only Actors and Directors are eligible for appeal. The `value` field is a decimal string 0.000–1.000. Edit only `value`; `overallValues` is a history log written by the game and must not be edited.
 
@@ -427,7 +431,7 @@ Note: there is no "attack tier" concept in the game config. The `ATTACK` budget 
 - UI note beneath the download button reminds users to overwrite an existing save slot, not create a new one
 
 ### 2. Resources
-Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric display and preset buttons (25 / 50 / 75 / 100%). Preserve original types on write.
+Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric display and preset buttons (25 / 50 / 75 / 100%). A **Max All Resources** button at the top sets all four to their caps in one click. A **Utilities** sub-section at the bottom exposes `availableWater` and `availableElectricity` with the same slider + preset UI. Utility fields are stored as decimal strings and written back via `formatDecimalString`. Preserve original types on write.
 
 ### 3. Character Editor
 - List all characters, filterable by employed/all, profession type, name/ID search
@@ -437,6 +441,7 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
   - Edit profession skill(s), `limit`/`Limit` (always update both), `mood` (Happiness), `attitude` (Loyalty), `xp`
   - Each stat bar has an optional **"Max"** button next to its label, shown only when the value is below 1.000
   - `selfEsteem` passes through untouched — not surfaced in UI
+  - **Filming skills section** (Cinematographers only): Indoor (Soundstage) and Outdoor (Location) skill sliders, range 0.000–0.400. The tier selector is a **4-segment joined control** with labels `1 / 2 / 3 / Max (4)`. Max All Stats also sets these to `"0.400"` for cinematographers.
   - Appeal section (Actors and Directors only): ART and COM sliders (0.000–1.000). The tier selector is a **4-segment joined control** — segments represent tiers and act as preset buttons (Promising Talent / Commanding Presence / True Artist / Icon for ART; Rising Star / Star / Superstar / Legend for COM). The active tier is highlighted. Setting a value for the first time creates the `whiteTagsNEW` entry.
 - **Global bulk actions** (always visible when not in selection mode): **Max All Stats** — maxes skills, cap, mood, attitude, and appeal for all visible characters; **Uncap All Skills** — sets `limit`/`Limit` to `"1.000"` for all visible characters. Both require confirmation.
 - **Selection mode**: a "Select" button in the bulk actions header enters selection mode. In this mode clicking a row selects/deselects it; shift-click selects a range. A "Select all visible" checkbox appears above the list. Six granular bulk actions apply to selected characters only (no confirmation needed — the user explicitly chose targets):
@@ -446,6 +451,7 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
   - **Max Happiness** — `mood` only
   - **Max Loyalty** — `attitude` only
   - **Max Appeal** — `whiteTagsNEW.ART` and `whiteTagsNEW.COM` (only for characters that already have those keys)
+  - **Max Filming Skills** — `whiteTagsNEW.INDOOR` and `whiteTagsNEW.OUTDOOR` set to `"0.400"` (only for Cinematographer characters; creates the entry if absent)
   - Selection is preserved after applying an action so multiple actions can be applied to the same group. Selection is cleared automatically when filters change.
 - Write decimal values back as 3-decimal strings: `"1.000"`
 
@@ -641,4 +647,48 @@ The game uses a shared **content tag budget** stored in `contentIds` (confirmed 
 - `AntagonistMode = "any" | "always" | "never"`
 - `SupportingMode = "any" | "some" | "none"`
 - `DualGenreMode = "any" | "prefer" | "single"`
+
+---
+
+### 11. Cheats & Mods
+
+One-click save file modifications that would otherwise require navigating multiple modules.
+
+**Resources** — "Max All Resources" button: sets `budget` and `cash` to `1,000,000,000`, `reputation` to `"200000.000"`, `influence` to `1,000,000`.
+
+**Negotiation** — "Max Negotiation Bonus" button:
+- Adds `NEGOTIATION_SCALE_50` and `NEGOTIATION_SCALE_75` to `stateJson.openedPerks` (skips if already present)
+- Sets `BonusCardMoney` and `BonusCardInfluencePoints` to `4` on all characters that have those fields, and mirrors the values into `bonusCards[0]` and `bonusCards[1]`
+- Shows live ✓/✗ status for each perk
+
+**Studio Policy** — button group writes `stateJson.mainPolicyId`:
+
+| Button label | Value written |
+|---|---|
+| None | `""` |
+| Trash King | `"TRASH_DOMINION"` |
+| Behemoth | `"MAJOR_DOMINION"` |
+| Boutique | `"BOUTIQUE_DOMINION"` |
+
+Setting the policy to Trash King is the actual fix for policy-locked writing tags appearing greyed out in-game — the tags are in `tagPool` but the game checks `mainPolicyId` independently when rendering them.
+
+**Advertising Agencies** — "Unlock All Agencies" adds all 8 known agency IDs to `stateJson.openedAdsAgents`:
+
+| Internal ID | Display name |
+|---|---|
+| `B1RADIO` | NBG |
+| `B1BLBRD` | Ross & Ross Bros. |
+| `ARTMAG` | Vien Pascal |
+| `TYC1` | Spice Mice |
+| `COMMAG` | Spark |
+| `B3PRINT` | Nate Sparrow Press |
+| `FC2` | Velvet Gloss |
+| `MCA1` | Pierre Zola Company |
+
+Shows per-agency unlock status and a count "X / 8 unlocked".
+
+**Research Speed** — preset buttons write `stateJson.overallPerkResearchSpeedup`:
+`1×` → `"1.000"` · `5×` → `"5.000"` · `10×` → `"10.000"` · `Max (99×)` → `"99.000"`
+
+**Experience** — "Max XP — All Characters" sets `xp` to `9,999,999` on every character in `stateJson.characters` (including fired characters).
 

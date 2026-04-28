@@ -81,6 +81,8 @@ export interface StateJson {
   cash: number;
   reputation: string;
   influence: number;
+  availableWater: string;
+  availableElectricity: string;
   studioName: string;
   characters: Character[];
   technologies: Technology[];
