@@ -383,8 +383,10 @@ function CineSkillColumn({
         label={label}
         value={value}
         cap={0.4}
+        max={0.4}
         color={color}
         onChange={(v) => onSet(skillKey, Math.min(0.4, Math.max(0, v)))}
+        onMax={value < 0.4 ? () => onSet(skillKey, 0.4) : undefined}
         scale={1}
         precision={3}
       />
@@ -487,6 +489,7 @@ function AppealColumn({
         cap={1}
         color={color}
         onChange={(v) => onSetAppeal(type, v)}
+        onMax={value < 1 ? () => onSetAppeal(type, 1) : undefined}
         scale={1}
         precision={3}
       />

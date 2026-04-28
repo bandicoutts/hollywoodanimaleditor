@@ -6,6 +6,7 @@ export default function StatBar({
   label,
   value,
   cap,
+  max = 1,
   color,
   onChange,
   onMax,
@@ -15,6 +16,7 @@ export default function StatBar({
   label: string;
   value: number;
   cap: number;
+  max?: number;
   color: string;
   onChange: (v: number) => void;
   onMax?: () => void;
@@ -31,7 +33,7 @@ export default function StatBar({
     setEditing(true);
   };
   const commit = () => {
-    const v = Math.max(0, Math.min(scale, parseFloat(inputVal) || 0));
+    const v = Math.max(0, Math.min(scale * max, parseFloat(inputVal) || 0));
     onChange(v / scale);
     setEditing(false);
   };
@@ -137,18 +139,20 @@ export default function StatBar({
             overflow: "visible",
           }}
         >
-          {/* Cap marker */}
-          <div
-            style={{
-              position: "absolute",
-              left: `${cap * 100}%`,
-              top: -2,
-              bottom: -2,
-              width: "2px",
-              background: color + "60",
-              zIndex: 1,
-            }}
-          />
+          {/* Cap marker — only shown when cap is below the slider max */}
+          {cap < max && (
+            <div
+              style={{
+                position: "absolute",
+                left: `${(cap / max) * 100}%`,
+                top: -2,
+                bottom: -2,
+                width: "2px",
+                background: color + "60",
+                zIndex: 1,
+              }}
+            />
+          )}
           {/* Skill fill */}
           <div
             style={{
@@ -156,7 +160,7 @@ export default function StatBar({
               left: 0,
               top: 0,
               height: "100%",
-              width: `${value * 100}%`,
+              width: `${(value / max) * 100}%`,
               background: color,
               transition: "width 0.3s ease",
             }}
@@ -165,8 +169,8 @@ export default function StatBar({
         <input
           type="range"
           min={0}
-          max={1}
-          step={0.001}
+          max={max}
+          step={max * 0.001}
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value))}
           style={{

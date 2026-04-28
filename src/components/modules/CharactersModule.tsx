@@ -361,8 +361,12 @@ export default function CharactersModule() {
         c.attitude = "1.000";
         if (!c.whiteTagsNEW) c.whiteTagsNEW = {};
         const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>>;
-        if (wt?.ART) wt.ART.value = "1.000";
-        if (wt?.COM) wt.COM.value = "1.000";
+        if ("Actor" in c.professions || "Director" in c.professions) {
+          if (!wt.ART) wt.ART = { overallValues: [], id: "ART", dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
+          if (!wt.COM) wt.COM = { overallValues: [], id: "COM", dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
+          wt.ART.value = "1.000";
+          wt.COM.value = "1.000";
+        }
         if ("Cinematographer" in c.professions) {
           for (const key of ["INDOOR", "OUTDOOR"]) {
             if (!wt[key]) wt[key] = { overallValues: [], id: key, dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
@@ -410,8 +414,12 @@ export default function CharactersModule() {
       c.attitude = "1.000";
       if (!c.whiteTagsNEW) c.whiteTagsNEW = {};
       const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>>;
-      if (wt?.ART) wt.ART.value = "1.000";
-      if (wt?.COM) wt.COM.value = "1.000";
+      if ("Actor" in c.professions || "Director" in c.professions) {
+        if (!wt.ART) wt.ART = { overallValues: [], id: "ART", dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
+        if (!wt.COM) wt.COM = { overallValues: [], id: "COM", dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
+        wt.ART.value = "1.000";
+        wt.COM.value = "1.000";
+      }
       if ("Cinematographer" in c.professions) {
         for (const key of ["INDOOR", "OUTDOOR"]) {
           if (!wt[key]) wt[key] = { overallValues: [], id: key, dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
@@ -460,12 +468,24 @@ export default function CharactersModule() {
     ),
   [applyToSelected, n]);
 
-  const applySelMaxAppeal = useCallback(() =>
+  const applySelMaxArtistic = useCallback(() =>
     applyToSelected((c) => {
-      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>> | undefined;
-      if (wt?.ART) wt.ART.value = "1.000";
-      if (wt?.COM) wt.COM.value = "1.000";
-    }, `Characters — max appeal (${n} selected)`),
+      if (!("Actor" in c.professions || "Director" in c.professions)) return;
+      if (!c.whiteTagsNEW) c.whiteTagsNEW = {};
+      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>>;
+      if (!wt.ART) wt.ART = { overallValues: [], id: "ART", dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
+      wt.ART.value = "1.000";
+    }, `Characters — max artistic appeal (${n} selected)`),
+  [applyToSelected, n]);
+
+  const applySelMaxCommercial = useCallback(() =>
+    applyToSelected((c) => {
+      if (!("Actor" in c.professions || "Director" in c.professions)) return;
+      if (!c.whiteTagsNEW) c.whiteTagsNEW = {};
+      const wt = c.whiteTagsNEW as Record<string, Record<string, unknown>>;
+      if (!wt.COM) wt.COM = { overallValues: [], id: "COM", dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
+      wt.COM.value = "1.000";
+    }, `Characters — max commercial appeal (${n} selected)`),
   [applyToSelected, n]);
 
   if (!isLoaded) {
@@ -652,7 +672,8 @@ export default function CharactersModule() {
                 <BulkBtn label="Max Cap" onClick={applySelMaxCap} />
                 <BulkBtn label="Max Happiness" onClick={applySelMaxHappiness} />
                 <BulkBtn label="Max Loyalty" onClick={applySelMaxLoyalty} />
-                <BulkBtn label="Max Appeal" onClick={applySelMaxAppeal} />
+                <BulkBtn label="Max Artistic" onClick={applySelMaxArtistic} />
+                <BulkBtn label="Max Commercial" onClick={applySelMaxCommercial} />
                 <BulkBtn label="Max Filming Skills" onClick={applySelMaxFilmingSkills} />
               </div>
             </>
