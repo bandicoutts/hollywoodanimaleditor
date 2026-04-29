@@ -369,8 +369,10 @@ export default function ResourcesModule() {
   const handleUtilityChange = useCallback(
     (key: "availableWater" | "availableElectricity", value: number) => {
       const label = key === "availableWater" ? "Water Supply" : "Electricity Supply";
+      const boughtKey = key === "availableWater" ? "boughtWaterThisMonth" : "boughtElectricityThisMonth";
       updateStateJson((s) => {
         s[key] = formatDecimalString(Math.round(value));
+        s[boughtKey] = "0.000";
       }, `${label} updated`);
     },
     [updateStateJson]

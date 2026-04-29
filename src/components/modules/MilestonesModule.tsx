@@ -82,6 +82,35 @@ interface MilestoneGroupDef {
   section: string;
 }
 
+// Goal values for milestones where progress must match a count > 1 when finished.
+// Source: inferred from milestone descriptions + audit verification against actual saves.
+// POLICY_MAJOR_1 and POLICY_MAJOR_3 are confirmed; others inferred from text.
+const MILESTONE_GOALS: Record<string, string> = {
+  POLICY_TRASH_1:                  "6.000",
+  POLICY_TRASH_2:                  "1500000.000",
+  POLICY_MAJOR_1:                  "8.000",
+  POLICY_MAJOR_3:                  "365.000",
+  POLICY_BOUTIQUE_3:               "3.000",
+  POLICY_CONVEYOR_1:               "3.000",
+  POLICY_CONVEYOR_2:               "13.000",
+  POLICY_CONVEYOR_3:               "13.000",
+  HESPRO_QUEST_2:                  "5.000",
+  BLUE_TERM_IRIS_QUEST_2:          "2.000",
+  DUPLER_COMPACT_QUEST_2:          "3.000",
+  HESPRO_70_EXTRA_QUEST_1:         "3.000",
+  HESPRO_70_EXTRA_QUEST_2:         "3.000",
+  DUPLER_COMPACT_CFS_QUEST_2:      "5.000",
+  HESPRO_70_RAD_EXTRA_QUEST_1:     "5.000",
+  HESPRO_70_RAD_EXTRA_QUEST_2:     "3.000",
+  FLUMEN_CELERE_PRO_QUEST_1:       "5.000",
+  FLUMEN_CELERE_PRO_QUEST_2:       "3.000",
+  FRAMETONE_QUEST_2:               "3.000",
+  FRAMETONE_CRYSTAL_CLEAR_QUEST_1: "3.000",
+  FRAMETONE_CRYSTAL_CLEAR_QUEST_2: "3.000",
+  FILMSOUND_NOVUM_ORGANUM_QUEST_1: "3.000",
+  FILMSOUND_PRAEALTUM_QUEST_2:     "3.000",
+};
+
 const MILESTONE_GROUP_DEFS: MilestoneGroupDef[] = [
   { id: "policy_enable", title: "Policy Unlock",  prefix: "POLICY_ENABLE",                section: "Studio Policies" },
   { id: "trash",         title: "Trash King",      prefix: "POLICY_TRASH",                 section: "Studio Policies" },
@@ -495,7 +524,7 @@ export default function MilestonesModule() {
         if (m) {
           m.finished = !m.finished;
           if (m.finished) {
-            m.progress = "1.000";
+            m.progress = MILESTONE_GOALS[id] ?? "1.000";
             m.locked = false;
           }
         }
@@ -520,7 +549,7 @@ export default function MilestonesModule() {
         const m = s.milestones[key] as Milestone;
         m.finished = true;
         m.locked = false;
-        m.progress = "1.000";
+        m.progress = MILESTONE_GOALS[key] ?? "1.000";
       }
     });
   }, [updateStateJson]);

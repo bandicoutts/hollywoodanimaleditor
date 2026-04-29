@@ -73,7 +73,8 @@ const CINE_SKILL_TIERS = [
   { label: "1",   value: 0.1 },
   { label: "2",   value: 0.2 },
   { label: "3",   value: 0.3 },
-  { label: "Max (4)", value: 0.4 },
+  { label: "4",   value: 0.4 },
+  { label: "Max (5)", value: 0.5 },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -218,7 +219,8 @@ function XpEditor({ xp, onChange }: { xp: number; onChange: (v: number) => void 
   const [val, setVal] = useState("");
 
   const commit = () => {
-    onChange(parseInt(val.replace(/\D/g, ""), 10) || 0);
+    const n = parseInt(val, 10);
+    onChange(isNaN(n) ? 0 : n);
     setEditing(false);
   };
 
@@ -382,11 +384,11 @@ function CineSkillColumn({
       <StatBar
         label={label}
         value={value}
-        cap={0.4}
-        max={0.4}
+        cap={0.5}
+        max={0.5}
         color={color}
-        onChange={(v) => onSet(skillKey, Math.min(0.4, Math.max(0, v)))}
-        onMax={value < 0.4 ? () => onSet(skillKey, 0.4) : undefined}
+        onChange={(v) => onSet(skillKey, Math.min(0.5, Math.max(0, v)))}
+        onMax={value < 0.5 ? () => onSet(skillKey, 0.5) : undefined}
         scale={1}
         precision={3}
       />
@@ -872,11 +874,11 @@ export default function DetailPanel({
           IsOverall: false,
         };
       }
-      wt[key].value = formatDecimalString(Math.min(0.4, Math.max(0, value)));
+      wt[key].value = formatDecimalString(Math.min(0.5, Math.max(0, value)));
     });
 
   const setXp = (value: number) =>
-    onUpdate((c) => { c.xp = Math.max(0, Math.round(value)); });
+    onUpdate((c) => { c.xp = Math.round(value); });
 
   const setBonusCard = (field: "BonusCardMoney" | "BonusCardInfluencePoints", pct: number) =>
     onUpdate((c) => {
@@ -905,7 +907,7 @@ export default function DetailPanel({
       if (isCinematographer(c.professions)) {
         for (const key of ["INDOOR", "OUTDOOR"] as const) {
           if (!wt[key]) wt[key] = { overallValues: [], id: key, dateAdded: "0001-01-01T00:00:00", movieId: 0, value: "0.000", IsOverall: false };
-          wt[key].value = "0.400";
+          wt[key].value = "0.500";
         }
       }
     });
@@ -1075,7 +1077,7 @@ export default function DetailPanel({
         <div style={{ marginBottom: "14px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px" }}>
             <span style={FIELD_LABEL_STYLE}>XP</span>
-            <XpEditor xp={Math.max(0, char.xp)} onChange={setXp} />
+            <XpEditor xp={char.xp} onChange={setXp} />
           </div>
         </div>
       </div>

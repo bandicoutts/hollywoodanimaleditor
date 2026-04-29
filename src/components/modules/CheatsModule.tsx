@@ -336,6 +336,22 @@ export default function CheatsModule() {
           </span>
         </div>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+          {currentPolicy === "REJECTED" && (
+            <span
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "10px",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                color: "#e08080",
+                border: "1px solid #e0808088",
+                padding: "4px 12px",
+                borderRadius: "2px",
+              }}
+            >
+              Rejected (game-set)
+            </span>
+          )}
           {POLICIES.map((p) => {
             const isActive = currentPolicy === p.id;
             return (
