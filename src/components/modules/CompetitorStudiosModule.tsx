@@ -8,6 +8,40 @@ import { formatDecimalString } from "@/lib/save-file";
 import { COMPETITOR_META } from "@/data/competitors";
 import ConfirmDialog from "./ConfirmDialog";
 
+// Default budgets from CompetitorStudios.json initialBudget values (approximate)
+const DEFAULT_BUDGETS: Record<string, number> = {
+  GB: 29_000_000,
+  EM: 6_000_000,
+  SU: 6_000_000,
+  HE: 4_000_000,
+  MA: 2_000_000,
+};
+
+function makeDefaultEntry(id: string): CompetitorStudio {
+  return {
+    id: null,
+    isUnderRaid: false,
+    lastBudget: DEFAULT_BUDGETS[id] ?? 0,
+    incomeThisMonth: 0,
+    ip: 0,
+    avgAttitude: "1.000",
+    aggression: "0.000",
+    generalSpending: 0,
+    attackedThisMonth: 0,
+    abortedMoviesThisYear: 0,
+    targetBaselineMultiplier: "1.000",
+    targetBudgetMultiplier: "1.000",
+    cinemasDiffLastMonth: 0,
+    isDead: false,
+    attackCooldown: 0,
+    budgetCheatsRemaining: 2,
+    wallets: {},
+    scheduledMovies: [],
+    debugStats: [],
+    budgetOnStartOfYear: 0,
+  };
+}
+
 // ── Studio row ────────────────────────────────────────────────────────────────
 
 function CompetitorRow({
@@ -263,7 +297,10 @@ export default function CompetitorStudiosModule() {
   const [confirmKill, setConfirmKill] = useState<string | null>(null);
 
   const competitorStudios = saveData?.stateJson?.competitorStudios ?? {};
-  const entries = Object.entries(competitorStudios) as [string, CompetitorStudio][];
+  const knownIds = Object.keys(COMPETITOR_META);
+  // Always show all known studios; fallback to save keys for any unknown ones
+  const saveKeys = Object.keys(competitorStudios).filter((k) => !knownIds.includes(k));
+  const allIds = [...knownIds, ...saveKeys];
 
   const updateStudio = useCallback(
     (id: string, updater: (s: CompetitorStudio) => void) => {
@@ -286,6 +323,15 @@ export default function CompetitorStudiosModule() {
     [updateStateJson]
   );
 
+  const createStudio = useCallback(
+    (id: string) => {
+      updateStateJson((s) => {
+        s.competitorStudios[id] = makeDefaultEntry(id);
+      }, `${COMPETITOR_META[id]?.name ?? id} entry created`);
+    },
+    [updateStateJson]
+  );
+
   return (
     <ModuleShell
       title="Competitor Studios"
@@ -293,18 +339,77 @@ export default function CompetitorStudiosModule() {
     >
       {!isLoaded ? (
         <EmptyState message="Upload a save file to edit competitor studios" />
-      ) : entries.length === 0 ? (
-        <EmptyState message="No competitor studios found in this save" />
       ) : (
-        entries.map(([id, studio]) => (
-          <CompetitorRow
-            key={id}
-            id={id}
-            studio={studio}
-            onUpdate={(updater) => updateStudio(id, updater)}
-            onKill={() => setConfirmKill(id)}
-          />
-        ))
+        allIds.map((id) => {
+          const studio = competitorStudios[id] as CompetitorStudio | undefined;
+          const meta = COMPETITOR_META[id];
+          if (!studio) {
+            return (
+              <div
+                key={id}
+                style={{
+                  padding: "14px 20px",
+                  border: "1px solid var(--color-border-subtle)",
+                  borderLeft: "3px solid var(--color-border-subtle)",
+                  marginBottom: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "12px",
+                  opacity: 0.6,
+                }}
+              >
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <p style={{ fontFamily: "var(--font-serif)", fontSize: "15px", fontWeight: 600, color: "var(--color-text-muted)" }}>
+                      {meta?.name ?? `Studio ${id}`}
+                    </p>
+                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "9px", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--color-text-muted)", border: "1px solid var(--color-border-subtle)", padding: "1px 5px" }}>
+                      {id}
+                    </span>
+                  </div>
+                  <p style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)", marginTop: "4px" }}>
+                    Not yet encountered in this save
+                  </p>
+                </div>
+                <button
+                  onClick={() => createStudio(id)}
+                  style={{
+                    fontFamily: "var(--font-ui)",
+                    fontSize: "10px",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    color: "var(--color-text-muted)",
+                    background: "transparent",
+                    border: "1px solid var(--color-border)",
+                    padding: "3px 10px",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--color-gold)";
+                    e.currentTarget.style.borderColor = "var(--color-gold)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--color-text-muted)";
+                    e.currentTarget.style.borderColor = "var(--color-border)";
+                  }}
+                >
+                  Create Entry
+                </button>
+              </div>
+            );
+          }
+          return (
+            <CompetitorRow
+              key={id}
+              id={id}
+              studio={studio}
+              onUpdate={(updater) => updateStudio(id, updater)}
+              onKill={() => setConfirmKill(id)}
+            />
+          );
+        })
       )}
 
       {confirmKill && (

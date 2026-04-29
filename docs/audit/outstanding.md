@@ -98,10 +98,41 @@ The one remaining question for in-game testing is whether the `BM_*` offensive o
 2. Is it safe to create a minimal entry `{ lastBudget: 0, aggression: "0.000", isUnderRaid: false, isDead: false }` without the other fields, or will the game error on load?
 3. What is a sensible initial `lastBudget` — 0, or a value derived from the studio's tier?
 
-**Answers (verified 2026-04-29):**
-1. **The game config (`CompetitorStudios.json`) defines AI configuration** (release targets, budget ranges, ad campaigns, staff levels) — but these are read-only game parameters, not runtime save fields. The actual save-file entry for a studio is separate and minimal. `competitorMovies` and `specialCompetitorsProposals` are **top-level save fields** in `stateJson`, not sub-fields inside `competitorStudios[id]`. The 4 editable fields are the complete runtime state.
-2. **A minimal entry is very likely safe.** `competitorMovies` and `specialCompetitorsProposals` already exist as separate top-level arrays/objects and will not be affected. The game likely initialises an entry with only these 4 fields when first touched. However, **this is not confirmed by a real populated save** — the test save has `competitorStudios: {}` even in late game. In-game testing is needed to see what a real populated entry looks like before implementing the create-entry button.
-3. **Use tier-appropriate values from config as defaults.** From `CompetitorStudios.json`: GB (top tier) has `initialBudget` ~29M, EM/SU ~6M, HE ~4M, MA ~2M. These would be better defaults than 0 for `lastBudget`, since 0 would make the studio act as if broke. Alternatively default to 0 and let the player fill in — they're explicitly creating the entry.
+**Answers (verified 2026-04-29, updated with real save data 2026-04-29):**
+1. **Confirmed from real saves.** A populated entry has 19 fields. The 4 currently exposed fields are correct; there are 15 additional runtime-state fields the game also writes:
+
+   ```json
+   {
+     "id": null,
+     "isUnderRaid": false,
+     "lastBudget": 27250673,
+     "incomeThisMonth": -651083,
+     "ip": 2075,
+     "avgAttitude": "1.000",
+     "aggression": "0.000",
+     "generalSpending": 337500,
+     "attackedThisMonth": 0,
+     "abortedMoviesThisYear": 0,
+     "targetBaselineMultiplier": "1.120",
+     "targetBudgetMultiplier": "1.120",
+     "cinemasDiffLastMonth": 1,
+     "isDead": false,
+     "attackCooldown": 0,
+     "budgetCheatsRemaining": 2,
+     "wallets": {},
+     "scheduledMovies": [472, 476, 484],
+     "debugStats": [],
+     "budgetOnStartOfYear": 0
+   }
+   ```
+
+   `competitorMovies` and `specialCompetitorsProposals` are confirmed as **top-level `stateJson` fields**, not sub-fields of a studio entry.
+
+2. **Safe to create a full entry with defaults.** The game writes all 19 fields simultaneously (all 5 studios appear together at one trigger point, around mid-game year 7–8). Safe defaults: `incomeThisMonth: 0`, `ip: 0`, `avgAttitude: "1.000"`, `aggression: "0.000"`, `generalSpending: 0`, all counters 0, `wallets: {}`, `scheduledMovies: []`, `debugStats: []`, `budgetCheatsRemaining: 2`, `targetBaselineMultiplier: "1.000"`, `targetBudgetMultiplier: "1.000"`.
+
+3. **Use tier-appropriate `lastBudget` defaults.** From `CompetitorStudios.json` initial budgets: GB ~29M, EM ~6M, SU ~6M, HE ~4M, MA ~2M. These are the defaults used in the implemented create-entry button.
+
+**Fix status:** Implemented. The Competitors tab now always shows all 5 known studios. Studios not yet in the save file show a "Not yet encountered" placeholder with a "Create Entry" button. Clicking it inserts the full 19-field default object with tier-appropriate budget.
 
 ---
 

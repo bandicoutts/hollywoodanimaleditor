@@ -41,15 +41,38 @@ Unhandled fields (`competitorMovies`, `specialCompetitorsProposals`, `nextGenCom
 
 ## Issues and Discrepancies
 
-### 1. Tab is blank when `competitorStudios` is empty — and this is common
+### 1. Tab is blank when `competitorStudios` is empty — and this is common (✅ Fixed)
 
-The module renders using `Object.entries(competitorStudios)`. If the object is `{}`, the tab shows nothing to edit.
+The module previously rendered using `Object.entries(competitorStudios)`. If the object was `{}`, the tab showed nothing to edit.
 
-In the test save (`1.json`), `competitorStudios` is an **empty object** despite being a late-game save with 1,199 characters and 345 competitor movies. This suggests `competitorStudios` entries are only created when the player has directly interacted with a studio (e.g., performed a raid, triggered an event that sets aggression). Studios the player has never touched do not appear.
+**Full runtime structure confirmed from real saves (Autosave 01 07 1936.json and later).** All 5 studios are initialized simultaneously at a mid-game trigger (between April and July of game-year 1936 in a typical playthrough). The complete 19-field entry structure per studio is:
 
-A player who has never raided a competitor — or who is in early game — will see a completely empty Competitors tab with no way to interact with any studio. The editor provides no mechanism to **create** entries for studios not yet in the map.
+```json
+{
+  "id": null,
+  "isUnderRaid": false,
+  "lastBudget": 27250673,
+  "incomeThisMonth": -651083,
+  "ip": 2075,
+  "avgAttitude": "1.000",
+  "aggression": "0.000",
+  "generalSpending": 337500,
+  "attackedThisMonth": 0,
+  "abortedMoviesThisYear": 0,
+  "targetBaselineMultiplier": "1.120",
+  "targetBudgetMultiplier": "1.120",
+  "cinemasDiffLastMonth": 1,
+  "isDead": false,
+  "attackCooldown": 0,
+  "budgetCheatsRemaining": 2,
+  "wallets": {},
+  "scheduledMovies": [472, 476, 484],
+  "debugStats": [],
+  "budgetOnStartOfYear": 0
+}
+```
 
-**Recommendation:** When `competitorStudios` is empty or a studio ID is absent, offer to create a default entry with sensible starting values (`lastBudget: 0`, `aggression: "0.000"`, `isUnderRaid: false`, `isDead: false`). Alternatively, display all five known studios and create the save entry only on first edit.
+**Fix implemented:** The tab now always displays all 5 known studios. Studios absent from the save file show a "Not yet encountered" placeholder with a "Create Entry" button. Clicking it inserts a full 19-field default entry with `aggression: "0.000"`, `isDead: false`, `isUnderRaid: false`, and a tier-appropriate `lastBudget` (GB: 29M, EM/SU: 6M, HE: 4M, MA: 2M). All other fields default to 0/false/empty.
 
 ### 2. `competitorMovies` not exposed
 
@@ -79,6 +102,6 @@ These cooldowns gate certain negotiation proposals. A player wanting to reset pr
 | `isDead` boolean | ✓ |
 | Studio IDs (all 5 match config) | ✓ |
 | Round-trip safety | ✓ |
-| Tab is empty when `competitorStudios: {}` (common) | ✗ No way to create entries for untouched studios |
+| Tab is empty when `competitorStudios: {}` (common) | ✅ Fixed — all 5 studios shown with Create Entry for missing ones |
 | `competitorMovies` not exposed | ✗ Minor gap |
 | `specialCompetitorsProposals` cooldowns not exposed | ✗ Minor gap |
