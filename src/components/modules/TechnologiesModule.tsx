@@ -260,13 +260,23 @@ function TechCard({
           {isReadOnly && " · read-only"}
         </p>
 
-        {/* QPE stats */}
+        {/* QPE stats — use live save values when available (upgraded tech), fall back to config */}
         {info && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <StatDots label="Quality" value={info.q} color={typeColor} />
-            <StatDots label="Practicality" value={info.p} color={typeColor} />
-            <StatDots label="Economy" value={info.e} color={typeColor} />
-          </div>
+          tech.currentPointsQPE ? (
+            <div style={{ display: "flex", gap: "10px", marginTop: "2px" }}>
+              {(["Q", "P", "E"] as const).map((label, i) => (
+                <span key={label} style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-text-muted)" }}>
+                  {label}: <span style={{ color: typeColor, fontWeight: 600 }}>{tech.currentPointsQPE![i] ?? "—"}</span>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              <StatDots label="Quality" value={info.q} color={typeColor} />
+              <StatDots label="Practicality" value={info.p} color={typeColor} />
+              <StatDots label="Economy" value={info.e} color={typeColor} />
+            </div>
+          )
         )}
       </div>
     </div>

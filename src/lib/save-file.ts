@@ -39,6 +39,7 @@ export interface Technology {
   created: boolean;
   releaseYear: number;
   isOutDated: boolean;
+  currentPointsQPE?: number[];
   [key: string]: unknown;
 }
 
@@ -106,6 +107,8 @@ export interface StateJson {
   currentTagsInCodex?: Record<string, { id: string; addingDate: string; fromStudioId: string; [key: string]: unknown }>;
   queueTagsForCodex?: Record<string, { id: string; addingDate: string; fromStudioId: string; [key: string]: unknown }>;
   movieScriptIdeas?: unknown[];
+  otherCountableResources?: Record<string, number>;
+  requestedCountableResources?: Record<string, number>;
   [key: string]: unknown;
 }
 

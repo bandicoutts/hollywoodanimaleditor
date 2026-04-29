@@ -91,6 +91,25 @@ const UTILITIES: UtilityConfig[] = [
 
 const PRESETS = [0.25, 0.5, 0.75, 1.0];
 
+const NEGOTIATION_ITEMS: { key: string; label: string }[] = [
+  { key: "WATCH",                  label: "Watch" },
+  { key: "SIGARS",                 label: "Cigars" },
+  { key: "ALCOHOL",                label: "Alcohol" },
+  { key: "WARDROBE_COUTURE",       label: "Couture Wardrobe" },
+  { key: "EUROPEAN_SPORTCAR",      label: "European Sports Car" },
+  { key: "HEROIN",                 label: "Heroin" },
+  { key: "COCAINE",                label: "Cocaine" },
+  { key: "ANIMAL_MURDER",          label: "Trophy Kill" },
+  { key: "PORNO_TAPE",             label: "Compromising Footage" },
+  { key: "MONKEY_BRAINS",          label: "Monkey Brains" },
+  { key: "ILLEGAL_SAFARI",         label: "Illegal Safari" },
+  { key: "CANNIBAL_DINNER",        label: "Cannibal Dinner" },
+  { key: "EVENING_WITH_UNDERAGED", label: "Evening with the Underaged" },
+  { key: "METH",                   label: "Meth" },
+];
+
+const ITEM_MAX = 99;
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatMoney(v: number): string {
@@ -342,6 +361,51 @@ function ResourceField({
   );
 }
 
+// ── ItemCounter ───────────────────────────────────────────────────────────────
+
+function ItemCounter({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [inputVal, setInputVal] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const startEdit = () => {
+    setInputVal(String(value));
+    setEditing(true);
+    setTimeout(() => inputRef.current?.select(), 0);
+  };
+
+  const commit = () => {
+    const n = clamp(parseInt(inputVal, 10) || 0, 0, ITEM_MAX);
+    onChange(n);
+    setEditing(false);
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid var(--color-border-subtle)" }}>
+      <span style={{ fontFamily: "var(--font-ui)", fontSize: "11px", color: "var(--color-text-secondary)" }}>{label}</span>
+      {editing ? (
+        <input
+          ref={inputRef}
+          autoFocus
+          value={inputVal}
+          onChange={(e) => setInputVal(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }}
+          style={{ fontFamily: "var(--font-serif)", fontSize: "13px", fontWeight: 600, color: "var(--color-gold)", background: "transparent", border: "none", borderBottom: "1px solid var(--color-gold)", outline: "none", width: "48px", textAlign: "right", padding: "0 0 1px" }}
+        />
+      ) : (
+        <span
+          onClick={startEdit}
+          title="Click to edit"
+          style={{ fontFamily: "var(--font-serif)", fontSize: "13px", fontWeight: 600, color: value > 0 ? "var(--color-gold)" : "var(--color-text-muted)", borderBottom: "1px dashed var(--color-border)", cursor: "text", minWidth: "28px", textAlign: "right" }}
+        >
+          {value}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function ResourcesModule() {
@@ -374,6 +438,17 @@ export default function ResourcesModule() {
         s[key] = formatDecimalString(Math.round(value));
         s[boughtKey] = "0.000";
       }, `${label} updated`);
+    },
+    [updateStateJson]
+  );
+
+  const handleItemChange = useCallback(
+    (key: string, value: number) => {
+      updateStateJson((s) => {
+        if (!s.otherCountableResources) s.otherCountableResources = {};
+        s.otherCountableResources[key] = value;
+        if (s.requestedCountableResources) s.requestedCountableResources[key] = 0;
+      }, `Item updated: ${key}`);
     },
     [updateStateJson]
   );
@@ -504,6 +579,28 @@ export default function ResourcesModule() {
             onChange={(v) => handleUtilityChange(u.key, v)}
             parseInput={parseNumber}
             formatInput={(v) => Math.round(v).toLocaleString()}
+          />
+        );
+      })}
+
+      {/* Negotiation Items section */}
+      <div style={{ marginTop: "28px", paddingTop: "20px", borderTop: "1px solid var(--color-border)" }}>
+        <p style={{ fontFamily: "var(--font-ui)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--color-text-muted)", marginBottom: "2px" }}>
+          Negotiation Items
+        </p>
+        <p style={{ fontFamily: "var(--font-ui)", fontSize: "11px", color: "var(--color-text-secondary)", marginBottom: "12px" }}>
+          Consumables used in negotiations and parties · max 99 each
+        </p>
+      </div>
+
+      {NEGOTIATION_ITEMS.map((item) => {
+        const itemVal = (s.otherCountableResources?.[item.key] as number) ?? 0;
+        return (
+          <ItemCounter
+            key={item.key}
+            label={item.label}
+            value={itemVal}
+            onChange={(v) => handleItemChange(item.key, v)}
           />
         );
       })}

@@ -482,14 +482,7 @@ Edit `budget`, `cash`, `reputation`, `influence` via sliders with live numeric d
 
 **Localization note:** The game's human-readable display strings live in Unity asset bundles, not in the JSON config files. The config files at `StreamingAssets/Data/Configs/` contain only internal IDs and numeric data. For any perk added by a future game update and not yet in `PERK_LABELS`, derive a provisional label from the ID pattern (e.g. `_QLT_` → "Quality", `_TIME_RED_` → "Time Reduction", `_XP_` → "XP Bonus") until the localisation string can be confirmed.
 
-**Unverified perk IDs (⚠️ not confirmed against game config files):** The following 19 IDs appear in `PERK_GROUPS` (and therefore in the Research module UI and "Unlock All") but were absent from a near-complete late-game save (216 perks present). They have not been verified against `Perks.json` in the game config archive and may not be valid:
-
-- `BM_UNLOCK`, `BM_DROWNING`, `BM_DRUNKARD`, `BM_FIGHT`, `BM_CRIMINAL`, `BM_HOUSE_BURN` — listed under "Offensive Operations"; may be event-acquired rather than `openedPerks`-gated, or may not exist
-- `BLDG_POWERPLANT_II`, `BLDG_POWERPLANT_III`, `BLDG_RND_II`, `BLDG_RND_III`, `BLDG_WATER_TOWER_II`, `BLDG_WATER_TOWER_III` — higher-tier building perks; the `_I` variants are confirmed but the upgrade tiers were absent even in the late-game save
-- `BLDG_COPYRIGHT`, `BLDG_FOCUS`, `BROADCAST_MEDIA`, `CHEAP_ILLEGALS` — unconfirmed
-- `BANK_LOAN_COOLDOWN_REDUCTION`, `BANK_LOAN_MICROLOAN`, `BANK_LOAN_REFINANCING` — in `HIDDEN_PERK_IDS`, so not shown as UI cards; lower risk
-
-If any of these are invalid, the game will most likely ignore the unknown perk ID rather than breaking the save. To confirm, check `StreamingAssets/Data/Configs/Perks.json` for each ID.
+**Previously unverified perk IDs — now confirmed (2026-04-29):** All 19 IDs (`BM_UNLOCK`, `BM_DROWNING`, `BM_DRUNKARD`, `BM_FIGHT`, `BM_CRIMINAL`, `BM_HOUSE_BURN`, `BLDG_POWERPLANT_II/III`, `BLDG_RND_II/III`, `BLDG_WATER_TOWER_II/III`, `BLDG_COPYRIGHT`, `BLDG_FOCUS`, `BROADCAST_MEDIA`, `CHEAP_ILLEGALS`, `BANK_LOAN_COOLDOWN_REDUCTION`, `BANK_LOAN_MICROLOAN`, `BANK_LOAN_REFINANCING`) are present in `Perks.json`. They are valid perks safe to include in "Unlock All". None appear in the 216-perk test save simply because they were unresearched. The `BM_*` offensive operation IDs may have in-game side-effects when triggered mid-save — worth noting to the player but not a reason to exclude them.
 
 ### 6. Research Speedup / Complete Instantly
 - Slider for `overallPerkResearchSpeedup`

@@ -484,6 +484,11 @@ export default function ScriptBuilder({
             Select a genre first — Pollux eligibility depends on genre
           </p>
         )}
+        {bias === "pollux" && sel.genre && (sel.genre.id === "MUSICAL" || sel.genre.id === "SLAPSTICK_COMEDY") && (
+          <p style={{ fontFamily: "var(--font-ui)", fontSize: "10px", color: "var(--color-gold)", marginTop: "8px", fontStyle: "italic" }}>
+            Pollux eligibility for this genre is unconfirmed — score shown as 0
+          </p>
+        )}
       </div>
 
       {/* Running score */}
