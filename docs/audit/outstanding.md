@@ -14,6 +14,13 @@
 2. Are the values on the same 1–3 scale used in `TECH_INFO`, or a different scale (e.g. 0–100)?
 3. Example from the audit save: a player-upgraded tech has `currentPointsQPE: [15, 15, 15]`. Is 15 exceptional, or does the display cap at 3 dots regardless?
 
+**Answers (verified 2026-04-29):**
+1. **Yes — order is `[quality, practicality, economy]`.** Confirmed by cross-referencing `VideoTech.json`'s `displayPointsQPE` against `TECH_INFO`: DUPLER has `displayPointsQPE: [1, 1, 2]` matching `TECH_INFO` entry `q: 1, p: 1, e: 2`.
+2. **Different scale — open-ended integers, not capped at 3.** `TECH_INFO` uses 1–3 dots for the base config display, but `currentPointsQPE` grows with upgrades and has no cap in any config file. The value `[15, 15, 15]` is a real upgraded-tech value.
+3. **15 is a high but real value.** There is no defined ceiling. Display the raw integers (e.g. `Q: 15 / P: 15 / E: 15`) rather than mapping to a dot count — dots are only meaningful for the base 1–3 range.
+
+**Fix guidance:** Add `currentPointsQPE?: number[]` to the `Technology` interface. When rendering a tech card, if `tech.currentPointsQPE` is present, display it as raw `Q / P / E` integers instead of the static `TECH_INFO` dot values. Keep the dot display only as a fallback for techs without `currentPointsQPE`.
+
 ---
 
 ## G1 — `otherCountableResources` (Resources tab)
@@ -32,6 +39,12 @@ ILLEGAL_SAFARI, CANNIBAL_DINNER, EVENING_WITH_UNDERAGED, METH
 2. When a player edits item counts, should `requestedCountableResources` be zeroed out for that item, left alone, or doesn't matter?
 3. Are any items unlocked progressively (i.e. unavailable early game), or are all keys always present in the save?
 4. Preferred UI placement: a new section within the Resources tab, or a separate "Inventory" tab?
+
+**Answers (verified 2026-04-29):**
+1. **No game-enforced cap found.** No config file defines a maximum for any item. Any non-negative integer appears safe to store. A reasonable editor ceiling of 99 per item would match the highest observed natural value and prevents obviously broken inputs.
+2. **Zero out `requestedCountableResources` for the edited item.** The field tracks pending requests the game has queued. If you add 50 watches but there are already 20 pending requests, the game may immediately fulfil them from the new stock. Zeroing the requests for a given item on edit is the safest approach.
+3. **All 14 keys are always present in the save** (confirmed from the test save — every key exists with value `0` even early-game). There is no progressive unlock for the keys themselves; the counts just remain at 0 until the player uses items in negotiations or parties.
+4. **New section within the Resources tab** is the simplest approach given the items are consumable resources. A separate "Inventory" tab is an option if the section grows large, but for 14 items a collapsible section in Resources is sufficient.
 
 ---
 
@@ -64,6 +77,16 @@ ILLEGAL_SAFARI, CANNIBAL_DINNER, EVENING_WITH_UNDERAGED, METH
 - Are these planned perks, removed perks, or defined in a config file other than `Perks.json`?
 - Are they safe to add to `openedPerks`, or do they depend on other state being set first?
 
+**Answers (verified 2026-04-29):**
+
+All 19 IDs **are present in `Perks.json`**. The earlier audit finding that they were absent was incorrect — the initial search missed them. A targeted search confirmed all four groups exist in the config.
+
+Additionally, none of the 19 IDs appear in the test save's `openedPerks` (which has 216 entries). This is consistent with them being valid but simply unresearched perks, not broken or phantom IDs.
+
+**Revised recommendation:** Remove the "unverified" flag from these 19 IDs in `technical-spec.md`. They are real perks defined in `Perks.json` and are safe to include in "Unlock All". The `BLDG_*_II/III` building tiers in particular are likely gated behind in-game building progression, but adding them to `openedPerks` via the editor should unlock that progression gate.
+
+The one remaining question for in-game testing is whether the `BM_*` offensive operation IDs have any immediate side-effect when added to `openedPerks` (e.g., triggering events). This is a "test before using" note rather than a reason to exclude them.
+
 ---
 
 ## G6 — Competitors tab blank (Competitors tab)
@@ -75,6 +98,11 @@ ILLEGAL_SAFARI, CANNIBAL_DINNER, EVENING_WITH_UNDERAGED, METH
 2. Is it safe to create a minimal entry `{ lastBudget: 0, aggression: "0.000", isUnderRaid: false, isDead: false }` without the other fields, or will the game error on load?
 3. What is a sensible initial `lastBudget` — 0, or a value derived from the studio's tier?
 
+**Answers (verified 2026-04-29):**
+1. **The game config (`CompetitorStudios.json`) defines AI configuration** (release targets, budget ranges, ad campaigns, staff levels) — but these are read-only game parameters, not runtime save fields. The actual save-file entry for a studio is separate and minimal. `competitorMovies` and `specialCompetitorsProposals` are **top-level save fields** in `stateJson`, not sub-fields inside `competitorStudios[id]`. The 4 editable fields are the complete runtime state.
+2. **A minimal entry is very likely safe.** `competitorMovies` and `specialCompetitorsProposals` already exist as separate top-level arrays/objects and will not be affected. The game likely initialises an entry with only these 4 fields when first touched. However, **this is not confirmed by a real populated save** — the test save has `competitorStudios: {}` even in late game. In-game testing is needed to see what a real populated entry looks like before implementing the create-entry button.
+3. **Use tier-appropriate values from config as defaults.** From `CompetitorStudios.json`: GB (top tier) has `initialBudget` ~29M, EM/SU ~6M, HE ~4M, MA ~2M. These would be better defaults than 0 for `lastBudget`, since 0 would make the studio act as if broke. Alternatively default to 0 and let the player fill in — they're explicitly creating the entry.
+
 ---
 
 ## G8 — Musical / Slapstick Comedy Pollux factors (Script Workshop)
@@ -85,3 +113,8 @@ ILLEGAL_SAFARI, CANNIBAL_DINNER, EVENING_WITH_UNDERAGED, METH
 1. Can Musical films win Pollux awards in-game? If yes, what is the appropriate genre factor weight relative to the existing scale?
 2. Can Slapstick Comedy films win Pollux awards?
 3. If neither is Pollux-eligible, should the Workshop show an explicit "Not Pollux-eligible" label when these genres are selected, rather than silently showing a 0 score?
+
+**Answers (verified 2026-04-29):**
+1 & 2. **Cannot be determined from config files.** Pollux eligibility rules are not defined in any JSON config file — they appear to be hardcoded in the game engine. No `Awards.json`, `Pollux.json`, or equivalent was found. `PCEventHeaders.json` contains Pollux event definitions (dialogue, triggers) but no genre eligibility table. `GenrePairs.json` shows MUSICAL compatibility factors but these are for script scoring, not awards.
+
+3. **Yes — show an explicit label regardless.** Since we cannot confirm eligibility either way, the correct fix is to display a visible note in the Script Workshop when MUSICAL or SLAPSTICK_COMEDY is the primary genre: something like *"Pollux eligibility for this genre is unconfirmed — score shown as 0"*. This is more honest than silently showing 0 (which implies ineligible) or guessing a factor. Once a player tests it in-game, the factor can be added or the "not eligible" label made permanent.
