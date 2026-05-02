@@ -60,6 +60,109 @@ function BanLabel({ pending }: { pending?: boolean }) {
   );
 }
 
+function SectionSearch({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div style={{ padding: "5px 12px 4px", borderBottom: "1px solid var(--color-border-subtle)" }}>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="Search…"
+        autoFocus
+        style={{
+          width: "100%",
+          fontFamily: "var(--font-ui)",
+          fontSize: "11px",
+          color: "var(--color-text-secondary)",
+          background: "transparent",
+          border: "none",
+          outline: "none",
+          padding: 0,
+        }}
+      />
+    </div>
+  );
+}
+
+function BanConfirmPopup({
+  item,
+  isBanned,
+  onConfirm,
+  onCancel,
+}: {
+  item: ScriptElement;
+  isBanned: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.55)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 100,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: "var(--color-bg-panel)",
+          border: "1px solid var(--color-border)",
+          padding: "20px 24px",
+          maxWidth: "320px",
+          width: "90%",
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px",
+        }}
+      >
+        <p style={{ fontFamily: "var(--font-ui)", fontSize: "11px", color: isBanned ? "#a05050" : "#a07830", margin: 0, lineHeight: 1.5 }}>
+          <strong>{item.label}</strong> {isBanned ? "is banned" : "has a pending ban"} — are you sure you want to add it?
+        </p>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            onClick={onConfirm}
+            style={{
+              fontFamily: "var(--font-ui)",
+              fontSize: "10px",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "var(--color-gold)",
+              background: "transparent",
+              border: "1px solid var(--color-gold)",
+              padding: "6px 16px",
+              cursor: "pointer",
+            }}
+          >
+            Add anyway
+          </button>
+          <button
+            onClick={onCancel}
+            style={{
+              fontFamily: "var(--font-ui)",
+              fontSize: "10px",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "var(--color-text-muted)",
+              background: "transparent",
+              border: "1px solid var(--color-border)",
+              padding: "6px 16px",
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ElementRow({
   item, score, selected, disabled, onSelect, banned, pending,
 }: {
@@ -220,9 +323,26 @@ export default function ScriptBuilder({
   const [themes, setThemes] = useState<ScriptElement[]>(() => initialCombo?.themesEvents ?? []);
   const [activeSection, setActiveSection] = useState<SectionKey | null>(initialCombo ? null : "genre");
   const [finalCombo, setFinalCombo] = useState<ScriptCombo | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [pendingConfirm, setPendingConfirm] = useState<{ item: ScriptElement; action: () => void; isBanned: boolean } | null>(null);
 
   function isBanned(id: string) { return bannedIds?.has(id) ?? false; }
   function isPending(id: string) { return !isBanned(id) && (pendingBannedIds?.has(id) ?? false); }
+
+  function openSection(key: SectionKey | null) {
+    setActiveSection(key);
+    setSearchQuery("");
+  }
+
+  function maybeConfirm(item: ScriptElement, action: () => void) {
+    if (isBanned(item.id)) {
+      setPendingConfirm({ item, action, isBanned: true });
+    } else if (isPending(item.id)) {
+      setPendingConfirm({ item, action, isBanned: false });
+    } else {
+      action();
+    }
+  }
 
   const selectedElements = useMemo(() =>
     [sel.genre, sel.genre2, sel.setting, sel.protagonist, ...sel.supporting, sel.antagonist, sel.finale, ...themes]
@@ -357,9 +477,9 @@ export default function ScriptBuilder({
           : next === "supporting"
             ? newSel.supporting.length === 0
             : newSel[next as keyof SelState] === null;
-      if (isEmpty) { setActiveSection(next); return; }
+      if (isEmpty) { openSection(next); return; }
     }
-    setActiveSection(null);
+    openSection(null);
   }
 
   function toggleTheme(item: ScriptElement) {
@@ -393,9 +513,9 @@ export default function ScriptBuilder({
         next === "themesEvents" ? contentTagsUsed < MIN_CONTENT_TAGS
         : next === "supporting" ? sel.supporting.length === 0
         : sel[next as keyof SelState] === null;
-      if (isEmpty) { setActiveSection(next); return; }
+      if (isEmpty) { openSection(next); return; }
     }
-    setActiveSection(null);
+    openSection(null);
   }
 
   function handleComplete() {
@@ -433,7 +553,7 @@ export default function ScriptBuilder({
   function startOver() {
     setSel({ genre: null, genre2: null, setting: null, protagonist: null, supporting: [], antagonist: null, finale: null });
     setThemes([]);
-    setActiveSection("genre");
+    openSection("genre");
     setFinalCombo(null);
     onBiasChange("balanced");
   }
@@ -596,7 +716,10 @@ export default function ScriptBuilder({
                     Skip →
                   </button>
                 </div>
-                {rankedGenre2.map(({ item, artMod, comMod }) => {
+                <SectionSearch value={searchQuery} onChange={setSearchQuery} />
+                {rankedGenre2
+                  .filter(({ item }) => item.label.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map(({ item, artMod, comMod }) => {
                   const total = artMod + comMod;
                   const isSelected = sel.genre2?.id === item.id;
                   const modColor = total > 0.01 ? "#7ec8a0" : total < -0.01 ? "#d47a7a" : "var(--color-text-muted)";
@@ -607,7 +730,7 @@ export default function ScriptBuilder({
                         if (isSelected) {
                           setSel(prev => ({ ...prev, genre2: null }));
                         } else {
-                          selectSingle("genre2", item);
+                          maybeConfirm(item, () => selectSingle("genre2", item));
                         }
                       }}
                       style={{
@@ -665,8 +788,10 @@ export default function ScriptBuilder({
                     </button>
                   </div>
                 ))}
+                <SectionSearch value={searchQuery} onChange={setSearchQuery} />
                 {rankedList
                   .filter(({ item }) => !themeIds.has(item.id))
+                  .filter(({ item }) => item.label.toLowerCase().includes(searchQuery.toLowerCase()))
                   .map(({ item, score }) => (
                     <ElementRow
                       key={item.id}
@@ -674,7 +799,7 @@ export default function ScriptBuilder({
                       score={score}
                       selected={false}
                       disabled={contentTagsUsed >= contentTagBudget}
-                      onSelect={() => toggleTheme(item)}
+                      onSelect={() => maybeConfirm(item, () => toggleTheme(item))}
                       banned={isBanned(item.id)}
                       pending={isPending(item.id)}
                     />
@@ -720,8 +845,10 @@ export default function ScriptBuilder({
                     </button>
                   </div>
                 ))}
+                <SectionSearch value={searchQuery} onChange={setSearchQuery} />
                 {rankedList
                   .filter(({ item }) => !supportingIds.has(item.id))
+                  .filter(({ item }) => item.label.toLowerCase().includes(searchQuery.toLowerCase()))
                   .map(({ item, score }) => (
                     <ElementRow
                       key={item.id}
@@ -729,7 +856,7 @@ export default function ScriptBuilder({
                       score={score}
                       selected={false}
                       disabled={contentTagsUsed >= contentTagBudget}
-                      onSelect={() => toggleSupporting(item)}
+                      onSelect={() => maybeConfirm(item, () => toggleSupporting(item))}
                       banned={isBanned(item.id)}
                       pending={isPending(item.id)}
                     />
@@ -738,22 +865,24 @@ export default function ScriptBuilder({
             );
           } else {
             const isAntagonist = key === "antagonist";
-            const rows = rankedList.map(({ item, score }) => {
-              const wouldAddNewChar = isAntagonist && sel.antagonist === null;
-              const disabled = wouldAddNewChar && contentTagsUsed >= contentTagBudget;
-              return (
-                <ElementRow
-                  key={item.id}
-                  item={item}
-                  score={score}
-                  selected={(sel[key as keyof SelState] as ScriptElement | null)?.id === item.id}
-                  disabled={disabled}
-                  onSelect={() => selectSingle(key as Exclude<SectionKey, "themesEvents" | "supporting">, item)}
-                  banned={isBanned(item.id)}
-                  pending={isPending(item.id)}
-                />
-              );
-            });
+            const rows = rankedList
+              .filter(({ item }) => item.label.toLowerCase().includes(searchQuery.toLowerCase()))
+              .map(({ item, score }) => {
+                const wouldAddNewChar = isAntagonist && sel.antagonist === null;
+                const disabled = wouldAddNewChar && contentTagsUsed >= contentTagBudget;
+                return (
+                  <ElementRow
+                    key={item.id}
+                    item={item}
+                    score={score}
+                    selected={(sel[key as keyof SelState] as ScriptElement | null)?.id === item.id}
+                    disabled={disabled}
+                    onSelect={() => maybeConfirm(item, () => selectSingle(key as Exclude<SectionKey, "themesEvents" | "supporting">, item))}
+                    banned={isBanned(item.id)}
+                    pending={isPending(item.id)}
+                  />
+                );
+              });
             sectionBody = isAntagonist ? (
               <>
                 <div style={{ padding: "6px 12px 6px", borderBottom: "1px solid var(--color-border-subtle)" }}>
@@ -773,9 +902,15 @@ export default function ScriptBuilder({
                     Skip →
                   </button>
                 </div>
+                <SectionSearch value={searchQuery} onChange={setSearchQuery} />
                 {rows}
               </>
-            ) : rows;
+            ) : (
+              <>
+                <SectionSearch value={searchQuery} onChange={setSearchQuery} />
+                {rows}
+              </>
+            );
           }
 
           return (
@@ -784,7 +919,7 @@ export default function ScriptBuilder({
               label={sectionLabel[key]}
               isOpen={activeSection === key}
               isComplete={isDone}
-              onToggle={() => setActiveSection(prev => prev === key ? null : key)}
+              onToggle={() => openSection(activeSection === key ? null : key)}
             >
               {sectionBody}
             </CategorySection>
@@ -818,6 +953,16 @@ export default function ScriptBuilder({
             </span>
           )}
         </div>
+      )}
+
+      {/* Ban confirmation popup */}
+      {pendingConfirm && (
+        <BanConfirmPopup
+          item={pendingConfirm.item}
+          isBanned={pendingConfirm.isBanned}
+          onConfirm={() => { pendingConfirm.action(); setPendingConfirm(null); }}
+          onCancel={() => setPendingConfirm(null)}
+        />
       )}
 
       {/* Result card */}

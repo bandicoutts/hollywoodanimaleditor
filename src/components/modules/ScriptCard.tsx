@@ -154,7 +154,7 @@ export default function ScriptCard({
       {/* Themes & events */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
         <span style={ROW_LABEL}>Story</span>
-        {themesEvents.map((te) => (
+        {[...themesEvents].sort((a, b) => a.label.localeCompare(b.label)).map((te) => (
           <Chip key={te.id} label={te.label} banned={isBanned(te.id)} pending={isPending(te.id)} />
         ))}
       </div>
