@@ -138,6 +138,11 @@ export default function AIScriptsModule() {
     [saveData]
   );
 
+  const openedAgentIds = useMemo(() =>
+    new Set<string>((saveData?.stateJson.openedAdsAgents as string[] | undefined) ?? []),
+    [saveData]
+  );
+
   function useCombo(combo: ScriptCombo) {
     setBuilderPreload(combo);
     setBuilderKey((k) => k + 1);
@@ -441,6 +446,7 @@ export default function AIScriptsModule() {
                         onUse={useCombo}
                         bannedIds={bannedIds.size > 0 ? bannedIds : undefined}
                         pendingBannedIds={pendingBannedIds.size > 0 ? pendingBannedIds : undefined}
+                        openedAgentIds={openedAgentIds}
                       />
                     ))}
                   </div>
@@ -457,6 +463,7 @@ export default function AIScriptsModule() {
                 initialCombo={builderPreload}
                 bannedIds={bannedIds.size > 0 ? bannedIds : undefined}
                 pendingBannedIds={pendingBannedIds.size > 0 ? pendingBannedIds : undefined}
+                openedAgentIds={openedAgentIds}
               />
             ) : null
           )}

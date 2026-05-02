@@ -300,6 +300,7 @@ export default function ScriptBuilder({
   initialCombo,
   bannedIds,
   pendingBannedIds,
+  openedAgentIds,
 }: {
   pool: UnlockedPool;
   bias: Bias;
@@ -307,6 +308,7 @@ export default function ScriptBuilder({
   initialCombo?: ScriptCombo;
   bannedIds?: Set<string>;
   pendingBannedIds?: Set<string>;
+  openedAgentIds?: Set<string>;
 }) {
   const [sel, setSel] = useState<SelState>(() => initialCombo ? {
     genre:       initialCombo.genre,
@@ -1002,7 +1004,7 @@ export default function ScriptBuilder({
               Start Over
             </button>
           </div>
-          <ScriptCard combo={finalCombo} index={0} />
+          <ScriptCard combo={finalCombo} index={0} openedAgentIds={openedAgentIds} />
         </div>
       )}
     </div>
