@@ -10,7 +10,7 @@ import ProfBadge from "./CharacterProfBadge";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const KNOWN_LABELS = [
+export const KNOWN_LABELS = [
   "ALCOHOLIC", "ARROGANT", "CALM", "CHASTE", "CHEERY", "DEMANDING",
   "DISCIPLINED", "HARDWORKING", "HEARTBREAKER", "HOTHEADED", "IMMORTAL",
   "INDIFFERENT", "JUNKIE", "LAZY", "LEADER", "LUDOMANIAC", "MAIN_CHARACTER",
@@ -19,8 +19,8 @@ const KNOWN_LABELS = [
   "UNDISCIPLINED", "UNTOUCHABLE", "UNWANTED_ACTOR", "XENOPHOBE",
 ];
 
-type LabelInfo = { desc: string; caution?: string };
-const LABEL_INFO: Record<string, LabelInfo> = {
+export type LabelInfo = { desc: string; caution?: string; addCaution?: string };
+export const LABEL_INFO: Record<string, LabelInfo> = {
   ALCOHOLIC:      { desc: "Heavy drinker. May trigger scandal events." },
   ARROGANT:       { desc: "Causes friction with co-workers and staff." },
   CALM:           { desc: "Positive temperament; resilient to negative events." },
@@ -37,7 +37,7 @@ const LABEL_INFO: Record<string, LabelInfo> = {
   LAZY:           { desc: "Lower productivity; slower skill progression." },
   LEADER:         { desc: "Boosts morale and performance of those around them." },
   LUDOMANIAC:     { desc: "Gambling addiction; may trigger financial events." },
-  MAIN_CHARACTER: { desc: "Marks the player's own studio head character.", caution: "Do not remove — this is story-critical and cannot be safely undone." },
+  MAIN_CHARACTER: { desc: "Marks the player's own studio head character.", caution: "Do not remove — this is story-critical and cannot be safely undone.", addCaution: "Adding MAIN_CHARACTER to multiple characters may break story events." },
   MELANCHOLIC:    { desc: "Lower baseline happiness; prone to mood drops." },
   MISOGYNIST:     { desc: "Causes friction with female co-workers." },
   MODEST:         { desc: "Content with lower pay; unlikely to demand raises." },
@@ -50,7 +50,7 @@ const LABEL_INFO: Record<string, LabelInfo> = {
   TEAM_PLAYER:    { desc: "Strong positive effect on co-worker relationships." },
   UNDISCIPLINED:  { desc: "Unreliable; inconsistent effort and performance." },
   UNTOUCHABLE:    { desc: "Cannot be targeted by competitor attacks or certain events." },
-  UNWANTED_ACTOR: { desc: "Blocked from being cast in any film.", caution: "Adding this will prevent this character from being cast. Only remove if you're sure." },
+  UNWANTED_ACTOR: { desc: "Blocked from being cast in any film.", caution: "Adding this will prevent this character from being cast. Only remove if you're sure.", addCaution: "This will block all selected characters from being cast in any film." },
   XENOPHOBE:      { desc: "Causes friction with international co-workers." },
 };
 

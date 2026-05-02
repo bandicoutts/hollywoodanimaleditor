@@ -10,7 +10,7 @@ import {
   getProfessionLabel,
   MANAGEMENT_KEYS,
 } from "@/data/professions";
-import DetailPanel, { moodColor, displayName } from "./CharacterDetailPanel";
+import DetailPanel, { moodColor, displayName, KNOWN_LABELS, LABEL_INFO } from "./CharacterDetailPanel";
 import ConfirmDialog from "./ConfirmDialog";
 import { GHOST_BTN, goldHover } from "@/lib/styles";
 
@@ -160,13 +160,14 @@ function CharRow({
 
 // ── Bulk action button ────────────────────────────────────────────────────────
 
-function BulkBtn({ label, onClick }: { label: string; onClick: () => void }) {
+function BulkBtn({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}
-      style={GHOST_BTN}
-      onMouseEnter={(e) => goldHover(e, true)}
-      onMouseLeave={(e) => goldHover(e, false)}
+      disabled={disabled}
+      style={{ ...GHOST_BTN, opacity: disabled ? 0.4 : 1, cursor: disabled ? "default" : "pointer" }}
+      onMouseEnter={(e) => { if (!disabled) goldHover(e, true); }}
+      onMouseLeave={(e) => { if (!disabled) goldHover(e, false); }}
     >
       {label}
     </button>
@@ -217,11 +218,13 @@ export default function CharactersModule() {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<"default" | "name" | "skill-desc" | "mood-asc">("default");
   const [pendingBulk, setPendingBulk] = useState<"maxAll" | "removeCaps" | null>(null);
+  const [pendingTraitAdd, setPendingTraitAdd] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   // Multi-select state
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [lastSelectedIdx, setLastSelectedIdx] = useState<number | null>(null);
+  const [bulkAddTrait, setBulkAddTrait] = useState("");
 
   const characters = saveData?.stateJson?.characters ?? [];
   const gameDate = useMemo(
@@ -488,6 +491,23 @@ export default function CharactersModule() {
     }, `Characters — max commercial appeal (${n} selected)`),
   [applyToSelected, n]);
 
+  const applySelAddTrait = useCallback((label: string) => {
+    const doIt = () => {
+      applyToSelected((c) => {
+        if (!Array.isArray(c.labels)) c.labels = [];
+        if (!(c.labels as string[]).includes(label))
+          (c.labels as string[]).push(label);
+      }, `Characters — add trait ${label} (${n} selected)`);
+      setBulkAddTrait("");
+    };
+    const addCaution = LABEL_INFO[label]?.addCaution;
+    if (addCaution) {
+      setPendingTraitAdd({ message: `${addCaution} Add to ${n} selected character${n !== 1 ? "s" : ""}?`, onConfirm: doIt });
+    } else {
+      doIt();
+    }
+  }, [applyToSelected, n]);
+
   if (!isLoaded) {
     return (
       <div style={{ padding: "32px 36px" }}>
@@ -515,6 +535,13 @@ export default function CharactersModule() {
         message={`This will remove skill caps for ${filtered.length} ${showAll ? "" : "employed "}character${filtered.length !== 1 ? "s" : ""}. This cannot be undone without re-uploading your original save.`}
         onConfirm={confirmBulkRemoveCaps}
         onCancel={() => setPendingBulk(null)}
+      />
+    )}
+    {pendingTraitAdd && (
+      <ConfirmDialog
+        message={pendingTraitAdd.message}
+        onConfirm={() => { pendingTraitAdd.onConfirm(); setPendingTraitAdd(null); }}
+        onCancel={() => setPendingTraitAdd(null)}
       />
     )}
     <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
@@ -675,6 +702,36 @@ export default function CharactersModule() {
                 <BulkBtn label="Max Artistic" onClick={applySelMaxArtistic} />
                 <BulkBtn label="Max Commercial" onClick={applySelMaxCommercial} />
                 <BulkBtn label="Max Filming Skills" onClick={applySelMaxFilmingSkills} />
+              </div>
+              <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                <select
+                  value={bulkAddTrait}
+                  onChange={(e) => setBulkAddTrait(e.target.value)}
+                  style={{
+                    fontFamily: "var(--font-ui)",
+                    fontSize: "10px",
+                    color: bulkAddTrait ? "var(--color-text-primary)" : "var(--color-text-muted)",
+                    background: "var(--color-bg-raised)",
+                    border: "1px solid var(--color-border)",
+                    padding: "3px 6px",
+                    flex: 1,
+                    minWidth: 0,
+                    cursor: "pointer",
+                    outline: "none",
+                  }}
+                >
+                  <option value="">Add trait…</option>
+                  {KNOWN_LABELS.map((l) => (
+                    <option key={l} value={l}>
+                      {LABEL_INFO[l]?.addCaution ? `⚠ ${l}` : l}
+                    </option>
+                  ))}
+                </select>
+                <BulkBtn
+                  label="Apply"
+                  disabled={!bulkAddTrait || selectedIds.size === 0}
+                  onClick={() => { if (bulkAddTrait) applySelAddTrait(bulkAddTrait); }}
+                />
               </div>
             </>
           ) : (
